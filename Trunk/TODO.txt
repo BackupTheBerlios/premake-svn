@@ -1,0 +1,15 @@
+* Document config.targetextension
+
+* Unit test Vs2002
+
+* Unit test VC6
+
+* Unit test MonoDevelop
+
+* Docs: no-symbols (not with-symbols)
+
+* Docs: pkg.buildflags inserts, pkg.cfg.buildflags replaces, potential confusion
+
+* Omit frame ptrs from release build
+
+* Phase out linkflags
