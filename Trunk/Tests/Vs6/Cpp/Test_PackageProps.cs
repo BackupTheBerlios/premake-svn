@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using Premake.Tests.Framework;
 
-namespace Premake.Tests.SharpDev.Cs
+namespace Premake.Tests.Vs6.Cpp
 {
 	[TestFixture]
 	public class Test_PackageProps
@@ -15,12 +15,12 @@ namespace Premake.Tests.SharpDev.Cs
 		[SetUp]
 		public void Test_Setup()
 		{
-			_script = Script.MakeBasic("exe", "c#");
+			_script = Script.MakeBasic("exe", "c++");
 
 			_expects = new Project();
 			_expects.Package.Add(1);
 
-			_parser = new SharpDevParser();
+			_parser = new Vs6Parser();
 		}
 
 		public void Run()
@@ -38,9 +38,9 @@ namespace Premake.Tests.SharpDev.Cs
 		}
 
 		[Test]
-		public void Test_LanguageIsCs()
+		public void Test_LanguageIsCpp()
 		{
-			_expects.Package[0].Language = "c#";
+			_expects.Package[0].Language = "c++";
 			Run();
 		}
 		#endregion
@@ -66,6 +66,14 @@ namespace Premake.Tests.SharpDev.Cs
 		{
 			_script.Replace("exe", "dll");
 			_expects.Package[0].Kind = "dll";
+			Run();
+		}
+
+		[Test]
+		public void Test_KindIsLib()
+		{
+			_script.Replace("exe", "lib");
+			_expects.Package[0].Kind = "lib";
 			Run();
 		}
 		#endregion

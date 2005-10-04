@@ -18,6 +18,16 @@ namespace Premake.Tests.Framework
 			_currentLine = 0;
 		}
 
+		public bool Expect(string actual, params string[] expected)
+		{
+			foreach (string value in expected)
+			{
+				if (actual == value)
+					return true;
+			}
+			throw new FormatException("Unexpected value '" + actual + "'");
+		}
+
 		public bool Match(string expected)
 		{
 			return this.Match(expected, false);

@@ -336,8 +336,9 @@ namespace Premake.Tests.Framework
 						matches = Regex("\t\t\t\tImportLibrary=\"(.+)\"");
 						if (buildFlags.Contains("no-import-lib"))
 						{
-							if (Path.GetDirectoryName(matches[0]) != config.ObjDir)
-								throw new FormatException("no-import-lib flag is set; import library should be in ObjDir");
+							if (Path.GetDirectoryName(matches[0]) != "$(IntDir)")
+								throw new FormatException("no-import-lib flag is set; " +
+									"import library should be $(IntDir), is " + matches[0]);
 						}
 						else
 						{

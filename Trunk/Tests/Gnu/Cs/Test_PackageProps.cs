@@ -19,7 +19,6 @@ namespace Premake.Tests.Gnu.Cs
 
 			_expects = new Project();
 			_expects.Package.Add(1);
-			_expects.Package[0].Config.Add(2);
 
 			_parser = new GnuParser();
 		}

@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using Premake.Tests.Framework;
 
-namespace Premake.Tests.Vs2003.Cpp
+namespace Premake.Tests.Vs6.Cpp
 {
 	[TestFixture]
 	public class Test_BuildFlags
@@ -21,7 +21,7 @@ namespace Premake.Tests.Vs2003.Cpp
 			_expects.Package.Add(1);
 			_expects.Package[0].Config.Add(2);
 
-			_parser = new Vs2003Parser();
+			_parser = new Vs6Parser();
 		}
 
 		public void Run()
@@ -33,27 +33,27 @@ namespace Premake.Tests.Vs2003.Cpp
 		[Test]
 		public void Test_SetFlagOnPackage()
 		{
-			_script.Append("package.buildflags = { 'no-64bit-checks' }");
-			_expects.Package[0].Config[0].BuildFlags = new string[] { "no-64bit-checks" };
-			_expects.Package[0].Config[1].BuildFlags = new string[] { "no-64bit-checks", "optimize", "no-symbols" };
+			_script.Append("package.buildflags = { 'no-rtti' }");
+			_expects.Package[0].Config[0].BuildFlags = new string[] { "no-rtti" };
+			_expects.Package[0].Config[1].BuildFlags = new string[] { "no-rtti", "optimize", "no-symbols" };
 			Run();
 		}
 
 		[Test]
 		public void Test_SetFlagOnConfig()
 		{
-			_script.Append("package.config['Debug'].buildflags = { 'no-64bit-checks' }");
-			_expects.Package[0].Config[0].BuildFlags = new string[] { "no-64bit-checks" };
+			_script.Append("package.config['Debug'].buildflags = { 'no-rtti' }");
+			_expects.Package[0].Config[0].BuildFlags = new string[] { "no-rtti" };
 			_expects.Package[0].Config[1].BuildFlags = new string[] { "optimize", "no-symbols" };
 			Run();
 		}
 
 		public void Test_SetFlagOnPackageAndConfig()
 		{
-			_script.Append("package.buildflags = { 'no-64bit-checks' }");
+			_script.Append("package.buildflags = { 'no-rtti' }");
 			_script.Append("package.config['Release'].buildflags = { 'no-exceptions' }");
-			_expects.Package[0].Config[0].BuildFlags = new string[] { "no-64bit-checks" };
-			_expects.Package[0].Config[1].BuildFlags = new string[] { "no-64bit-checks", "no-exceptions" };
+			_expects.Package[0].Config[0].BuildFlags = new string[] { "no-rtti" };
+			_expects.Package[0].Config[1].BuildFlags = new string[] { "no-rtti", "no-exceptions" };
 			Run();
 		}
 
@@ -72,15 +72,6 @@ namespace Premake.Tests.Vs2003.Cpp
 			_script.Append("package.buildflags = { 'fatal-warnings' }");
 			_expects.Package[0].Config[0].BuildFlags = new string[] { "fatal-warnings" };
 			_expects.Package[0].Config[1].BuildFlags = new string[] { "fatal-warnings", "optimize", "no-symbols" };
-			Run();
-		}
-
-		[Test]
-		public void Test_No64BitChecks()
-		{
-			_script.Append("package.buildflags = { 'no-64bit-checks' }");
-			_expects.Package[0].Config[0].BuildFlags = new string[] { "no-64bit-checks" };
-			_expects.Package[0].Config[1].BuildFlags = new string[] { "no-64bit-checks", "optimize", "no-symbols" };
 			Run();
 		}
 
@@ -160,18 +151,19 @@ namespace Premake.Tests.Vs2003.Cpp
 		[Test]
 		public void Test_OptimizeSpeed()
 		{
+			/* VS6 only has two built in optimization levels */
 			_script.Append("package.buildflags = { 'optimize-speed' }");
-			_expects.Package[0].Config[0].BuildFlags = new string[] { "optimize-speed" };
-			_expects.Package[0].Config[1].BuildFlags = new string[] { "optimize-speed", "no-symbols" };
+			_expects.Package[0].Config[0].BuildFlags = new string[] { "optimize" };
+			_expects.Package[0].Config[1].BuildFlags = new string[] { "optimize", "no-symbols" };
 			Run();
 		}
 
 		[Test]
-		public void Test_Unicode()
+		public void Test_StaticRuntime()
 		{
-			_script.Append("package.buildflags = { 'unicode' }");
-			_expects.Package[0].Config[0].BuildFlags = new string[] { "unicode" };
-			_expects.Package[0].Config[1].BuildFlags = new string[] { "unicode", "optimize", "no-symbols" };
+			_script.Append("package.linkflags = { 'static-runtime' }");
+			_expects.Package[0].Config[0].LinkFlags = new string[] { "static-runtime" };
+			_expects.Package[0].Config[1].LinkFlags = new string[] { "static-runtime" };
 			Run();
 		}
 	}

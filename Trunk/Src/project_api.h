@@ -1,20 +1,27 @@
-extern int         prj_get_numconfigs();
-extern int         prj_get_numpackages();
+extern int          prj_get_numconfigs();
+extern int          prj_get_numpackages();
 
-extern const char* prj_get_bindir(int pathType, int appendSeparator);
-extern const char* prj_get_bindir_for(Package* pkg, int pathType, int appendSeparator);
-extern const char* prj_get_cfgname();
-extern const char* prj_get_language();
-extern const char* prj_get_libdir(int pathType, int appendSeparator);
-extern const char* prj_get_libdir_for(Package* pkg, int pathType, int appendSeparator);
-extern const char* prj_get_objdir(int pathType, int appendSeparator);
-extern const char* prj_get_outdir(int pathType, int appendSeparator);
-extern const char* prj_get_outdir_for(Package* pkg, int pathType, int appendSeparator);
-extern const char* prj_get_pkgname();
-extern const char* prj_get_pkgpath();
-extern const char* prj_get_target();
-extern const char* prj_get_target_for(Package* pkg);
-
-extern void        prj_select_config(int i);
-extern void        prj_select_package(int i);
-
+extern const char*  prj_get_bindir(int pathType, int appendSeparator);
+extern const char*  prj_get_bindir_for(Package* pkg, int pathType, int appendSeparator);
+extern const char** prj_get_buildoptions();
+extern const char*  prj_get_cfgname();
+extern const char** prj_get_defines();
+extern const char** prj_get_includepaths();
+extern const char*  prj_get_kind();
+extern const char*  prj_get_language();
+extern const char*  prj_get_libdir(int pathType, int appendSeparator);
+extern const char*  prj_get_libdir_for(Package* pkg, int pathType, int appendSeparator);
+extern const char** prj_get_libpaths();
+extern const char** prj_get_linkoptions();
+extern const char** prj_get_links();
+extern const char*  prj_get_objdir(int pathType, int appendSeparator);
+extern const char*  prj_get_outdir(int pathType, int appendSeparator);
+extern const char*  prj_get_outdir_for(Package* pkg, int pathType, int appendSeparator);
+extern Package*     prj_get_package();
+extern const char*  prj_get_pkgname();
+extern const char*  prj_get_pkgpath(int pathType, int includeName);
+extern const char*  prj_get_target();
+extern const char*  prj_get_target_for(Package* pkg);
+extern int          prj_has_buildflag(const char* flagname);
+extern void         prj_select_config(int i);
+extern void         prj_select_package(int i);

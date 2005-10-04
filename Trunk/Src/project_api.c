@@ -68,12 +68,52 @@ const char* prj_get_bindir_for(Package* pkg, int pathType, int appendSeparator)
 
 
 /************************************************************************
+ * Return the list of build options for the active set
+ ***********************************************************************/
+
+const char** prj_get_buildoptions()
+{
+	return my_cfg->buildOptions;
+}
+
+
+/************************************************************************
  * Return the name of the active configuration
  ***********************************************************************/
 
 const char* prj_get_cfgname()
 {
 	return my_cfg->name;
+}
+
+
+/************************************************************************
+ * Returns a list of defined symbols.
+ ***********************************************************************/
+
+const char** prj_get_defines()
+{
+	return my_cfg->defines;
+}
+
+
+/************************************************************************
+ * Return the list of include search paths for the active set
+ ***********************************************************************/
+
+const char** prj_get_includepaths()
+{
+	return my_cfg->includePaths;
+}
+
+
+/************************************************************************
+ * Return the target kind (exe, dll, etc.) used by the active set
+ ***********************************************************************/
+
+const char* prj_get_kind()
+{
+	return my_pkg->kind;
 }
 
 
@@ -102,6 +142,36 @@ const char* prj_get_libdir_for(Package* pkg, int pathType, int appendSeparator)
 	Config* cfg = prj_get_config_for(pkg);
 	strcpy(buffer, reversePath(pkg->path, cfg->projectConfig->libdir, pathType, appendSeparator));
 	return buffer;
+}
+
+
+/************************************************************************
+ * Return the list of library search paths for the active set
+ ***********************************************************************/
+
+const char** prj_get_libpaths()
+{
+	return my_cfg->libPaths;
+}
+
+
+/************************************************************************
+ * Return the list of raw linker options
+ ***********************************************************************/
+
+const char** prj_get_linkoptions()
+{
+	return my_cfg->linkOptions;
+}
+
+
+/************************************************************************
+ * Return the list of linked libraries
+ ***********************************************************************/
+
+const char** prj_get_links()
+{
+	return my_cfg->links;
 }
 
 
@@ -147,6 +217,16 @@ const char* prj_get_outdir_for(Package* pkg, int pathType, int appendSeparator)
 
 
 /************************************************************************
+ * Return the active package; for interfacing with legacy util API
+ ***********************************************************************/
+
+Package* prj_get_package()
+{
+	return my_pkg;
+}
+
+
+/************************************************************************
  * Return the name of the active package
  ***********************************************************************/
 
@@ -160,9 +240,16 @@ const char* prj_get_pkgname()
  * Return the path to the active package relative to the project root
  ***********************************************************************/
 
-const char* prj_get_pkgpath()
+const char* prj_get_pkgpath(int pathType, int includeName)
 {
-	return my_pkg->path;
+	strcpy(buffer, my_pkg->path);
+	if (includeName)
+	{
+		if (strlen(buffer) > 0)
+			strcat(buffer, "/");
+		strcat(buffer, my_pkg->name);
+	}
+	return translatePath(buffer, pathType);
 }
 
 
@@ -266,6 +353,19 @@ const char* prj_get_target_for(Package* pkg)
 	strcat(buffer, extension);
 	
 	return buffer;
+}
+
+
+/************************************************************************
+ * Returns true if the active set contains the specified build flag.
+ ***********************************************************************/
+
+int prj_has_buildflag(const char* flagname)
+{
+	int result = inArray(my_cfg->buildFlags, flagname);
+	if (!result)
+		result = inArray(my_cfg->linkFlags, flagname);
+	return result;
 }
 
 

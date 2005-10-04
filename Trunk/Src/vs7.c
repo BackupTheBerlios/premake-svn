@@ -591,7 +591,7 @@ static int writeVcProject(int version, Package* package)
 				}
 				else
 				{
-					fprintf(file, "$(IntDir)");
+					fprintf(file, "$(IntDir)\\");
 				}
 				fprintf(file, "%s.lib\"\n", getFilename(config->target, 1));
 			}

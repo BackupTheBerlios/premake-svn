@@ -34,6 +34,9 @@ namespace Premake.Tests.Framework
 
 		public void CompareTo(ConfigCollection actual)
 		{
+			if (this.Count == 0)
+				return;
+
 			if (this.Count != actual.Count)
 				throw new FormatException("Expected " + this.Count + " configurations but got " + actual.Count);
 
