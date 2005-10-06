@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
 using System.IO;
+using Premake.Tests.Framework;
 
-namespace Premake.Tests.Framework
+namespace Premake.Tests.Gnu
 {
 	public class GnuParser : Parser
 	{
@@ -485,7 +486,7 @@ namespace Premake.Tests.Framework
 			Match("");
 
 			Match("EMBEDDEDCOMMAND = \\");
-			foreach (File file in package.File)
+			foreach (SourceFile file in package.File)
 			{
 				if (file.BuildAction == "EmbeddedResource")
 					Match("\t/resource:" + file.Name + " \\");
@@ -502,7 +503,7 @@ namespace Premake.Tests.Framework
 			Match("");
 
 			Match("LINKEDCOMMAND = \\");
-			foreach (File file in package.File)
+			foreach (SourceFile file in package.File)
 			{
 				if (file.BuildAction == "Content")
 					Match("\t/linkresource:" + file.Name + " \\");
@@ -515,7 +516,7 @@ namespace Premake.Tests.Framework
 			Match("");
 			Match("all: \\");
 			Match("\t$(OUTDIR)/$(TARGET) \\");
-			foreach (File file in package.File)
+			foreach (SourceFile file in package.File)
 			{
 				if (file.BuildAction == "Content")
 					Match("\t$(BINDIR)/" + Path.GetFileName(file.Name) + " \\");
@@ -535,7 +536,7 @@ namespace Premake.Tests.Framework
 
 			Match("");
 
-			foreach (File file in package.File)
+			foreach (SourceFile file in package.File)
 			{
 				if (file.BuildAction == "Content")
 				{

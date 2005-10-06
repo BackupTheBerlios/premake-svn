@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using Premake.Tests.Framework;
 
-namespace Premake.Tests.SharpDev.Cs
+namespace Premake.Tests.Vs2002.Cs
 {
 	[TestFixture]
 	public class Test_Dependencies
@@ -22,7 +22,7 @@ namespace Premake.Tests.SharpDev.Cs
 			_expects.Package[0].Config.Add(2);
 			_expects.Package[1].Config.Add(2);
 
-			_parser = new SharpDevParser();
+			_parser = new Vs2002Parser();
 		}
 
 		public void Run()
@@ -31,17 +31,9 @@ namespace Premake.Tests.SharpDev.Cs
 		}
 		#endregion
 
-#if FAILING
 		[Test]
 		public void Test_ExeAndDll()
 		{
-			/* This test is failing, but I can't figure out why. At the end of 
-			 * SharpDevParser.Parse() the dependencies are set correctly, but
-			 * when that method exits back to TestEnvironment.Run() they have
-			 * disappeared, replaced by an empty list! I spent a couple of
-			 * hours trying to figure this one out to no avail. If you think
-			 * you are up for it, search for SHARPDEV_DEPENDENCY_BUG in 
-			 * Parser_SharpDev.cs and TestEnvironment.cs. */
 			_script.Append("package.links = { 'PackageB' }");
 			_script.Append("package = newpackage()");
 			_script.Append("package.name = 'PackageB'");
@@ -54,7 +46,6 @@ namespace Premake.Tests.SharpDev.Cs
 
 			Run();
 		}
-#endif
 
 	}
 }

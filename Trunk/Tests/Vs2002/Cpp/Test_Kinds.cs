@@ -2,10 +2,10 @@ using System;
 using NUnit.Framework;
 using Premake.Tests.Framework;
 
-namespace Premake.Tests.Vs2003.Cs
+namespace Premake.Tests.Vs2002.Cpp
 {
 	[TestFixture]
-	public class Test_PackageProps
+	public class Test_Kinds
 	{
 		Script  _script;
 		Project _expects;
@@ -15,12 +15,12 @@ namespace Premake.Tests.Vs2003.Cs
 		[SetUp]
 		public void Test_Setup()
 		{
-			_script = Script.MakeBasic("exe", "c#");
+			_script = Script.MakeBasic("exe", "c++");
 
 			_expects = new Project();
 			_expects.Package.Add(1);
 
-			_parser = new Vs2003Parser();
+			_parser = new Vs2002Parser();
 		}
 
 		public void Run()
@@ -29,23 +29,6 @@ namespace Premake.Tests.Vs2003.Cs
 		}
 		#endregion
 
-		#region Basic Property Tests
-		[Test]
-		public void Test_PackageName()
-		{
-			_expects.Package[0].Name = "MyPackage";
-			Run();
-		}
-
-		[Test]
-		public void Test_LanguageIsCs()
-		{
-			_expects.Package[0].Language = "c#";
-			Run();
-		}
-		#endregion
-
-		#region Kind Tests
 		[Test]
 		public void Test_KindIsExe()
 		{
@@ -70,12 +53,11 @@ namespace Premake.Tests.Vs2003.Cs
 		}
 
 		[Test]
-		public void Test_KindIsAspNet()
+		public void Test_KindIsLib()
 		{
-			_script.Replace("exe", "aspnet");
-			_expects.Package[0].Kind = "aspnet";
+			_script.Replace("exe", "lib");
+			_expects.Package[0].Kind = "lib";
 			Run();
 		}
-		#endregion
 	}
 }

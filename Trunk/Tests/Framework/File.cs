@@ -2,14 +2,14 @@ using System;
 
 namespace Premake.Tests.Framework
 {
-	public class File
+	public class SourceFile
 	{
 		public string Name;
 		public string Subtype;
 		public string BuildAction;
 		public string DependsOn;
 
-		public void CompareTo(File actual)
+		public void CompareTo(SourceFile actual)
 		{
 			Test(this.Name,        actual.Name,        "Name");
 			Test(this.Subtype,     actual.Subtype,     "Subtype");

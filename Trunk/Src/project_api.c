@@ -227,6 +227,16 @@ Package* prj_get_package()
 
 
 /************************************************************************
+ * Return the userdata attached to the active package
+ ***********************************************************************/
+
+void* prj_get_packagedata()
+{
+	return my_pkg->data;
+}
+
+
+/************************************************************************
  * Return the name of the active package
  ***********************************************************************/
 
@@ -249,6 +259,44 @@ const char* prj_get_pkgpath(int pathType, int includeName)
 			strcat(buffer, "/");
 		strcat(buffer, my_pkg->name);
 	}
+	return translatePath(buffer, pathType);
+}
+
+
+/************************************************************************
+ * Return the path to the active package relative to the project file
+ ***********************************************************************/
+
+const char* prj_get_pkgpathfromprj(int pathType, int includeName)
+{
+	strcpy(buffer, reversePath(project->path, my_pkg->path, pathType, 0));
+	if (includeName)
+	{
+		if (strlen(buffer) > 0)
+			strcat(buffer, "/");
+		strcat(buffer, my_pkg->name);
+	}
+	return translatePath(buffer, pathType);
+}
+
+
+/************************************************************************
+ * Return the name of the project
+ ***********************************************************************/
+
+const char* prj_get_prjname()
+{
+	return project->name;
+}
+
+
+/************************************************************************
+ * Return the path to the project files, relative to project root
+ ***********************************************************************/
+
+const char* prj_get_prjpath(int pathType)
+{
+	strcpy(buffer, project->path);
 	return translatePath(buffer, pathType);
 }
 
@@ -390,6 +438,16 @@ int prj_is_kind(const char* kind)
 
 
 /************************************************************************
+ * Returns true if active set generates uses this language (c#, c++)
+ ***********************************************************************/
+
+int prj_is_language(const char* language)
+{
+	return matches(my_pkg->language, language);
+}
+
+
+/************************************************************************
  * Activate a new configuration within the active package
  ***********************************************************************/
 
@@ -407,3 +465,15 @@ void prj_select_package(int i)
 {
 	my_pkg = project->package[i];
 }
+
+
+/************************************************************************
+ * Attach userdata to the active package
+ ***********************************************************************/
+
+void prj_set_packagedata(void* data)
+{
+	my_pkg->data = data;
+}
+
+

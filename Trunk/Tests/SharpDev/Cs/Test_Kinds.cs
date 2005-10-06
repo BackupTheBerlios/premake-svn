@@ -5,7 +5,7 @@ using Premake.Tests.Framework;
 namespace Premake.Tests.SharpDev.Cs
 {
 	[TestFixture]
-	public class Test_PackageProps
+	public class Test_Kinds
 	{
 		Script  _script;
 		Project _expects;
@@ -29,23 +29,6 @@ namespace Premake.Tests.SharpDev.Cs
 		}
 		#endregion
 
-		#region Basic Property Tests
-		[Test]
-		public void Test_PackageName()
-		{
-			_expects.Package[0].Name = "MyPackage";
-			Run();
-		}
-
-		[Test]
-		public void Test_LanguageIsCs()
-		{
-			_expects.Package[0].Language = "c#";
-			Run();
-		}
-		#endregion
-
-		#region Kind Tests
 		[Test]
 		public void Test_KindIsExe()
 		{
@@ -68,6 +51,5 @@ namespace Premake.Tests.SharpDev.Cs
 			_expects.Package[0].Kind = "dll";
 			Run();
 		}
-		#endregion
 	}
 }

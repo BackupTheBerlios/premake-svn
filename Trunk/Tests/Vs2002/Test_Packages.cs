@@ -2,10 +2,10 @@ using System;
 using NUnit.Framework;
 using Premake.Tests.Framework;
 
-namespace Premake.Tests.Vs2003.Cpp
+namespace Premake.Tests.Vs2002
 {
 	[TestFixture]
-	public class Test_PackageProps
+	public class Test_Packages
 	{
 		Script  _script;
 		Project _expects;
@@ -20,7 +20,7 @@ namespace Premake.Tests.Vs2003.Cpp
 			_expects = new Project();
 			_expects.Package.Add(1);
 
-			_parser = new Vs2003Parser();
+			_parser = new Vs2002Parser();
 		}
 
 		public void Run()
@@ -29,7 +29,6 @@ namespace Premake.Tests.Vs2003.Cpp
 		}
 		#endregion
 
-		#region Basic Property Tests
 		[Test]
 		public void Test_PackageName()
 		{
@@ -38,44 +37,27 @@ namespace Premake.Tests.Vs2003.Cpp
 		}
 
 		[Test]
-		public void Test_LanguageIsCpp()
+		public void Test_C()
+		{
+			_script.Replace("c++", "c");
+			_expects.Package[0].Language = "c++";
+			Run();
+		}
+
+		[Test]
+		public void Test_Cpp()
 		{
 			_expects.Package[0].Language = "c++";
 			Run();
 		}
-		#endregion
 
-		#region Kind Tests
 		[Test]
-		public void Test_KindIsExe()
+		public void Test_Cs()
 		{
-			_expects.Package[0].Kind = "exe";
+			_script.Replace("c++", "c#");
+			_expects.Package[0].Language = "c#";
 			Run();
 		}
 
-		[Test]
-		public void Test_KindIsWinExe()
-		{
-			_script.Replace("exe", "winexe");
-			_expects.Package[0].Kind = "winexe";
-			Run();
-		}
-
-		[Test]
-		public void Test_KindIsDll()
-		{
-			_script.Replace("exe", "dll");
-			_expects.Package[0].Kind = "dll";
-			Run();
-		}
-
-		[Test]
-		public void Test_KindIsLib()
-		{
-			_script.Replace("exe", "lib");
-			_expects.Package[0].Kind = "lib";
-			Run();
-		}
-		#endregion
 	}
 }

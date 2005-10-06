@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
 using System.IO;
+using Premake.Tests.Framework;
 
-namespace Premake.Tests.Framework
+namespace Premake.Tests.SharpDev
 {
 	public class SharpDevParser : Parser
 	{

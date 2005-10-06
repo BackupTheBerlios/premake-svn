@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "project.h"
+#include "project_api.h"
 #include "util.h"
 #include "vs_helpers.h"
 
@@ -20,64 +21,69 @@ static int  targetVersion;
 static char buffer[4096];
 
 
-int vs_AssignPackageData()
+/************************************************************************
+ * Assign GUIDs to the package. One is a unique ID for the package, the 
+ * other is a predefined GUID to represent the project type (C#, C++)
+ ***********************************************************************/
+
+void vs_AssignPackageData()
 {
 	int i;
 
-	for (i = 0; i < project->numPackages; ++i)
+	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
 		/* Attach a package data object to all packages */
-		Package* package = project->package[i];
 		PkgData* data = (PkgData*)malloc(sizeof(PkgData));
-		package->data = data;
+		prj_select_package(i);
+		prj_set_packagedata(data);
 	
 		/* Generate a unique ID for each project in the solution */
 		generateUUID(data->projGuid);
 
 		/* Assign project type specific data */
-		if (strcmp(package->language, "c++") == 0 || strcmp(package->language, "c") == 0)
+		if (prj_is_language("c++") || prj_is_language("c"))
 		{
 			strcpy(data->toolGuid, "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942");
 			strcpy(data->projExt, "vcproj");
 			strcpy(data->projType, "Win32");
 		}
-		else if (strcmp(package->language, "c#") == 0)
+		else if (prj_is_language("c#"))
 		{
 			strcpy(data->toolGuid, "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC");
 			strcpy(data->projExt, "csproj");
-			if (targetVersion < 2005)
-				strcpy(data->projType, ".NET");
-			else
-				strcpy(data->projType, "Any CPU");
-		}
-		else
-		{
-			printf("** Error: unrecognized language '%s'\n", package->language);
-			return 0;
+			strcpy(data->projType, ".NET");
 		}
 
 		/* Initialize remaining values */
 		data->numDependencies = 0;
 	}
-
-	return 1;
 }
 
 
+/************************************************************************
+ * List callback: scans the list of links for a package. If a link is
+ * found to a sibling package, return a dependency string for the 
+ * solution file. 
+ ***********************************************************************/
 
 const char* vs_FindProjectDependencies(const char* name, void* data)
 {
 	int i;
-
-	/* "name" is the name of a item found in the package.links table. Look to
-	 * see if this is the name of a project within the solution and if so
-	 * return dependency entry for the solution */
-	for (i = 0; i < project->numPackages; ++i)
+	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
-		if (strcmp(project->package[i]->name, name) == 0)
+		if (matches(project->package[i]->name, name))
 		{
 			PkgData* data = (PkgData*)project->package[i]->data;
-			sprintf(buffer, "{%s} = {%s}", data->projGuid, data->projGuid);
+			if (targetVersion == 2003)
+			{
+				sprintf(buffer, "{%s} = {%s}", data->projGuid, data->projGuid);
+			}
+			else
+			{
+				PkgData* src = (PkgData*)prj_get_packagedata();
+				sprintf(buffer, "{%s}.%d = {%s}", src->projGuid, src->numDependencies, data->projGuid);
+				++(src->numDependencies);
+			}
 			return buffer;
 		}
 	}
@@ -86,6 +92,10 @@ const char* vs_FindProjectDependencies(const char* name, void* data)
 }
 
 
+/************************************************************************
+ * Store the target version. This is used to modify the behavior of
+ * some of the function here based on VS.NET version.
+ ***********************************************************************/
 
 void vs_SetTargetVersion(int version)
 {
@@ -93,29 +103,39 @@ void vs_SetTargetVersion(int version)
 }
 
 
+/************************************************************************
+ * Write out the list of projects for a solution.
+ ***********************************************************************/
+
 void vs_WriteProjectList(FILE* file)
 {
 	int i;
-
-	/* Write the project list for the solution */
-	for (i = 0; i < project->numPackages; ++i)
+	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
-		Package* package = project->package[i];
-		PkgData* data    = package->data;
-		const char* name = package->name;
-		const char* path = reversePath(project->path, package->path, WINDOWS, 1);
+		PkgData* data;
+		const char* name;
+		const char* path;
+
+		prj_select_package(i);
+		data = (PkgData*)prj_get_packagedata();
+		name = prj_get_pkgname();
+		path = prj_get_pkgpathfromprj(WINDOWS, 1);
 
 		/* VS.NET doesn't write out the leading '.\' on solution-relative
 		 * paths. Not really necessary, but I'm trying to match the original */
 		if (strncmp(path, ".\\", 2) == 0)
 			path = path + 2;
 
-		fprintf(file, "Project(\"{%s}\") = \"%s\", \"%s%s.%s\", \"{%s}\"\n", data->toolGuid, name, path, name, data->projExt, data->projGuid);
+		fprintf(file, "Project(\"{%s}\") = \"%s\", \"%s.%s\", \"{%s}\"\n", data->toolGuid, name, path, data->projExt, data->projGuid);
 
 		/* Write project dependency information */
-		fprintf(file, "\tProjectSection(ProjectDependencies) = postProject\n");
-		writeList(file, package->config[0]->links, "\t\t", "\n", "", vs_FindProjectDependencies, NULL);
-		fprintf(file, "\tEndProjectSection\n");
+		if (targetVersion == 2003)
+		{
+			prj_select_config(0);
+			fprintf(file, "\tProjectSection(ProjectDependencies) = postProject\n");
+			writeList(file, prj_get_links(), "\t\t", "\n", "", vs_FindProjectDependencies, NULL);
+			fprintf(file, "\tEndProjectSection\n");
+		}
 
 		fprintf(file, "EndProject\n");
 	}

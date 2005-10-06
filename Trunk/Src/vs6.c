@@ -91,7 +91,7 @@ static int writeWorkspace()
 	{
 		prj_select_package(i);
 
-		fprintf(file, "Project: \"%s\"=%s.dsp - Package Owner=<4>\n", prj_get_pkgname(), prj_get_pkgpath(WINDOWS,1));
+		fprintf(file, "Project: \"%s\"=%s.dsp - Package Owner=<4>\n", prj_get_pkgname(), prj_get_pkgpathfromprj(WINDOWS,1));
 		fprintf(file, "\n");
 		fprintf(file, "Package=<5>\n");
 		fprintf(file, "{{{\n");

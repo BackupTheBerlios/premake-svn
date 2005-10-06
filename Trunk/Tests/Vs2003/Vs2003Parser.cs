@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
 using System.IO;
+using Premake.Tests.Framework;
 
-namespace Premake.Tests.Framework
+namespace Premake.Tests.Vs2003
 {
 	public class Vs2003Parser : Parser
 	{
@@ -35,9 +36,6 @@ namespace Premake.Tests.Framework
 					package.ID   = matches[3];
 					package.Path = Path.GetDirectoryName(matches[2]);
 					package.ScriptName = Path.GetFileName(matches[2]);
-
-					if (package.Path != String.Empty)
-						package.Path += '\\';
 
 					switch (matches[0])
 					{
@@ -334,17 +332,7 @@ namespace Premake.Tests.Framework
 					else
 					{
 						matches = Regex("\t\t\t\tImportLibrary=\"(.+)\"");
-						if (buildFlags.Contains("no-import-lib"))
-						{
-							if (Path.GetDirectoryName(matches[0]) != "$(IntDir)")
-								throw new FormatException("no-import-lib flag is set; " +
-									"import library should be $(IntDir), is " + matches[0]);
-						}
-						else
-						{
-							if (Path.GetDirectoryName(matches[0]) != config.LibDir)
-								throw new FormatException("import library should be in LibDir");
-						}
+						config.ImportLib = matches[0];
 					}
 
 					Match("\t\t\t\tTargetMachine=\"1\"/>");

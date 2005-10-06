@@ -17,15 +17,12 @@
 #include "util.h"
 #include "vs_helpers.h"
 
-#define TRUE_VALUE()   ((version == 2005) ? "true" : "TRUE")
-#define FALSE_VALUE()  ((version == 2005) ? "false" : "FALSE")
-
 static char buffer[4096];
 static int  version;
 
-static int writeSolution(int version);
-static int writeVcProject(int version, Package* package);
-static int writeCsProject(int version, Package* package);
+static int writeSolution();
+static int writeVcProject();
+static int writeCsProject();
 
 //-----------------------------------------------------------------------------
 
@@ -36,27 +33,30 @@ int makeVsXmlScripts(int v)
 	version = v;
 	printf("Generating Visual Studio %d solution and project files:\n", version);
 
+	/* Assign GUIDs to packages */
+	vs_SetTargetVersion(version);
 	vs_AssignPackageData(version);
 
 	/* Generate the project files */
-	for (i = 0; i < project->numPackages; ++i)
+	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
-		Package* package = project->package[i];
-		PkgData* data = (PkgData*)package->data;
-
 		prj_select_package(i);
 
-		printf("...%s\n", package->name);
+		printf("...%s\n", prj_get_pkgname());
 
-		if (strcmp(package->language, "c++") == 0 || strcmp(package->language, "c") == 0)
+		if (prj_is_language("c++") || prj_is_language("c"))
 		{
-			if (!writeVcProject(version, package))
+			if (!writeVcProject(version, prj_get_package()))
 				return 0;
 		}
-		else if (strcmp(package->language, "c#") == 0)
+		else if (prj_is_language("c#"))
 		{
-			if (!writeCsProject(version, package))
+			if (!writeCsProject(version, prj_get_package()))
 				return 0;
+		}
+		else
+		{
+			printf("** Warning: %s packages are not supported by this generator\n", prj_get_language());
 		}
 	}
 
@@ -68,155 +68,85 @@ int makeVsXmlScripts(int v)
 
 //-----------------------------------------------------------------------------
 
-static int numDeps = 0;   /* Use by the project dependency writer */
-
-/* Look for a package with the same name as 'name' and if found, return a
- * dependency description to be included in the solution file */
-static const char* checkProjectDependencies(const char* name, void* data)
-{
-	int i;
-	for (i = 0; i < project->numPackages; ++i)
-	{
-		if (strcmp(project->package[i]->name, name) == 0)
-		{
-			PkgData* data = (PkgData*)project->package[i]->data;
-			if (version < 2003)
-			{
-				sprintf(buffer, "%d = {%s}", numDeps++, data->projGuid);
-			}
-			else
-			{
-				sprintf(buffer, "{%s} = {%s}", data->projGuid, data->projGuid);
-			}
-			return buffer;
-		}
-	}
-	return NULL;
-}
-
-static int writeSolution(int version)
+static int writeSolution()
 {
 	int i, j;
 	FILE* file;
 
-	file = openFile(project->path, project->name, ".sln");
+	file = openFile(prj_get_prjpath(WINDOWS), prj_get_prjname(), ".sln");
 	if (file == NULL)
 		return 0;
 
 	/* Format identification string */
 	fprintf(file, "Microsoft Visual Studio Solution File, Format Version ");
-	if (version == 2003)
-		fprintf(file, "8.00\n");
-	else
-		fprintf(file, "7.00\n");
+	fprintf(file, "%d.00\n", version == 2003 ? 8 : 7);
 
 	/* List the projects that make up the solution */
-	for (i = 0; i < project->numPackages; ++i)
-	{
-		Package* package = project->package[i];
-		PkgData* data = package->data;
-		const char* name = package->name;
-		const char* path = reversePath(project->path, package->path, WINDOWS, 1);
-
-		fprintf(file, "Project(\"{%s}\") = \"%s\", \"%s%s.%s\", \"{%s}\"\n", data->toolGuid, name, path, name, data->projExt, data->projGuid);
-		if (version >= 2003)
-		{
-			fprintf(file, "\tProjectSection(ProjectDependencies) = postProject\n");
-			writeList(file, package->config[0]->links, "\t\t", "\n", "", checkProjectDependencies, (void*)version);
-			fprintf(file, "\tEndProjectSection\n");
-		}
-		fprintf(file, "EndProject\n");
-	}
+	vs_WriteProjectList(file);
 
 	fprintf(file, "Global\n");
-	if (version == 2005)
+	fprintf(file, "\tGlobalSection(SolutionConfiguration) = preSolution\n");
+	prj_select_package(0);
+	for (i = 0; i < prj_get_numconfigs(); ++i)
 	{
-		fprintf(file, "\tGlobalSection(SolutionConfigurationPlatforms) = preSolution\n");
-	}
-	else
-	{
-		fprintf(file, "\tGlobalSection(SolutionConfiguration) = preSolution\n");
-	}
-	for (i = 0; i < project->package[0]->numConfigs; ++i)
-	{
-		if (version < 2003)
+		prj_select_config(i);
+		if (version == 2003)
 		{
-			fprintf(file, "\t\tConfigName.%d = %s\n", i, project->package[0]->config[i]->name);
+			fprintf(file, "\t\t%s = %s\n", prj_get_cfgname(), prj_get_cfgname());
 		}
-		else if (version == 2003)
+		else
 		{
-			fprintf(file, "\t\t%s = %s\n", project->package[0]->config[i]->name, project->package[0]->config[i]->name);
-		}
-		else if (version == 2005)
-		{
-			fprintf(file, "\t\t%s|Win32 = %s|Win32\n", project->package[0]->config[i]->name, project->package[0]->config[i]->name);
+			fprintf(file, "\t\tConfigName.%d = %s\n", i, prj_get_cfgname());
 		}
 	}
 	fprintf(file, "\tEndGlobalSection\n");
 
-	/* Find package dependencies for VS7 */
-	if (version == 7)
+	/* Find package dependencies for VS2002 */
+	if (version < 2003)
 	{
 		fprintf(file, "\tGlobalSection(ProjectDependencies) = postSolution\n");
-		for (i = 0; i < project->numPackages; ++i)
+		for (i = 0; i < prj_get_numpackages(); ++i)
 		{
-			char prefix[128];
-			Package* package = project->package[i];
-			PkgData* data = (PkgData*)package->data;
-			Config* config = package->config[0];
-
-			numDeps = 0;
-			sprintf(prefix, "\t\t{%s}.", data->projGuid);
-			writeList(file, config->links, prefix, "\n", "", checkProjectDependencies, (void*)version);
+			prj_select_package(i);
+			prj_select_config(0);
+			writeList(file, prj_get_links(), "\t\t", "\n", "", vs_FindProjectDependencies, NULL);
 		}
 		fprintf(file, "\tEndGlobalSection\n");
 	}
 
 	/* Write configuration for each project */
-	if (version == 2005)
+	fprintf(file, "\tGlobalSection(ProjectConfiguration) = postSolution\n");
+	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
-		fprintf(file, "\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\n");
-	}
-	else
-	{
-		fprintf(file, "\tGlobalSection(ProjectConfiguration) = postSolution\n");
-	}
-	for (i = 0; i < project->numPackages; ++i)
-	{
-		Package* package = project->package[i];
-		for (j = 0; j < package->numConfigs; ++j)
+		prj_select_package(i);
+		for (j = 0; j < prj_get_numconfigs(); ++j)
 		{
-			Config* config = package->config[j];
-			PkgData* data = (PkgData*)package->data;
+			PkgData* data;
+			const char* name;
+
+			prj_select_config(j);
+			data = (PkgData*)prj_get_packagedata();
+			name = prj_get_cfgname();
+
 			if (version < 2005)
 			{
-				fprintf(file, "\t\t{%s}.%s.ActiveCfg = %s|%s\n", data->projGuid, config->name, config->name, data->projType);
-				fprintf(file, "\t\t{%s}.%s.Build.0 = %s|%s\n", data->projGuid, config->name, config->name, data->projType);
+				fprintf(file, "\t\t{%s}.%s.ActiveCfg = %s|%s\n", data->projGuid, name, name, data->projType);
+				fprintf(file, "\t\t{%s}.%s.Build.0 = %s|%s\n", data->projGuid, name, name, data->projType);
 			}
 			else
 			{
-				fprintf(file, "\t\t{%s}.%s|%s.ActiveCfg = %s|%s\n", data->projGuid, config->name, data->projType, config->name, data->projType);
-				fprintf(file, "\t\t{%s}.%s|%s.Build.0 = %s|%s\n", data->projGuid, config->name, data->projType, config->name, data->projType);
+				fprintf(file, "\t\t{%s}.%s|%s.ActiveCfg = %s|%s\n", data->projGuid, name, data->projType, name, data->projType);
+				fprintf(file, "\t\t{%s}.%s|%s.Build.0 = %s|%s\n", data->projGuid, name, data->projType, name, data->projType);
 			}
 		}
 	}
 	fprintf(file, "\tEndGlobalSection\n");
 
 	/* Finish */
-	if (version == 2005)
-	{
-		fprintf(file, "\tGlobalSection(SolutionProperties) = preSolution\n");
-		fprintf(file, "\t\tHideSolutionNode = FALSE\n");
-		fprintf(file, "\tEndGlobalSection\n");
-	}
-	else
-	{
-		fprintf(file, "\tGlobalSection(ExtensibilityGlobals) = postSolution\n");
-		fprintf(file, "\tEndGlobalSection\n");
-		fprintf(file, "\tGlobalSection(ExtensibilityAddIns) = postSolution\n");
-		fprintf(file, "\tEndGlobalSection\n");
-	}
-
+	fprintf(file, "\tGlobalSection(ExtensibilityGlobals) = postSolution\n");
+	fprintf(file, "\tEndGlobalSection\n");
+	fprintf(file, "\tGlobalSection(ExtensibilityAddIns) = postSolution\n");
+	fprintf(file, "\tEndGlobalSection\n");
 	fprintf(file, "EndGlobal\n");
 	fclose(file);
 	return 1;
@@ -235,14 +165,6 @@ static const char* checkLibs(const char* file, void* data)
 	if (package == NULL) return file;
 	if (strcmp(package->language, "c++") != 0) return NULL;
 	return package->config[*((int*)data)]->target;
-}
-
-static void closeTag(FILE* file, int version, const char* indent, const char* tag)
-{
-	if (version < 2005)
-		fprintf(file, "%s\n", tag);
-	else
-		fprintf(file, "\n%s%s\n", indent, tag);
 }
 
 static void vcFiles(FILE* file, const char* path, int stage)
@@ -294,12 +216,14 @@ static void vcFiles(FILE* file, const char* path, int stage)
 	}
 }
 
-static int writeVcProject(int version, Package* package)
+static int writeVcProject()
 {
 	int configType, subsystem, managed, i;
 	const char* extension;
 	const char* exports;
 	FILE* file;
+
+	Package* package = prj_get_package();
 
 	const char* name = package->name;
 	const char* path = package->path;
@@ -345,32 +269,18 @@ static int writeVcProject(int version, Package* package)
 	fprintf(file, "<?xml version=\"1.0\" encoding=\"Windows-1252\"?>\n");
 	fprintf(file, "<VisualStudioProject\n");
 	fprintf(file, "\tProjectType=\"Visual C++\"\n");
-	fprintf(file, "\tVersion=\"");
-	switch (version)
-	{
-	case 7:
-		fprintf(file, "7.00");
-		break;
-	case 2003:
-		fprintf(file, "7.10");
-		break;
-	case 2005:
-		fprintf(file, "8.00");
-		break;
-	}
-	fprintf(file, "\"\n");
+	fprintf(file, "\tVersion=\"7.%d0\"\n", version == 2003 ? 1 : 0);
 	fprintf(file, "\tName=\"%s\"\n", name);
 	fprintf(file, "\tProjectGUID=\"{%s}\"\n", data->projGuid);
 	if (version == 2005)
 	{
 		fprintf(file, "\tRootNamespace=\"%s\"\n", package->name);
 	}
-	fprintf(file, "\tKeyword=\"%s\"", managed ? "ManagedCProj" : "Win32Proj");  
-	closeTag(file, version, "\t", ">");
+	fprintf(file, "\tKeyword=\"%s\">\n", managed ? "ManagedCProj" : "Win32Proj");  
 
 	fprintf(file, "\t<Platforms>\n");
 	fprintf(file, "\t\t<Platform\n");
-	fprintf(file, "\t\t\tName=\"Win32\"");  closeTag(file, version, "\t\t", "/>");
+	fprintf(file, "\t\t\tName=\"Win32\"/>\n");
 	fprintf(file, "\t</Platforms>\n");
 
 	if (version == 2005)
@@ -441,26 +351,7 @@ static int writeVcProject(int version, Package* package)
 		fprintf(file, "\t\t\tConfigurationType=\"%d\"\n", configType);
 		fprintf(file, "\t\t\tCharacterSet=\"%d\"", (unicode) ? 1 : 2);
 		if (managed) fprintf(file, "\n\t\t\tManagedExtensions=\"TRUE\"");
-		closeTag(file, version, "\t\t\t", ">");
-
-		if (version == 2005)
-		{
-			fprintf(file, "\t\t\t<Tool\n");
-			fprintf(file, "\t\t\t\tName=\"VCPreBuildEventTool\"\n");
-			fprintf(file, "\t\t\t/>\n");
-			fprintf(file, "\t\t\t<Tool\n");
-			fprintf(file, "\t\t\t\tName=\"VCCustomBuildTool\"\n");
-			fprintf(file, "\t\t\t/>\n");
-			fprintf(file, "\t\t\t<Tool\n");
-			fprintf(file, "\t\t\t\tName=\"VCXMLDataGeneratorTool\"\n");
-			fprintf(file, "\t\t\t/>\n");
-			fprintf(file, "\t\t\t<Tool\n");
-			fprintf(file, "\t\t\t\tName=\"VCWebServiceProxyGeneratorTool\"\n");
-			fprintf(file, "\t\t\t/>\n");
-			fprintf(file, "\t\t\t<Tool\n");
-			fprintf(file, "\t\t\t\tName=\"VCMIDLTool\"\n");
-			fprintf(file, "\t\t\t/>\n");
-		}
+		fprintf(file, ">\n");
 
 		fprintf(file, "\t\t\t<Tool\n");
 		fprintf(file, "\t\t\t\tName=\"VCCLCompilerTool\"\n");
@@ -500,18 +391,18 @@ static int writeVcProject(int version, Package* package)
 		}
 
 		if (debug && !managed)
-			fprintf(file, "\t\t\t\tMinimalRebuild=\"%s\"\n", TRUE_VALUE());
+			fprintf(file, "\t\t\t\tMinimalRebuild=\"TRUE\"\n");
 
 		if (!exceptions) 
-			fprintf(file, "\t\t\t\tExceptionHandling=\"%s\"\n", FALSE_VALUE());
+			fprintf(file, "\t\t\t\tExceptionHandling=\"FALSE\"\n");
 
 		if (debug && !managed)
 			fprintf(file, "\t\t\t\tBasicRuntimeChecks=\"3\"\n");
 		
-		if (!debug) fprintf(file, "\t\t\t\tStringPooling=\"%s\"\n", TRUE_VALUE());
+		if (!debug) fprintf(file, "\t\t\t\tStringPooling=\"TRUE\"\n");
 		
 		fprintf(file, "\t\t\t\tRuntimeLibrary=\"%d\"\n", runtime);
-		fprintf(file, "\t\t\t\tEnableFunctionLevelLinking=\"%s\"\n", TRUE_VALUE());
+		fprintf(file, "\t\t\t\tEnableFunctionLevelLinking=\"TRUE\"\n");
 
 		if (!rtti)
 			fprintf(file, "\t\t\t\tRuntimeTypeInfo=\"FALSE\"\n");
@@ -520,11 +411,9 @@ static int writeVcProject(int version, Package* package)
 		fprintf(file, "\t\t\t\tWarningLevel=\"%d\"\n", warnings);
 		if (fatalWarn)
 			fprintf(file, "\t\t\t\tWarnAsError=\"TRUE\"\n");
-		if (!managed) fprintf(file, "\t\t\t\tDetect64BitPortabilityProblems=\"%s\"\n", check64bit ? TRUE_VALUE() : FALSE_VALUE());
+		if (!managed) fprintf(file, "\t\t\t\tDetect64BitPortabilityProblems=\"%s\"\n", check64bit ? "TRUE" : "FALSE");
 
-		fprintf(file, "\t\t\t\tDebugInformationFormat=\"%d\"", symbols);
-
-		closeTag(file, version, "\t\t\t", "/>");
+		fprintf(file, "\t\t\t\tDebugInformationFormat=\"%d\"/>\n", symbols);
 
 		if (version < 2005)
 		{
@@ -572,7 +461,7 @@ static int writeVcProject(int version, Package* package)
 				fprintf(file, "\"\n");
 			if (exports)
 				fprintf(file, "\t\t\t\tModuleDefinitionFile=\"%s\"\n", translatePath(exports, WINDOWS));
-			fprintf(file, "\t\t\t\tGenerateDebugInformation=\"%s\"\n", symbols ? TRUE_VALUE() : FALSE_VALUE());
+			fprintf(file, "\t\t\t\tGenerateDebugInformation=\"%s\"\n", symbols ? "TRUE" : "FALSE");
 			if (symbols && version < 2005) 
 			{
 				fprintf(file, "\t\t\t\tProgramDatabaseFile=\"$(OutDir)/%s.pdb\"\n", getFilename(config->target, 0));
@@ -584,18 +473,13 @@ static int writeVcProject(int version, Package* package)
 				fprintf(file, "\t\t\t\tEntryPointSymbol=\"mainCRTStartup\"\n");
 			else if (strcmp(kind, "dll") == 0) {
 				fprintf(file, "\t\t\t\tImportLibrary=\"");
-				if (importlib)
-				{
-					fprintf(file, reversePath(path, prjCfg->libdir, WINDOWS, 1));
-					insertPath(file, getDirectory(config->target, 0), WINDOWS, 1);
-				}
+				if (prj_has_buildflag("no-import-lib"))
+					fprintf(file, prj_get_objdir(WINDOWS,0));
 				else
-				{
-					fprintf(file, "$(IntDir)\\");
-				}
-				fprintf(file, "%s.lib\"\n", getFilename(config->target, 1));
+					fprintf(file, prj_get_libdir(WINDOWS,0));
+				fprintf(file, "\\%s.lib\"\n", prj_get_targetname());
 			}
-			fprintf(file, "\t\t\t\tTargetMachine=\"1\"");  closeTag(file, version, "\t\t\t", "/>");
+			fprintf(file, "\t\t\t\tTargetMachine=\"1\"/>\n");
 		}
 		else
 		{
@@ -681,7 +565,7 @@ static int writeVcProject(int version, Package* package)
 
 	fprintf(file, "\t</Configurations>\n");
 
-	if (version >= 2003)
+	if (version == 2003)
 	{
 		fprintf(file, "\t<References>\n");
 		fprintf(file, "\t</References>\n");
@@ -862,12 +746,14 @@ static int packageIsReferenced(const char* name)
 }
 
 
-static int writeCsProject(int version, Package* package)
+static int writeCsProject()
 {
 	FILE* file;
 	const char* target;
 	const char* outputType;
 	int i;
+
+	Package* package = prj_get_package();
 
 	const char* name = package->name;
 	const char* path = package->path;
@@ -896,17 +782,18 @@ static int writeCsProject(int version, Package* package)
 	fprintf(file, "\t\tProjectType = \"");
 		fprintf(file, strcmp(kind, "aspnet") == 0 ? "Web" : "Local");
 		fprintf(file, "\"\n");
-	switch (version)
+	
+	if (version == 2003)
 	{
-	case 7:
-		fprintf(file, "\t\tProductVersion = \"7.0.9254\"\n");
-		fprintf(file, "\t\tSchemaVersion = \"1.0\"\n");
-		break;
-	case 2003:
 		fprintf(file, "\t\tProductVersion = \"7.10.3077\"\n");
 		fprintf(file, "\t\tSchemaVersion = \"2.0\"\n");
-		break;
 	}
+	else
+	{
+		fprintf(file, "\t\tProductVersion = \"7.0.9254\"\n");
+		fprintf(file, "\t\tSchemaVersion = \"1.0\"\n");
+	}
+
 	fprintf(file, "\t\tProjectGuid = \"{%s}\"\n", data->projGuid);
 	fprintf(file, "\t>\n");
 	fprintf(file, "\t\t<Build>\n");
@@ -919,7 +806,7 @@ static int writeCsProject(int version, Package* package)
 	fprintf(file, "\t\t\t\tDefaultHTMLPageLayout = \"Grid\"\n");
 	fprintf(file, "\t\t\t\tDefaultTargetSchema = \"IE50\"\n");
 	fprintf(file, "\t\t\t\tDelaySign = \"false\"\n");
-	if (version == 7) 
+	if (version < 2003) 
 	{
 		fprintf(file, "\t\t\t\tNoStandardLibraries = \"false\"\n");
 	}
@@ -961,8 +848,6 @@ static int writeCsProject(int version, Package* package)
 		fprintf(file, "\t\t\t\t\tDebugSymbols = \"%s\"\n", symbols ? "true" : "false");
 		fprintf(file, "\t\t\t\t\tFileAlignment = \"4096\"\n");
 		fprintf(file, "\t\t\t\t\tIncrementalBuild = \"false\"\n");
-/*			fprintf(file, strcmp(kind, "aspnet") == 0 ? "false" : "true"); */
-/*			fprintf(file, "\"\n"); */
 		if (version == 2003)
 		{
 			fprintf(file, "\t\t\t\t\tNoStdLib = \"false\"\n");

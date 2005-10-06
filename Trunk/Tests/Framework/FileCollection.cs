@@ -6,7 +6,7 @@ namespace Premake.Tests.Framework
 {
 	public class FileCollection : CollectionBase
 	{
-		public void Add(File file)
+		public void Add(SourceFile file)
 		{
 			List.Add(file);
 		}
@@ -28,7 +28,7 @@ namespace Premake.Tests.Framework
 			
 		public void Add(string filename, string subtype, string buildaction, string depends)
 		{
-			File file = new File();
+			SourceFile file = new SourceFile();
 			file.Name = filename;
 			file.Subtype = subtype;
 			file.BuildAction = buildaction;
@@ -39,12 +39,12 @@ namespace Premake.Tests.Framework
 		public void Add(int count)
 		{
 			for (int i = 0; i < count; ++i)
-				List.Add(new File());
+				List.Add(new SourceFile());
 		}
 
-		public File this[int index]
+		public SourceFile this[int index]
 		{
-			get { return (File)List[index]; }
+			get { return (SourceFile)List[index]; }
 			set { List[index] = value; }
 		}
 
@@ -57,17 +57,17 @@ namespace Premake.Tests.Framework
 				throw new FormatException("Expected " + this.Count + " files but got " + actual.Count);
 
 			Hashtable index = new Hashtable();
-			foreach (File file in actual)
+			foreach (SourceFile file in actual)
 				index[file.Name] = file;
 
-			foreach (File efile in this.List)
+			foreach (SourceFile efile in this.List)
 			{
-				File afile = (File)index[efile.Name];
+				SourceFile afile = (SourceFile)index[efile.Name];
 				if (afile == null)
 				{
 					StringBuilder msg = new StringBuilder();
 					msg.Append("Expected file '" + efile.Name + "' not found in file list. Actual list follows:\n");
-					foreach (File file in actual)
+					foreach (SourceFile file in actual)
 						msg.Append(file.Name + "\n");
 					throw new FormatException(msg.ToString());
 				}

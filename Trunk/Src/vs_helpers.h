@@ -18,6 +18,7 @@ typedef struct _PkgData
 	int  numDependencies;
 } PkgData;
 
-int  vs_AssignPackageData();
-void vs_SetTargetVersion(int version);
-void vs_WriteProjectList(FILE* file);
+void        vs_AssignPackageData();
+const char* vs_FindProjectDependencies(const char* name, void* data);
+void        vs_SetTargetVersion(int version);
+void        vs_WriteProjectList(FILE* file);
