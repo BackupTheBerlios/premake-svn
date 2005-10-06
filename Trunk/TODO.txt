@@ -21,3 +21,5 @@
 * Phase out linkflags (documentation only, can leave in scripts)
 
 * unicode, no-64bit-checks currently only supported in VS200x generators
+
+* Add support for Code::Blocks (http://www.codeblocks.org/)

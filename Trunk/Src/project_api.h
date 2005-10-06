@@ -22,6 +22,8 @@ extern const char*  prj_get_pkgname();
 extern const char*  prj_get_pkgpath(int pathType, int includeName);
 extern const char*  prj_get_target();
 extern const char*  prj_get_target_for(Package* pkg);
+extern const char*  prj_get_targetname();
 extern int          prj_has_buildflag(const char* flagname);
+extern int          prj_is_kind(const char* kind);
 extern void         prj_select_config(int i);
 extern void         prj_select_package(int i);

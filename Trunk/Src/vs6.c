@@ -159,9 +159,8 @@ static const char* checkLink(const char* path, void* data)
 	Package* package = getPackage(path);
 	if (package == NULL) return path;
 
-	if (strcmp(package->language, "c++") == 0)
-		return prj_get_target_for(package);
-	
+	/* If this is a sibling package, don't return anything. VC6 links to
+	 * dependent projects implicitly */
 	return NULL;
 }
 
@@ -232,12 +231,12 @@ static void writeLinkFlags(FILE* file)
 	writeList(file, prj_get_links(), " ", ".lib", "", checkLink, NULL);
 	fprintf(file, " /nologo");
 
-	if ((matches(prj_get_kind(), "winexe") || matches(prj_get_kind(), "exe")) && !prj_has_buildflag("no-main"))
+	if ((prj_is_kind("winexe") || prj_is_kind("exe")) && !prj_has_buildflag("no-main"))
 		fprintf(file, " /entry:\"mainCRTStartup\"");
 
-	if (matches(prj_get_kind(), "winexe"))
+	if (prj_is_kind("winexe"))
 		fprintf(file, " /subsystem:windows");
-	else if (matches(prj_get_kind(), "exe"))
+	else if (prj_is_kind("exe"))
 		fprintf(file, " /subsystem:console");
 	else
 		fprintf(file, " /dll");
@@ -247,7 +246,17 @@ static void writeLinkFlags(FILE* file)
 
 	fprintf(file, " /machine:I386");
 
-	fprintf(file, " /out:\"%s", prj_get_outdir(WINDOWS,1));
+	if (prj_is_kind("dll"))
+	{
+		fprintf(file, " /implib:\"");
+		if (prj_has_buildflag("no-import-lib"))
+			fprintf(file, prj_get_objdir(WINDOWS,0));
+		else
+			fprintf(file, prj_get_libdir(WINDOWS,0));
+		fprintf(file, "\\%s.lib\"", prj_get_targetname());
+	}
+
+	fprintf(file, " /out:\"%s", prj_get_outdir(UNIX,1));
 	fprintf(file, "%s\"", prj_get_target());
 
 	if (!prj_has_buildflag("no-symbols"))
@@ -274,12 +283,12 @@ static int writeVcProject()
 	writeProjectHeader(file);
 
 	fprintf(file, "CPP=cl.exe\n");
-	if (!matches(prj_get_kind(), "lib"))
+	if (!prj_is_kind("lib"))
 		fprintf(file, "MTL=midl.exe\n");
 	fprintf(file, "RSC=rc.exe\n");
 	fprintf(file, "\n");
 
-	for (i = 0; i < prj_get_numconfigs(); ++i)
+	for (i = prj_get_numconfigs() - 1; i >= 0; --i)
 	{
 		int optimizeSize, optimizeSpeed, useDebugLibs;
 		const char* debugSymbol;
@@ -290,19 +299,19 @@ static int writeVcProject()
 		optimizeSpeed =  prj_has_buildflag("optimize-speed") || prj_has_buildflag("optimize");
 		useDebugLibs  =  (!optimizeSize && !optimizeSpeed);
 
-		fprintf(file, "!%s  \"$(CFG)\" == \"%s - %s\"\n", 
-			(i == 0 ? "IF" : "ELSEIF"), prj_get_pkgname(), prj_get_cfgname());
+		fprintf(file, "!%s  \"$(CFG)\" == \"%s - Win32 %s\"\n", 
+			(i == (prj_get_numconfigs() - 1) ? "IF" : "ELSEIF"), prj_get_pkgname(), prj_get_cfgname());
 		fprintf(file, "\n");
 		fprintf(file, "# PROP BASE Use_MFC 0\n");
 		fprintf(file, "# PROP BASE Use_Debug_Libraries %d\n", useDebugLibs ? 1 : 0);
-		fprintf(file, "# PROP BASE Output_Dir \"%s\"\n", prj_get_outdir(WINDOWS,0));
-		fprintf(file, "# PROP BASE Intermediate_Dir \"%s\"\n", prj_get_objdir(WINDOWS,0));
+		fprintf(file, "# PROP BASE Output_Dir \"%s\"\n", prj_get_outdir(UNIX,0));
+		fprintf(file, "# PROP BASE Intermediate_Dir \"%s\"\n", prj_get_objdir(UNIX,0));
 		fprintf(file, "# PROP BASE Target_Dir \"\"\n");
 		fprintf(file, "# PROP Use_MFC 0\n");
 		fprintf(file, "# PROP Use_Debug_Libraries %d\n", useDebugLibs ? 1 : 0);
-		fprintf(file, "# PROP Output_Dir \"%s\"\n", prj_get_outdir(WINDOWS,0));
-		fprintf(file, "# PROP Intermediate_Dir \"%s\"\n", prj_get_objdir(WINDOWS,0));
-		if (matches(prj_get_kind(), "dll") && prj_has_buildflag("no-import-lib"))
+		fprintf(file, "# PROP Output_Dir \"%s\"\n", prj_get_outdir(UNIX,0));
+		fprintf(file, "# PROP Intermediate_Dir \"%s\"\n", prj_get_objdir(UNIX,0));
+		if (prj_is_kind("dll") && prj_has_buildflag("no-import-lib"))
 			fprintf(file, "# PROP Ignore_Export_Lib 1\n");
 		fprintf(file, "# PROP Target_Dir \"\"\n");
 
@@ -312,7 +321,7 @@ static int writeVcProject()
 		writeCppFlags(file);
 
 		debugSymbol = prj_has_buildflag("no-symbols") ? "NDEBUG" : "_DEBUG";
-		if (matches(prj_get_kind(), "winexe") || matches(prj_get_kind(), "dll"))
+		if (prj_is_kind("winexe") || prj_is_kind("dll"))
 		{
 			fprintf(file, "# ADD BASE MTL /nologo /D \"%s\" /mktyplib203 /win32\n", debugSymbol);
 			fprintf(file, "# ADD MTL /nologo /D \"%s\" /mktyplib203 /win32\n", debugSymbol);
@@ -324,7 +333,7 @@ static int writeVcProject()
 		fprintf(file, "# ADD BASE BSC32 /nologo\n");
 		fprintf(file, "# ADD BSC32 /nologo\n");
 		
-		if (matches(prj_get_kind(), "lib"))
+		if (prj_is_kind("lib"))
 		{
 			fprintf(file, "LINK32=link.exe -lib\n");
 			fprintf(file, "# ADD BASE LIB32 /nologo\n");
@@ -338,6 +347,8 @@ static int writeVcProject()
 			fprintf(file, "# ADD LINK32");
 			writeLinkFlags(file);
 		}
+
+		fprintf(file, "\n");
 	}
 
 	fprintf(file, "!ENDIF\n");
@@ -345,33 +356,16 @@ static int writeVcProject()
 	fprintf(file, "# Begin Target\n");
 	fprintf(file, "\n");
 
-	for (i = 0; i < prj_get_numconfigs(); ++i)
+	for (i = prj_get_numconfigs() - 1; i >= 0; --i)
 	{
 		prj_select_config(i);
-		fprintf(file, "# Name \"%s - %s\"\n", prj_get_pkgname(), prj_get_cfgname());
+		fprintf(file, "# Name \"%s - Win32 %s\"\n", prj_get_pkgname(), prj_get_cfgname());
 	}
 
 	walkSourceList(file, prj_get_package(), "", vcFiles);
 
 	fprintf(file, "# End Target\n");
 	fprintf(file, "# End Project\n");
-
-#if WORK_IN_PROGRESS
-
-
-				if (strcmp(package->kind, "dll") == 0)
-				{
-					fprintf(file, " /implib:\"");
-					if (importlib)
-						fprintf(file, reversePath(package->path, prjCfg->libdir, WINDOWS, 1));
-					else
-						fprintf(file, "$(IntDir)\\");
-					fprintf(file, "%s.lib\"", translatePath(config->target, WINDOWS));
-				}
-
-				fprintf(file, "\n");
-	}
-#endif
 
 	fclose(file);
 	return 1;
@@ -419,7 +413,7 @@ static int writeProjectHeader(FILE* file)
 	fprintf(file, "\n");
 
 	prj_select_config(0);
-	fprintf(file, "CFG=%s - %s\n", prj_get_pkgname(), prj_get_cfgname());
+	fprintf(file, "CFG=%s - Win32 %s\n", prj_get_pkgname(), prj_get_cfgname());
 
 	fprintf(file, "!MESSAGE This is not a valid makefile. To build this project using NMAKE,\n");
 	fprintf(file, "!MESSAGE use the Export Makefile command and run\n");
@@ -429,16 +423,16 @@ static int writeProjectHeader(FILE* file)
 	fprintf(file, "!MESSAGE You can specify a configuration when running NMAKE\n");
 	fprintf(file, "!MESSAGE by defining the macro CFG on the command line. For example:\n");
 	fprintf(file, "!MESSAGE \n");
-	fprintf(file, "!MESSAGE NMAKE /f \"%s.mak\" CFG=\"%s - %s\"\n", prj_get_pkgname(), prj_get_pkgname(), prj_get_cfgname());
+	fprintf(file, "!MESSAGE NMAKE /f \"%s.mak\" CFG=\"%s - Win32 %s\"\n", prj_get_pkgname(), prj_get_pkgname(), prj_get_cfgname());
 	fprintf(file, "!MESSAGE \n");
 	fprintf(file, "!MESSAGE Possible choices for configuration are:\n");
 	fprintf(file, "!MESSAGE \n");
 
 
-	for (i = 0; i < prj_get_numconfigs(); ++i)
+	for (i = prj_get_numconfigs() - 1; i >= 0; --i)
 	{
 		prj_select_config(i);
-		fprintf(file, "!MESSAGE \"%s - %s\" (based on \"%s\")\n", prj_get_pkgname(), prj_get_cfgname(), tag);
+		fprintf(file, "!MESSAGE \"%s - Win32 %s\" (based on \"%s\")\n", prj_get_pkgname(), prj_get_cfgname(), tag);
 	}
 
 	fprintf(file, "!MESSAGE \n");

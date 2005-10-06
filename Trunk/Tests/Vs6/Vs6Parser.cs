@@ -88,8 +88,17 @@ namespace Premake.Tests.Vs6
 					throw new NotImplementedException("Loading of " + package.Language + " packages not implemented");
 				}
 
+				ArrayList temp = new ArrayList();
 				foreach (Configuration config in package.Config)
+				{
 					config.Dependencies = (string[])dependencies[package];
+					temp.Add(config);
+				}
+
+				/* VS6 stores configs in reverse order */
+				temp.Reverse();
+				for (int i = 0; i < package.Config.Count; ++i)
+					package.Config[i] = (Configuration)temp[i];
 			}
 		}
 
@@ -147,6 +156,7 @@ namespace Premake.Tests.Vs6
 			while (!Match("!MESSAGE ", true))
 			{
 				matches = Regex("!MESSAGE \"" + package.Name + " - ([^\"]+)\" \\(based on " + baseKind + "\\)");
+
 				Configuration config = new Configuration();
 				config.Name = matches[0];
 				config.Dependencies = new string[0];
@@ -377,6 +387,12 @@ namespace Premake.Tests.Vs6
 
 					Expect(matches[i++], "/machine:I386");
 
+					if (package.Kind == "dll")
+					{
+						config.ImportLib = matches[i].Substring(9, matches[i].Length - 10);
+						++i;
+					}
+
 					config.Target = matches[i].Substring(6, matches[i].Length - 7);
 					config.Target = config.Target.Substring(config.OutDir.Length + 1);
 					++i;
@@ -402,6 +418,8 @@ namespace Premake.Tests.Vs6
 				config.IncludePaths = (string[])incpaths.ToArray(typeof(string));
 				config.Links      = (string[])links.ToArray(typeof(string));
 				config.LibPaths   = (string[])libpaths.ToArray(typeof(string));
+
+				Match("");
 			}
 
 			Match("!ENDIF");

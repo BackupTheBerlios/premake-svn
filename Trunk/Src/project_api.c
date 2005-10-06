@@ -357,6 +357,16 @@ const char* prj_get_target_for(Package* pkg)
 
 
 /************************************************************************
+ * Returns the undecorated target name.
+ ***********************************************************************/
+
+const char* prj_get_targetname()
+{
+	return getFilename(my_cfg->target, 0);
+}
+
+
+/************************************************************************
  * Returns true if the active set contains the specified build flag.
  ***********************************************************************/
 
@@ -366,6 +376,16 @@ int prj_has_buildflag(const char* flagname)
 	if (!result)
 		result = inArray(my_cfg->linkFlags, flagname);
 	return result;
+}
+
+
+/************************************************************************
+ * Returns true if active set generates this target kind (exe, dll, etc.)
+ ***********************************************************************/
+
+int prj_is_kind(const char* kind)
+{
+	return matches(my_pkg->kind, kind);
 }
 
 

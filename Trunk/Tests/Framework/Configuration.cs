@@ -23,6 +23,7 @@ namespace Premake.Tests.Framework
 		public string   LinkOptions;
 		public string[] Dependencies;
 		public string[] LinkDeps;
+		public string   ImportLib;
 
 		public Configuration()
 		{
@@ -39,6 +40,7 @@ namespace Premake.Tests.Framework
 			Test(this.OutFile, actual.OutFile, "Output file");
 			Test(this.BuildOptions, actual.BuildOptions, "Build options");
 			Test(this.LinkOptions,  actual.LinkOptions,  "Link options");
+			Test(this.ImportLib,    actual.ImportLib,    "Import library");
 
 			TestList(this.IncludePaths, actual.IncludePaths, "Include paths");
 			TestList(this.Defines,      actual.Defines,      "Defined symbols");
