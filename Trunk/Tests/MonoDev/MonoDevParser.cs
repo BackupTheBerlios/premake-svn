@@ -3,14 +3,14 @@ using System.Collections;
 using System.IO;
 using Premake.Tests.Framework;
 
-namespace Premake.Tests.SharpDev
+namespace Premake.Tests.MonoDev
 {
-	public class SharpDevParser : Parser
+	public class MonoDevParser : Parser
 	{
 		#region Parser Methods
 		public override string TargetName
 		{
-			get { return "sharpdev"; }
+			get { return "monodev"; }
 		}
 		#endregion
 
@@ -74,7 +74,7 @@ namespace Premake.Tests.SharpDev
 				filename = Path.Combine(Path.Combine(project.Path, package.Path), package.ScriptName);
 				ParsePackage(project, package, filename);
 
-				/* SHARPDEV_DEPENDENCY_BUG: Dependencies are set correctly here! */
+				/* MonoDev_DEPENDENCY_BUG: Dependencies are set correctly here! */
 				Console.WriteLine(package.Name + ": ");
 				foreach (Configuration config in package.Config)
 				{
@@ -88,13 +88,11 @@ namespace Premake.Tests.SharpDev
 		private void ParsePackage(Project project, Package package, string filename)
 		{
 			Begin(filename);
-			
-			string[] matches = Regex("<Project name=\"(.+)\" standardNamespace=\"(.+)\" description=\"(.*)\" newfilesearch=\"None\" enableviewstate=\"True\" version=\"1.1\" projecttype=\"(.+)\">");
-			package.Name = matches[0];
-			package.Language = matches[3].ToLower();
 
-			if (package.Name != matches[1])
-				throw new FormatException("Namespace should be '" + package.Name + "' but is '" + matches[1] + "'");
+			string[] matches;
+			matches = Regex("<Project name=\"(.+)\" description=\"\" newfilesearch=\"None\" enableviewstate=\"True\" version=\"1.1\" projecttype=\"(.+)\">");
+			package.Name = matches[0];
+			package.Language = matches[1].ToLower();
 
 			Match("  <Contents>");
 			while (!Match("  </Contents>", true))

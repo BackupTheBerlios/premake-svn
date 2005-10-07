@@ -1,10 +1,11 @@
 //-----------------------------------------------------------------------------
 // Premake - monodev.c
 //
-// Copyright (C) 2002-2005 by Jason Perkins
+// MonoDevelop tool target.
 // Source code licensed under the GPL, see LICENSE.txt for details.
 //
-// $Id: monodev.c,v 1.6 2005/09/22 21:03:13 jason379 Exp $
+// Originally written by Chris McGuirk (leedgitar@latenitegames.com)
+// Maintained by Jason Perkins
 //-----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -14,6 +15,7 @@
 #include "util.h"
 
 static char buffer[4096];
+static int  warnContentBuildAction;
 
 static int writeCombine();
 static int writeCsProject(Package* package);
@@ -25,7 +27,9 @@ extern const char* dotnet;
 int makeMonoDevScripts()
 {
 	int i;
-	puts("Generating MonoDevelop solution and project files:");
+	puts("Generating MonoDevelop combine and project files:");
+
+	warnContentBuildAction = 0;
 	for (i = 0; i < project->numPackages; ++i)
 	{
 		Package* package = project->package[i];
@@ -37,7 +41,7 @@ int makeMonoDevScripts()
 		}
 		else if (strcmp(package->language, "c++") == 0 || strcmp(package->language, "c") == 0)
 		{
-			printf("** Error: SharpDevelop does not support C/C++ development.\n");
+			printf("** Error: MonoDevelop does not support C/C++ development.\n");
 			return 0;
 		}
 		else
@@ -49,6 +53,13 @@ int makeMonoDevScripts()
 
 	if (!writeCombine())
 		return 0;
+
+	if (warnContentBuildAction)
+	{
+		puts("\n** Warning: this project uses the 'Content' build action. This action is not");
+		puts("            supported by MonoDevelop; some manual configuration may be needed.");
+	}
+
 	return 1;
 }
 
@@ -93,7 +104,7 @@ static int writeCombine()
 	}
 
 	fprintf(file, "  </Entries>\n");
-	fprintf(file, "  <Configurations active=\"%s\">\n", project->package[0]->config[0]->name);
+	fprintf(file, "  <Configurations active=\"Debug\">\n");
 
 	// write out the entries for each build configuration
 	for (i = 0; i < project->package[0]->numConfigs; ++i)
@@ -160,7 +171,14 @@ static const char* checkRefs(const char* ref, void* data)
 
 	strcpy(buffer," type=\"");
 
-	// Is this a sibling project?
+	/* A bit of craziness here...#dev wants to know if an assembly is local
+	 * (type == "Assembly") or in the GAC (type == "GAC"). I would prefer
+	 * to not have to specify this in the premake script if I can get away
+	 * with it. So for each reference I check to see if it is a sibling
+	 * project, and if so I consider it local. If not, I check all of the
+	 * reference paths to see if I can find the DLL and if so I consider
+	 * it local. If not, I consider it in the GAC. Seems to work so far */
+
 	for (i = 0; i < project->numPackages; ++i)
 	{
 		if (strcmp(project->package[i]->name, ref) == 0)
@@ -209,27 +227,54 @@ static const char* checkRefPaths(const char* ref, void* data)
 	return makeAbsolute(projPath, ref);
 }
 
-static const char* checkSrcFileType(const char* file, void* data)
+static const char* writeFileList(const char* file, void* data)
 {
 	const char* ext;
+	const char* prefix  = "";
+	const char* subtype = "";
+	const char* action  = "";
+	const char* depends = "";
 
-	strcpy(buffer, translatePath(file, WINDOWS));
-	strcat(buffer, "\" subtype=\"Code\" ");
-	
+	Package* package = (Package*)data;
+
+	if (file[0] != '.') 
+		prefix = ".\\";
+
 	ext = getExtension(file);
 	if (strcmp(ext, ".cs") == 0)
 	{
-		strcat(buffer, "BuildAction=\"Compile\"");
+		subtype = "Code";
+		action = "Compile";
 	}
 	else if (strcmp(ext, ".resx") == 0)
 	{
-		strcat(buffer, "BuildAction=\"EmbedAsResource\"");
+		/* If a matching .cs file exists, link it */
+		char depname[2048];
+		strcpy(depname, file);
+		strcpy(depname + strlen(file) - 5, ".cs");
+		if (inArray(package->files, depname))
+		{
+			/* Path is relative to .resx file, I assume both are in same
+			 * directory and cut off path information */
+			char* ptr = strrchr(depname, '/');
+			depends = (ptr != NULL) ? ptr+1 : depname;
+		}
+		strcat(buffer, "\t\t\t\t\tBuildAction = \"EmbeddedResource\"\n");
+
+		action = "EmbedAsResource";
 	}
 	else
 	{
-		strcat(buffer, "BuildAction=\"Nothing\"");
+		FileConfig* config = getFileConfig(package, file);
+		action = config->buildAction;
+		if (action == NULL || strcmp(action, "Content") == 0)
+		{
+			warnContentBuildAction = 1;
+			action = "Nothing";
+		}
 	}
 
+	sprintf(buffer, "    <File name=\"%s%s\" subtype=\"%s\" buildaction=\"%s\" dependson=\"%s\" data=\"\" />\n", prefix, translatePath(file, WINDOWS), subtype, action, depends);
 	return buffer;
 }
 
@@ -256,7 +301,7 @@ static int writeCsProject(Package* package)
 		return 0;
 	}
 
-	// Figure out what .net environment I'm using
+	/* Figure out what .NET environment I'm using */
 	if (dotnet == NULL)
 		dotnet = (strcmp(os, "windows") == 0) ? "ms" : "mono";
 	
@@ -272,7 +317,7 @@ static int writeCsProject(Package* package)
 	}
 	else if (strcmp(dotnet, "pnet") == 0)
 	{
-		printf("** Error: SharpDevelop does not yet support Portable.NET\n");
+		printf("** Error: MonoDevelop does not yet support Portable.NET\n");
 		return 0;
 	}
 	else
@@ -282,25 +327,27 @@ static int writeCsProject(Package* package)
 	}
 
 
-	// Open the project file and write the header
+	/* Open the project file and write the header */
 	file = openFile(path, name, ".prjx");
 	if (file == NULL)
 		return 0;
 
-	// Project Header
-	fprintf(file, "<Project name=\"%s\" description=\"\" newfilesearch=\"None\" enableviewstate=\"True\" version=\"1.1\" projecttype=\"C#\">\n", name);
+	/* Project Header */
+	fprintf(file, "<Project name=\"%s\" description=\"\" newfilesearch=\"None\" enableviewstate=\"True\" version=\"1.1\" projecttype=\"C#\">\n", name, name);
 
-	// File List
+	/* File List */
 	fprintf(file, "  <Contents>\n");
-	writeList(file, package->files, "    <File name=\".\\", " dependson=\"\" data=\"\" />\n", "", checkSrcFileType, NULL);
+	writeList(file, package->files, "", "", "", writeFileList, package);
 	fprintf(file, "  </Contents>\n");
 
-	// References
+	/* References - all configuration will use the same set */
 	fprintf(file, "  <References>\n");
 	writeList(file, package->config[0]->links, "    <Reference", " />\n", "", checkRefs, package);
 	fprintf(file, "  </References>\n");
 
-	// Configurations
+	fprintf(file, "  <DeploymentInformation target=\"\" script=\"\" strategy=\"File\" />\n");
+	  
+	 /* Configurations */
 	fprintf(file, "  <Configurations active=\"%s\">\n", package->config[0]->name);
 
 	for (i = 0; i < package->numConfigs; ++i)
@@ -308,13 +355,14 @@ static int writeCsProject(Package* package)
 		ProjectConfig* prjCfg = project->config[i];
 		Config* config = package->config[i];
 
-		int symbols = !inArray(config->buildFlags, "no-symbols");
-		int optimize = inArray(config->buildFlags, "optimize") || inArray(config->buildFlags, "optimize-size") || inArray(config->buildFlags, "optimize-speed");
-		int unsafe = inArray(config->buildFlags, "unsafe");
+		int symbols   = !inArray(config->buildFlags, "no-symbols");
+		int optimize  =  inArray(config->buildFlags, "optimize") || inArray(config->buildFlags, "optimize-size") || inArray(config->buildFlags, "optimize-speed");
+		int unsafe    =  inArray(config->buildFlags, "unsafe");
+		int fatalWarn =  inArray(config->buildFlags, "fatal-warnings");
 
-		fprintf(file, "    <Configuration runwithwarnings=\"True\" name=\"%s\">\n", config->name);
-		fprintf(file, "      <CodeGeneration runtime=\"%s\" compiler=\"%s\" ", runtime, csc);
-		fprintf(file, "warninglevel=\"4\" ");  /* C# defaults to highest warning level */
+		fprintf(file, "    <Configuration runwithwarnings=\"%s\" name=\"%s\">\n", fatalWarn ? "False" : "True", config->name);
+		fprintf(file, "      <CodeGeneration runtime=\"%s\" compiler=\"%s\" compilerversion=\"\" ", runtime, csc);
+		fprintf(file, "warninglevel=\"4\" nowarn=\"\" ");  /* C# defaults to highest warning level */
 		fprintf(file, "includedebuginformation=\"%s\" ", symbols ? "True" : "False"); 
 		fprintf(file, "optimize=\"%s\" ", optimize ? "True" : "False");
 		fprintf(file, "unsafecodeallowed=\"%s\" ", unsafe ? "True" : "False");
@@ -325,17 +373,23 @@ static int writeCsProject(Package* package)
 			writeList(file, config->defines, "", "", ";", NULL, NULL);
 			fprintf(file, "\" ");
 		fprintf(file, "generatexmldocumentation=\"False\" ");
+		fprintf(file, "win32Icon=\"\" noconfig=\"\" nostdlib=\"False\" ");
 		fprintf(file, "/>\n");
+
+		fprintf(file, "      <Execution commandlineparameters=\"\" consolepause=\"True\" />\n");
 
 		fprintf(file, "      <Output ");
 		fprintf(file, "directory=\"");
-			fprintf(file, reversePath(path, prjCfg->bindir, NATIVE, 1));
-			insertPath(file, getDirectory(config->target, 0), NATIVE, 1);
+			fprintf(file, reversePath(path, prjCfg->bindir, WINDOWS, 1));
+			insertPath(file, getDirectory(config->target, 0), WINDOWS, 0);
 			fprintf(file, "\" ");
-		fprintf(file, "assembly=\"%s\" ", getFilename(config->target,0));
+	
+		fprintf(file, "assembly=\"%s\" ", getFilename(package->config[0]->target,0));
 		fprintf(file, "executeScript=\"\" ");
 		fprintf(file, "executeBeforeBuild=\"\" ");
 		fprintf(file, "executeAfterBuild=\"\" ");
+		fprintf(file, "executeBeforeBuildArguments=\"\" ");
+		fprintf(file, "executeAfterBuildArguments=\"\" ");
 		fprintf(file, "/>\n");		
 
 		fprintf(file, "    </Configuration>\n", config->name);

@@ -293,7 +293,7 @@ static int writeVcProject()
 	exports = NULL;
 	for (i = 0; i < package->numFiles; ++i)
 	{
-		if (strcmp(getExtension(package->files[i]), ".def") == 0)
+		if (matches(getExtension(package->files[i]), ".def"))
 			exports = package->files[i];
 	}
 
