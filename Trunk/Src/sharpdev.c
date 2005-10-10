@@ -12,10 +12,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include "project.h"
+#include "project_api.h"
 #include "util.h"
+
+#define SHARPDEV   0
+#define MONODEV    1
 
 static char buffer[4096];
 static int  warnContentBuildAction;
+static int  version;
 
 static int writeCombine();
 static int writeCsProject(Package* package);
@@ -24,10 +29,13 @@ extern const char* dotnet;
 
 //-----------------------------------------------------------------------------
 
-int makeSharpDevScripts()
+int makeSharpDevScripts(int v)
 {
 	int i;
-	puts("Generating SharpDevelop combine and project files:");
+
+	version = v;
+
+	printf("Generating %sDevelop combine and project files:", version == SHARPDEV ? "Sharp" : "Mono");
 
 	warnContentBuildAction = 0;
 	for (i = 0; i < project->numPackages; ++i)
@@ -138,11 +146,27 @@ static int writeCombine()
         fprintf(file, "    </Configuration>\n");
 	}
 
+	// Finish
 	fprintf(file, "  </Configurations>\n");
 	fprintf(file, "</Combine>");
-
-	// Finish
 	fclose(file);
+
+	/* MonoDevelop adds another file */
+	if (version == MONODEV)
+	{
+		file = openFile(project->path, project->name, ".mdsx");
+		if (file == NULL)
+			return 0;
+
+		prj_select_package(0);
+		prj_select_config(0);
+		fprintf(file, "<MonoDevelopSolution fileversion=\"1.0\">\n");
+		fprintf(file, "  <RelativeOutputPath>%s</RelativeOutputPath>\n", prj_get_bindir(NATIVE,0));
+		fprintf(file, "</MonoDevelopSolution>\n");
+
+		fclose(file);
+	}
+
 	return 1;
 }
 
@@ -150,7 +174,7 @@ static int writeCombine()
 
 static const char* checkDir(const char* path, void* data)
 {
-	return translatePath(path, WINDOWS);
+	return translatePath(path, NATIVE);
 }
 
 static const char* checkLibs(const char* file, void* data)
@@ -274,7 +298,7 @@ static const char* writeFileList(const char* file, void* data)
 		}
 	}
 
-	sprintf(buffer, "    <File name=\"%s%s\" subtype=\"%s\" buildaction=\"%s\" dependson=\"%s\" data=\"\" />\n", prefix, translatePath(file, WINDOWS), subtype, action, depends);
+	sprintf(buffer, "    <File name=\"%s%s\" subtype=\"%s\" buildaction=\"%s\" dependson=\"%s\" data=\"\" />\n", prefix, translatePath(file, NATIVE), subtype, action, depends);
 	return buffer;
 }
 
@@ -333,7 +357,10 @@ static int writeCsProject(Package* package)
 		return 0;
 
 	/* Project Header */
-	fprintf(file, "<Project name=\"%s\" standardNamespace=\"%s\" description=\"\" newfilesearch=\"None\" enableviewstate=\"True\" version=\"1.1\" projecttype=\"C#\">\n", name, name);
+	if (version == SHARPDEV)
+		fprintf(file, "<Project name=\"%s\" standardNamespace=\"%s\" description=\"\" newfilesearch=\"None\" enableviewstate=\"True\" version=\"1.1\" projecttype=\"C#\">\n", name, name);
+	else
+		fprintf(file, "<Project name=\"%s\" description=\"\" newfilesearch=\"None\" enableviewstate=\"True\" version=\"1.1\" projecttype=\"C#\">\n", name, name);
 
 	/* File List */
 	fprintf(file, "  <Contents>\n");
@@ -380,8 +407,8 @@ static int writeCsProject(Package* package)
 
 		fprintf(file, "      <Output ");
 		fprintf(file, "directory=\"");
-			fprintf(file, reversePath(path, prjCfg->bindir, WINDOWS, 1));
-			insertPath(file, getDirectory(config->target, 0), WINDOWS, 0);
+			fprintf(file, reversePath(path, prjCfg->bindir, NATIVE, 1));
+			insertPath(file, getDirectory(config->target, 0), NATIVE, 0);
 			fprintf(file, "\" ");
 	
 		fprintf(file, "assembly=\"%s\" ", getFilename(package->config[0]->target,0));

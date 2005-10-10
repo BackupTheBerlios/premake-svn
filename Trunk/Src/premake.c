@@ -19,8 +19,7 @@
 #define COPYRIGHT "Copyright (C) 2002-@YEAR@ Jason Perkins"
 
 extern int  makeGnuScripts();
-extern int  makeMonoDevScripts();
-extern int  makeSharpDevScripts();
+extern int  makeSharpDevScripts(int version);
 extern int  makeVs6Scripts();
 extern int  makeVsXmlScripts(int version);
 extern int  makeVs2005Scripts();
@@ -145,9 +144,9 @@ void defaultCommand(int argc, const char* argv[])
 			if (strcmp(argv[i], "gnu") == 0)
 				result = makeGnuScripts();
 			else if (strcmp(argv[i], "md") == 0 || strcmp(argv[i], "monodev") == 0)
-				result = makeMonoDevScripts();
+				result = makeSharpDevScripts(1);
 			else if (strcmp(argv[i], "sd") == 0 || strcmp(argv[i], "sharpdev") == 0)
-				result = makeSharpDevScripts();
+				result = makeSharpDevScripts(0);
 			else if (strcmp(argv[i], "vs6") == 0)
 				result = makeVs6Scripts();
 			else if (strcmp(argv[i], "vs7") == 0 || strcmp(argv[i], "vs2002") == 0)

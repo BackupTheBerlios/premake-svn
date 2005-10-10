@@ -71,8 +71,8 @@ namespace Premake.Tests.MonoDev
 
 			foreach (Package package in project.Package)
 			{
-				filename = Path.Combine(Path.Combine(project.Path, package.Path), package.ScriptName);
-				ParsePackage(project, package, filename);
+				string pkgfilename = Path.Combine(Path.Combine(project.Path, package.Path), package.ScriptName);
+				ParsePackage(project, package, pkgfilename);
 
 				/* MonoDev_DEPENDENCY_BUG: Dependencies are set correctly here! */
 				Console.WriteLine(package.Name + ": ");
@@ -81,6 +81,12 @@ namespace Premake.Tests.MonoDev
 					Console.WriteLine("  " + config.Name + ": " + config.Dependencies.Length);
 				}
 			}
+
+			/* MonoDev also has another file with their own settings */
+			Begin(filename + ".mdsx");
+			Match("<MonoDevelopSolution fileversion=\"1.0\">");
+			Match("  <RelativeOutputPath>" + Path.GetDirectoryName(project.Package[0].Config[0].BinDir) + "</RelativeOutputPath>");
+			Match("</MonoDevelopSolution>");
 		}
 		#endregion
 
