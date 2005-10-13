@@ -22,8 +22,7 @@ namespace Premake.Tests.SharpDev
 			string[] matches = Regex("<Combine fileversion=\"(.+)\" name=\"(.+)\" description=\"(.*)\">");
 			project.Name = matches[1];
 
-			matches = Regex("  <StartMode startupentry=\"(.+)\" single=\"True\">");
-			string active = matches[0];
+			matches = Regex("  <StartMode startupentry=\"\" single=\"True\">");
 
 			while (!Match("  </StartMode>", true))
 			{
@@ -32,9 +31,6 @@ namespace Premake.Tests.SharpDev
 				package.Name = matches[0];
 				project.Package.Add(package);
 			}
-
-			if (active != project.Package[0].Name)
-				throw new FormatException("Startup entry should be '" + project.Package[0].Name + "' but is '" + active + "'");
 
 			Match("  <Entries>");
 			foreach (Package package in project.Package)
@@ -46,7 +42,7 @@ namespace Premake.Tests.SharpDev
 			Match("  </Entries>");
 
 			matches = Regex("  <Configurations active=\"(.+)\">");
-			active = matches[0];
+			string active = matches[0];
 
 			while (!Match("  </Configurations>", true))
 			{

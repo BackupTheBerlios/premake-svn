@@ -21,6 +21,7 @@
 static char buffer[4096];
 static int  warnContentBuildAction;
 static int  version;
+static int  pathType;
 
 static int writeCombine();
 static int writeCsProject(Package* package);
@@ -34,6 +35,7 @@ int makeSharpDevScripts(int v)
 	int i;
 
 	version = v;
+	pathType = (version == SHARPDEV) ? WINDOWS : UNIX;
 
 	printf("Generating %sDevelop combine and project files:", version == SHARPDEV ? "Sharp" : "Mono");
 
@@ -85,10 +87,9 @@ static int writeCombine()
 	fprintf(file, "<Combine fileversion=\"1.0\" name=\"%s\" description=\"\">\n", project->name);
 
 	// TODO: select the first executable project
-	// pick the first project as the startup by default in the meantime
 	if(project->numPackages != 0)
 	{
-		fprintf(file, "  <StartMode startupentry=\"%s\" single=\"True\">\n", project->package[0]->name);
+		fprintf(file, "  <StartMode startupentry=\"\" single=\"True\">\n");
 	}
 
 	// first write out the startup entries
@@ -103,12 +104,10 @@ static int writeCombine()
 	fprintf(file, "  <Entries>\n");
 
 	// now write out the project entries
-	for (i = 0; i < project->numPackages; ++i)
+	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
-		Package* package = project->package[i];
-		const char* name = package->name;
-		const char* path = reversePath(project->path, package->path, NATIVE, 1);
-		fprintf(file, "    <Entry filename=\"%s%s.%s\" />\n", path, name, "prjx");
+		prj_select_package(i);
+		fprintf(file, "    <Entry filename=\"%s.prjx\" />\n", prj_get_pkgpathfromprj(pathType, 1));
 	}
 
 	fprintf(file, "  </Entries>\n");
@@ -158,10 +157,8 @@ static int writeCombine()
 		if (file == NULL)
 			return 0;
 
-		prj_select_package(0);
-		prj_select_config(0);
 		fprintf(file, "<MonoDevelopSolution fileversion=\"1.0\">\n");
-		fprintf(file, "  <RelativeOutputPath>%s</RelativeOutputPath>\n", prj_get_bindir(NATIVE,0));
+		fprintf(file, "  <RelativeOutputPath>%s</RelativeOutputPath>\n", project->config[0]->bindir);
 		fprintf(file, "</MonoDevelopSolution>\n");
 
 		fclose(file);
@@ -174,7 +171,7 @@ static int writeCombine()
 
 static const char* checkDir(const char* path, void* data)
 {
-	return translatePath(path, NATIVE);
+	return translatePath(path, pathType);
 }
 
 static const char* checkLibs(const char* file, void* data)
@@ -228,7 +225,7 @@ static const char* checkRefs(const char* ref, void* data)
 		if (fileExists(project->config[0]->bindir, ref, ext))
 		{
 			strcat(buffer, "Assembly\" refto=\"");
-			strcat(buffer, reversePath(package->path, project->config[0]->bindir, NATIVE, 1));
+			strcat(buffer, reversePath(package->path, project->config[0]->bindir, pathType, 1));
 			strcat(buffer, "/");
 			strcat(buffer, ref);
 			strcat(buffer, ".dll\" localcopy=\"False\"");
@@ -261,8 +258,8 @@ static const char* writeFileList(const char* file, void* data)
 
 	Package* package = (Package*)data;
 
-	if (file[0] != '.') 
-		prefix = ".\\";
+	if (file[0] != '.')
+		prefix = (pathType == WINDOWS) ? ".\\" : "./";
 
 	ext = getExtension(file);
 	if (strcmp(ext, ".cs") == 0)
@@ -298,7 +295,7 @@ static const char* writeFileList(const char* file, void* data)
 		}
 	}
 
-	sprintf(buffer, "    <File name=\"%s%s\" subtype=\"%s\" buildaction=\"%s\" dependson=\"%s\" data=\"\" />\n", prefix, translatePath(file, NATIVE), subtype, action, depends);
+	sprintf(buffer, "    <File name=\"%s%s\" subtype=\"%s\" buildaction=\"%s\" dependson=\"%s\" data=\"\" />\n", prefix, translatePath(file, pathType), subtype, action, depends);
 	return buffer;
 }
 
@@ -407,8 +404,8 @@ static int writeCsProject(Package* package)
 
 		fprintf(file, "      <Output ");
 		fprintf(file, "directory=\"");
-			fprintf(file, reversePath(path, prjCfg->bindir, NATIVE, 1));
-			insertPath(file, getDirectory(config->target, 0), NATIVE, 0);
+			fprintf(file, reversePath(path, prjCfg->bindir, pathType, 1));
+			insertPath(file, getDirectory(config->target, 0), pathType, 0);
 			fprintf(file, "\" ");
 	
 		fprintf(file, "assembly=\"%s\" ", getFilename(package->config[0]->target,0));

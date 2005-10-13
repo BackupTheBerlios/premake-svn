@@ -22,8 +22,7 @@ namespace Premake.Tests.MonoDev
 			string[] matches = Regex("<Combine fileversion=\"(.+)\" name=\"(.+)\" description=\"(.*)\">");
 			project.Name = matches[1];
 
-			matches = Regex("  <StartMode startupentry=\"(.+)\" single=\"True\">");
-			string active = matches[0];
+			matches = Regex("  <StartMode startupentry=\"\" single=\"True\">");
 
 			while (!Match("  </StartMode>", true))
 			{
@@ -33,20 +32,17 @@ namespace Premake.Tests.MonoDev
 				project.Package.Add(package);
 			}
 
-			if (active != project.Package[0].Name)
-				throw new FormatException("Startup entry should be '" + project.Package[0].Name + "' but is '" + active + "'");
-
 			Match("  <Entries>");
 			foreach (Package package in project.Package)
 			{
 				matches = Regex("    <Entry filename=\"(.+)\" />");
-				package.Path = Path.GetDirectoryName(matches[0]);
+				package.Path = matches[0].Substring(0, Path.GetDirectoryName(matches[0]).Length); /* Keep '/', not '\' */
 				package.ScriptName = Path.GetFileName(matches[0]);
 			}
 			Match("  </Entries>");
 
 			matches = Regex("  <Configurations active=\"(.+)\">");
-			active = matches[0];
+			string active = matches[0];
 
 			while (!Match("  </Configurations>", true))
 			{
@@ -85,7 +81,7 @@ namespace Premake.Tests.MonoDev
 			/* MonoDev also has another file with their own settings */
 			Begin(filename + ".mdsx");
 			Match("<MonoDevelopSolution fileversion=\"1.0\">");
-			Match("  <RelativeOutputPath>" + Path.GetDirectoryName(project.Package[0].Config[0].BinDir) + "</RelativeOutputPath>");
+			Regex("  <RelativeOutputPath>(.+)</RelativeOutputPath>");
 			Match("</MonoDevelopSolution>");
 		}
 		#endregion

@@ -23,9 +23,9 @@ namespace Premake.Tests.MonoDev
 			_parser = new MonoDevParser();
 		}
 
-		public void Run()
+		public void Run(params string[] opts)
 		{
-			TestEnvironment.Run(_script, _parser, _expects, null);
+			TestEnvironment.Run(_script, _parser, _expects, opts);
 		}
 		#endregion
 
@@ -40,8 +40,8 @@ namespace Premake.Tests.MonoDev
 		public void Test_PackageInSubDir()
 		{
 			_script.Append("package.path = 'MySubDir'");
-			_expects.Package[0].Path = ".\\MySubDir";
-			Run();
+			_expects.Package[0].Path = "./MySubDir";
+			Run("--os linux");
 		}
 
 		[Test]
@@ -59,7 +59,7 @@ namespace Premake.Tests.MonoDev
 			_script.Append("project.path = 'BuildDir'");
 			_script.Append("package.path = 'PkgDir'");
 			_expects.Path = "BuildDir";
-			_expects.Package[0].Path = "..\\PkgDir";
+			_expects.Package[0].Path = "../PkgDir";
 			Run();
 		}
 
@@ -69,7 +69,7 @@ namespace Premake.Tests.MonoDev
 			_script.Append("project.path = 'Build'");
 			_script.Append("package.path = 'Build'");
 			_expects.Path = "Build";
-			_expects.Package[0].Path = "..\\Build";
+			_expects.Package[0].Path = "../Build";
 			Run();
 		}
 

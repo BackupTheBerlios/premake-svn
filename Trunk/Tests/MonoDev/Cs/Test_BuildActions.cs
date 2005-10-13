@@ -34,7 +34,7 @@ namespace Premake.Tests.MonoDev.Cs
 		public void Test_DefaultCodeAction()
 		{
 			_script.Replace("'somefile.txt'", "'file0.cs'");
-			_expects.Package[0].File.Add(".\\file0.cs", "Code", "Compile");
+			_expects.Package[0].File.Add("./file0.cs", "Code", "Compile");
 			Run();
 		}
 
@@ -42,7 +42,7 @@ namespace Premake.Tests.MonoDev.Cs
 		public void Test_ResxAction()
 		{
 			_script.Replace("'somefile.txt'", "'file0.resx'");
-			_expects.Package[0].File.Add(".\\file0.resx", null, "EmbeddedResource");
+			_expects.Package[0].File.Add("./file0.resx", null, "EmbeddedResource");
 			Run();
 		}
 
@@ -51,8 +51,8 @@ namespace Premake.Tests.MonoDev.Cs
 		public void Test_ResxWithDependencyAction()
 		{
 			_script.Replace("'somefile.txt'", "'file0.resx','file0.cs'");
-			_expects.Package[0].File.Add(".\\file0.resx", null, "EmbeddedResource", "file0.cs");
-			_expects.Package[0].File.Add(".\\file0.cs");
+			_expects.Package[0].File.Add("./file0.resx", null, "EmbeddedResource", "file0.cs");
+			_expects.Package[0].File.Add("./file0.cs");
 			Run();
 		}
 
@@ -60,7 +60,7 @@ namespace Premake.Tests.MonoDev.Cs
 		public void Test_DefaultBuildAction()
 		{
 			/* #develop does not support the 'Content' build action so I am forced to do this */
-			_expects.Package[0].File.Add(".\\somefile.txt", "Nothing");
+			_expects.Package[0].File.Add("./somefile.txt", "Nothing");
 			Run();
 		}
 
@@ -68,7 +68,7 @@ namespace Premake.Tests.MonoDev.Cs
 		public void Test_CustomBuildAction()
 		{
 			_script.Append("package.config['somefile.txt'].buildaction = 'EmbeddedResource'");
-			_expects.Package[0].File.Add(".\\somefile.txt", "EmbeddedResource");
+			_expects.Package[0].File.Add("./somefile.txt", "EmbeddedResource");
 			Run();
 		}
 
