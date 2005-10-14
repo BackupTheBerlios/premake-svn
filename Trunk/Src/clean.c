@@ -51,6 +51,7 @@ int makeClean()
 
 			deleteFile(prjCfg->bindir, target, "");      // posix executable
 			deleteFile(prjCfg->bindir, target, ".exe");  // windows executable
+			deleteFile(prjCfg->bindir, target, ".exe.manifest");  // .NET assembly manifest
 			deleteFile(prjCfg->bindir, target, ".dll");  // windows or .NET shared lib
 			deleteFile(prjCfg->bindir, target, ".pdb");  // VS symbol file
 			deleteFile(prjCfg->bindir, target, ".ilk");  // VS incremental link

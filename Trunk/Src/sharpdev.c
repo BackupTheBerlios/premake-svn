@@ -5,7 +5,7 @@
 // Source code licensed under the GPL, see LICENSE.txt for details.
 //
 // Originally written by Chris McGuirk (leedgitar@latenitegames.com)
-// Maintained by Jason Perkins
+// Massively modified and maintained by Jason Perkins
 //-----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -37,7 +37,7 @@ int makeSharpDevScripts(int v)
 	version = v;
 	pathType = (version == SHARPDEV) ? WINDOWS : UNIX;
 
-	printf("Generating %sDevelop combine and project files:", version == SHARPDEV ? "Sharp" : "Mono");
+	printf("Generating %sDevelop combine and project files:\n", version == SHARPDEV ? "Sharp" : "Mono");
 
 	warnContentBuildAction = 0;
 	for (i = 0; i < project->numPackages; ++i)
@@ -77,7 +77,7 @@ int makeSharpDevScripts(int v)
 
 static int writeCombine()
 {
-	int i, j, k;
+	int i, j;
 
 	FILE* file;
 	file = openFile(project->path, project->name, ".cmbx");
@@ -116,9 +116,7 @@ static int writeCombine()
 	// write out the entries for each build configuration
 	for (i = 0; i < project->package[0]->numConfigs; ++i)
 	{
-		const char* configName = project->package[0]->config[i]->name;
-
-		fprintf(file, "    <Configuration name=\"%s\">\n", configName);
+		fprintf(file, "    <Configuration name=\"%s\">\n", project->package[0]->config[i]->name);
 
 		// loop through each package.  if has a configuration matching the curent one, write an entry
 		for(j = 0; j < project->numPackages; j++)
@@ -126,20 +124,8 @@ static int writeCombine()
 			Package* package = project->package[j];
 			const char* name = package->name;
 
-			int isIncluded = 0;
-
-			// look at each of this projects configs
-			for(k = 0; k < package->numConfigs; k++)
-			{
-				if(strcmp(configName, package->config[k]->name) != 0)
-				{
-					isIncluded = 1;
-					break;
-				}
-			}
-
 			// write the entry for the current project in this build configuration
-			fprintf(file, "      <Entry name=\"%s\" configurationname=\"%s\" build=\"%s\" />\n", package->name, configName, isIncluded ? "True" : "False");
+			fprintf(file, "      <Entry name=\"%s\" configurationname=\"%s\" build=\"False\" />\n", package->name, project->package[0]->config[0]->name);
 		}
 
         fprintf(file, "    </Configuration>\n");
@@ -248,7 +234,7 @@ static const char* checkRefPaths(const char* ref, void* data)
 	return makeAbsolute(projPath, ref);
 }
 
-static const char* writeFileList(const char* file, void* data)
+static const char* writeFile(const char* file)
 {
 	const char* ext;
 	const char* prefix  = "";
@@ -256,7 +242,7 @@ static const char* writeFileList(const char* file, void* data)
 	const char* action  = "";
 	const char* depends = "";
 
-	Package* package = (Package*)data;
+	Package* package = prj_get_package();
 
 	if (file[0] != '.')
 		prefix = (pathType == WINDOWS) ? ".\\" : "./";
@@ -282,11 +268,13 @@ static const char* writeFileList(const char* file, void* data)
 		}
 		strcat(buffer, "\t\t\t\t\tBuildAction = \"EmbeddedResource\"\n");
 
+		subtype = "Code";
 		action = "EmbedAsResource";
 	}
 	else
 	{
 		FileConfig* config = getFileConfig(package, file);
+		subtype = "Code";
 		action = config->buildAction;
 		if (action == NULL || strcmp(action, "Content") == 0)
 		{
@@ -298,6 +286,33 @@ static const char* writeFileList(const char* file, void* data)
 	sprintf(buffer, "    <File name=\"%s%s\" subtype=\"%s\" buildaction=\"%s\" dependson=\"%s\" data=\"\" />\n", prefix, translatePath(file, pathType), subtype, action, depends);
 	return buffer;
 }
+
+
+static void csFiles(FILE* file, const char* path, int stage)
+{
+
+	switch (stage)
+	{
+	case WST_OPENGROUP:
+		if (strlen(path) > 0)
+		{
+			fprintf(file, "    <File name=\"");
+			if (strncmp(path, "..", 2) != 0)
+				fprintf(file, "%s", translatePath("./", pathType));
+			fprintf(file, "%s\"", translatePath(path, pathType));
+			fprintf(file, " subtype=\"Directory\" buildaction=\"Compile\" dependson=\"\" data=\"\" />\n");
+		}
+		break;
+
+	case WST_CLOSEGROUP:
+		break;
+
+	case WST_SOURCEFILE:
+		fprintf(file, writeFile(path));
+		break;
+	}
+}
+
 
 static int writeCsProject(Package* package)
 {
@@ -353,6 +368,9 @@ static int writeCsProject(Package* package)
 	if (file == NULL)
 		return 0;
 
+	prj_select_package(0);
+	prj_select_config(0);
+
 	/* Project Header */
 	if (version == SHARPDEV)
 		fprintf(file, "<Project name=\"%s\" standardNamespace=\"%s\" description=\"\" newfilesearch=\"None\" enableviewstate=\"True\" version=\"1.1\" projecttype=\"C#\">\n", name, name);
@@ -361,7 +379,7 @@ static int writeCsProject(Package* package)
 
 	/* File List */
 	fprintf(file, "  <Contents>\n");
-	writeList(file, package->files, "", "", "", writeFileList, package);
+	walkSourceList(file, package, "", csFiles);
 	fprintf(file, "  </Contents>\n");
 
 	/* References - all configuration will use the same set */
@@ -390,14 +408,14 @@ static int writeCsProject(Package* package)
 		fprintf(file, "includedebuginformation=\"%s\" ", symbols ? "True" : "False"); 
 		fprintf(file, "optimize=\"%s\" ", optimize ? "True" : "False");
 		fprintf(file, "unsafecodeallowed=\"%s\" ", unsafe ? "True" : "False");
-		fprintf(file, "generateoverflowchecks=\"True\" ");
+		fprintf(file, "generateoverflowchecks=\"%s\" ", optimize ? "False" : "True");
 		fprintf(file, "mainclass=\"\" ");
 		fprintf(file, "target=\"%s\" ", kind); 
 		fprintf(file, "definesymbols=\"");
 			writeList(file, config->defines, "", "", ";", NULL, NULL);
 			fprintf(file, "\" ");
 		fprintf(file, "generatexmldocumentation=\"False\" ");
-		fprintf(file, "win32Icon=\"\" noconfig=\"\" nostdlib=\"False\" ");
+		fprintf(file, "win32Icon=\"\" noconfig=\"False\" nostdlib=\"False\" ");
 		fprintf(file, "/>\n");
 
 		fprintf(file, "      <Execution commandlineparameters=\"\" consolepause=\"True\" />\n");

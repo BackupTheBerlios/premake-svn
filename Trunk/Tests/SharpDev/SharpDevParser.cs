@@ -36,7 +36,8 @@ namespace Premake.Tests.SharpDev
 			foreach (Package package in project.Package)
 			{
 				matches = Regex("    <Entry filename=\"(.+)\" />");
-				package.Path = Path.GetDirectoryName(matches[0]);
+				/* Pull out directory, but keep the path separators intact (no translation) */
+				package.Path = matches[0].Substring(0, Path.GetDirectoryName(matches[0]).Length);
 				package.ScriptName = Path.GetFileName(matches[0]);
 			}
 			Match("  </Entries>");
@@ -54,7 +55,7 @@ namespace Premake.Tests.SharpDev
 				foreach (Package package in project.Package)
 				{
 					package.Config.Add(config);
-					Match("      <Entry name=\"" + package.Name + "\" configurationname=\"" + matches[0] + "\" build=\"True\" />");
+					Match("      <Entry name=\"" + package.Name + "\" configurationname=\"" + active + "\" build=\"False\" />");
 				}
 
 				Match("    </Configuration>");
@@ -93,12 +94,33 @@ namespace Premake.Tests.SharpDev
 				throw new FormatException("Namespace should be '" + package.Name + "' but is '" + matches[1] + "'");
 
 			Match("  <Contents>");
+
+			Hashtable folders = new Hashtable();
+			folders.Add(".", true);
 			while (!Match("  </Contents>", true))
 			{
 				matches = Regex("    <File name=\"(.+)\" subtype=\"(.*)\" buildaction=\"(.+)\" dependson=\"(.*)\" data=\"(.*)\" />");
-				if (matches[2] == "EmbedAsResource")
-					matches[2] = "EmbeddedResource";
-				package.File.Add(matches[0], matches[1], matches[2], matches[3]);
+				if (matches[1] == "Directory")
+				{
+					if (matches[2] != "Compile")
+						throw new FormatException("Buildaction of folders must be Compile");
+					folders.Add(matches[0], true);
+				}
+				else if (matches[1] == "Code")
+				{
+					if (matches[2] == "EmbedAsResource")
+						matches[2] = "EmbeddedResource";
+	
+					string path = Path.GetDirectoryName(matches[0]);
+					if (folders[path] == null)
+						throw new FormatException("Missing directory entry in file block for '" + path + "'");
+				
+					package.File.Add(matches[0], matches[1], matches[2], matches[3]);
+				}
+				else
+				{
+					throw new FormatException("Unrecognized file subtype '" + matches[1] + "'");
+				}
 			}
 
 			ArrayList links = new ArrayList();
@@ -132,7 +154,7 @@ namespace Premake.Tests.SharpDev
 				if (matches[0] == "False")
 					buildFlags.Add("fatal-warnings");
 
-				matches = Regex("      <CodeGeneration runtime=\"(.+)\" compiler=\"(.+)\" compilerversion=\"(.*)\" warninglevel=\"4\" nowarn=\"(.*)\" includedebuginformation=\"(True|False)\" optimize=\"(True|False)\" unsafecodeallowed=\"(True|False)\" generateoverflowchecks=\"(True|False)\" mainclass=\"(.*)\" target=\"(.+)\" definesymbols=\"(.*)\" generatexmldocumentation=\"(.+)\" win32Icon=\"(.*)\" noconfig=\"(.*)\" nostdlib=\"(.+)\" />");
+				matches = Regex("      <CodeGeneration runtime=\"(.+)\" compiler=\"(.+)\" compilerversion=\"(.*)\" warninglevel=\"4\" nowarn=\"(.*)\" includedebuginformation=\"(True|False)\" optimize=\"(True|False)\" unsafecodeallowed=\"(True|False)\" generateoverflowchecks=\"(True|False)\" mainclass=\"(.*)\" target=\"(.+)\" definesymbols=\"(.*)\" generatexmldocumentation=\"(.+)\" win32Icon=\"(.*)\" noconfig=\"False\" nostdlib=\"(True|False)\" />");
 				package.Compiler = matches[1];
 
 				switch (matches[9])
