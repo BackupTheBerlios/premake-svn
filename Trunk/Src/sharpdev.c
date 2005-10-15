@@ -339,7 +339,7 @@ static int writeCsProject(Package* package)
 
 	/* Figure out what .NET environment I'm using */
 	if (dotnet == NULL)
-		dotnet = (strcmp(os, "windows") == 0) ? "ms" : "mono";
+		dotnet = (strcmp(os, "windows") == 0 || version == MONODEV) ? "ms" : "mono";
 	
 	if (strcmp(dotnet, "ms") == 0)
 	{
