@@ -70,6 +70,19 @@ namespace Premake.Tests.Vs2003.Cs
 			Run();
 		}
 
+		[Test]
+		public void Test_TargetInPackageDir()
+		{
+			_script.Append("package.path = 'MyPackage'");
+			_script.Append("package.target = package.path .. '/bin/MyTarget'");
+			_expects.Package[0].Config[0].OutDir = ".\\MyPackage\\bin";
+			_expects.Package[0].Config[0].Target = "MyTarget";
+			_expects.Package[0].Config[1].OutDir = ".\\MyPackage\\bin";
+			_expects.Package[0].Config[1].Target = "MyTarget";
+			Run();
+		}
+
+
 		#endregion
 	}
 }

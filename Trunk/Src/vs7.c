@@ -725,7 +725,8 @@ static const char* checkSrcFileType(const char* file, void* data)
 	return buffer;
 }
 
-/* Determine if any other packages depend on this one */
+#if MORE_TROUBLE_THAN_ITS_WORTH
+/* Determine if any other packages depend on this one, to work around a VS.NET bug */
 static int packageIsReferenced(const char* name)
 {
 	int i, j, k;
@@ -744,6 +745,7 @@ static int packageIsReferenced(const char* name)
 	}
 	return 0;
 }
+#endif
 
 
 static int writeCsProject()
@@ -855,21 +857,24 @@ static int writeCsProject()
 		}
 		fprintf(file, "\t\t\t\t\tOptimize = \"%s\"\n", optimize ? "true" : "false");
 
+		fprintf(file, "\t\t\t\t\tOutputPath = \"");
+#if MORE_TROUBLE_THAN_ITS_WORTH
 		/* VS.NET has a bug that causes builds to break when the size of a
 		 * compiled assembly grows > 64K. It happens when DLLs are built to
 		 * the same directory as an executable that references them. Since
 		 * MS apparently has no plans to fix this problem that has been 
-		 * around since 2003, try to work around it here */
-		fprintf(file, "\t\t\t\t\tOutputPath = \"");
+		 * around since 2002, try to work around it here */
 		if (strcmp(package->kind, "dll") == 0 && packageIsReferenced(package->name))
 		{
 			fprintf(file, "%s\\%s", translatePath(package->objdir, WINDOWS), config->name);
 		}
 		else
 		{
-			fprintf(file, reversePath(path, prjCfg->bindir, WINDOWS, 1));
+			fprintf(file, reversePath(path, prjCfg->bindir, WINDOWS, 0));
 		}
-		insertPath(file, getDirectory(config->target, 0), WINDOWS, 0);
+#endif
+		fprintf(file, reversePath(path, prjCfg->bindir, WINDOWS, 0));
+		insertPath(file, getDirectory(config->target, 0), WINDOWS, 1);
 		fprintf(file, "\"\n");
 
 		fprintf(file, "\t\t\t\t\tRegisterForComInterop = \"false\"\n");
