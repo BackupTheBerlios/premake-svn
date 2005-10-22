@@ -24,9 +24,9 @@ namespace Premake.Tests.Gnu.Cs
 			_parser = new GnuParser();
 		}
 
-		public void Run()
+		public void Run(params string[] args)
 		{
-			TestEnvironment.Run(_script, _parser, _expects, null);
+			TestEnvironment.Run(_script, _parser, _expects, args);
 		}
 		#endregion
 
@@ -81,7 +81,17 @@ namespace Premake.Tests.Gnu.Cs
 			_script.Append("package.buildflags = { 'optimize' }");
 			_expects.Package[0].Config[0].BuildFlags = new string[] { "optimize" };
 			_expects.Package[0].Config[1].BuildFlags = new string[] { "optimize", "no-symbols" };
-			Run();
+			Run("--dotnet ms");
+		}
+
+		[Test]
+		public void Test_OptimizeMono()
+		{
+			/* Mono does not support an optimize flag */
+			_script.Append("package.buildflags = { 'optimize' }");
+			_expects.Package[0].Config[0].BuildFlags = new string[] { };
+			_expects.Package[0].Config[1].BuildFlags = new string[] { "no-symbols" };
+			Run("--dotnet mono");
 		}
 	}
 }

@@ -773,7 +773,7 @@ static int writeCsPackage(Package* package)
 	
 		fprintf(file, "  FLAGS +=");
 		if (symbols)   fprintf(file, " /debug");
-		if (optimize)  fprintf(file, " /o");
+		if (optimize && !matches(csc,"mcs"))  fprintf(file, " /o");
 		if (unsafe)    fprintf(file, " /unsafe");
 		if (fatalWarn) fprintf(file, " /warnaserror");
 		writeList(file, config->defines, " /d:", "", "", NULL, NULL);
