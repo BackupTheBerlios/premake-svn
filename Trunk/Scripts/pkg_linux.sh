@@ -52,17 +52,19 @@ make CONFIG=Release
 
 #####################################################################
 # Stage 3: Unit Test
+#
+# I haven't gotten the unit tests to run on Linux yet
 #####################################################################
 
-echo ""
-echo "RUNNING UNIT TESTS..."
-echo ""
+# echo ""
+# echo "RUNNING UNIT TESTS..."
+# echo ""
 
-nunit-console.exe Premake.Tests.nunit
+# nunit-console.exe Premake.Tests.nunit
 
-echo "Did the unit tests run successfully?"
-read line
-echo ""
+# echo "Did the unit tests run successfully?"
+# read line
+# echo ""
 
 
 #####################################################################

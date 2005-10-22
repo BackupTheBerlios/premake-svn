@@ -1,16 +1,7 @@
-* Make sure VS6 static libs getting put in right place
+* `make clean` needs to remove objects for all configs, not just
+  the default one ($OBJDIR is set to obj/Debug, instead of obj)
 
 * Document config.targetextension (chage to customtarget or something)
-
-* Unit test Vs2002
-
-* Unit test VC6
-
-* Unit test MonoDevelop
-
-* Unit test linkoptions (gnu, vs6, vs200x?)
-
-* Build all my projects with all tools and verify results (.pdb files, etc.)
 
 * Docs: no-symbols (not with-symbols)
 
