@@ -4,9 +4,9 @@
 
 3. Create tag in Subversion
 
-4. Run Linux packaging script
+5. Build Windows packaging script (has unit tests)
 
-5. Build Windows packaging script
+4. Run Linux packaging script
 
 6. Create new file release on SourceForge
 

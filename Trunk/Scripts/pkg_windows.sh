@@ -24,7 +24,7 @@ echo ""
 echo "Did you create a tag for version $1?"
 read line
 echo ""
-echo "Ready to build Windows executable for version $1."
+echo "Ready to build Source Code and Windows packages for version $1."
 echo "Press [Enter] to begin."
 read line
 
