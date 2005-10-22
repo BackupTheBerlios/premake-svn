@@ -1,0 +1,25 @@
+* Make sure VS6 static libs getting put in right place
+
+* Document config.targetextension (chage to customtarget or something)
+
+* Unit test Vs2002
+
+* Unit test VC6
+
+* Unit test MonoDevelop
+
+* Unit test linkoptions (gnu, vs6, vs200x?)
+
+* Build all my projects with all tools and verify results (.pdb files, etc.)
+
+* Docs: no-symbols (not with-symbols)
+
+* Docs: pkg.buildflags inserts, pkg.cfg.buildflags replaces, potential confusion
+
+* Omit frame ptrs from release build
+
+* Phase out linkflags (documentation only, can leave in scripts)
+
+* unicode, no-64bit-checks currently only supported in VS200x generators
+
+* Add support for Code::Blocks (http://www.codeblocks.org/)
