@@ -2,6 +2,7 @@ user anonymous jason379@users.sourceforge.net
 cd incoming
 bin
 prompt
-mput Premake-win32-*.zip
+mput premake-win32-*.zip
+mput premake-src-*.zip
 quit
 

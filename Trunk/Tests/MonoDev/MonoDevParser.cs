@@ -71,12 +71,14 @@ namespace Premake.Tests.MonoDev
 				string pkgfilename = Path.Combine(Path.Combine(project.Path, package.Path), package.ScriptName);
 				ParsePackage(project, package, pkgfilename);
 
-				/* MonoDev_DEPENDENCY_BUG: Dependencies are set correctly here! */
+				/* SHARPDEV_DEPENDENCY_BUG: Dependencies are set correctly here! */
+#if SHARPDEV_DEPENDENCY_BUG
 				Console.WriteLine(package.Name + ": ");
 				foreach (Configuration config in package.Config)
 				{
 					Console.WriteLine("  " + config.Name + ": " + config.Dependencies.Length);
 				}
+#endif
 			}
 
 			/* MonoDev also has another file with their own settings */

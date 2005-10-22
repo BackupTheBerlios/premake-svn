@@ -72,11 +72,13 @@ namespace Premake.Tests.SharpDev
 				ParsePackage(project, package, filename);
 
 				/* SHARPDEV_DEPENDENCY_BUG: Dependencies are set correctly here! */
+#if SHARPDEV_DEPENDENCY_BUG
 				Console.WriteLine(package.Name + ": ");
 				foreach (Configuration config in package.Config)
 				{
 					Console.WriteLine("  " + config.Name + ": " + config.Dependencies.Length);
 				}
+#endif
 			}
 		}
 		#endregion

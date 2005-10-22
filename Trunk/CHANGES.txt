@@ -36,6 +36,9 @@ Premake Changelog
   `premake --os macosx --target gnu`. This is really only useful
   for makefiles currently.
 
+  The MonoDevelop generator is now fully supported, and is no
+  longer considered experimental.
+  
 
 2.4
 * Added chdir() to Lua script environment

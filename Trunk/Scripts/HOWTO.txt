@@ -1,23 +1,17 @@
-1. Update premake.c to the latest version number
+1. Update premake.c
 
-2. Build the Linux binary using `pkg_linux.sh`
+2. Update support files
 
-3. Build the Windows binary using `pkg_windows.sh`
+3. Create tag in Subversion
 
-4. Update README.txt and CHANGES.txt
+4. Run Linux packaging script
 
-5. Commit everything to CVS
+5. Build Windows packaging script
 
-6. Create a new tag `cvs tag v#_#_#`
+6. Create new file release on SourceForge
 
-7. Build the source package using `pkg_source.sh`
+7. Update site documentation
 
-8. Release new file package on SourceForge
+8. Add new group to SourceForge tracker
 
-9. Create news item on SourceForge and/or website
-
-10. Send email to mailing list
-
-11. Update documentation to reflect changes
-
-12. Add new group to SourceForge tracker
+9. Announce on website and mailing list

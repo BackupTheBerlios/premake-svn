@@ -67,6 +67,7 @@ namespace Premake.Tests.Framework
 				parser.Parse(actual, Path.Combine(actual.Path, actual.Name));
 
 				/* SHARPDEV_DEPENDENCY_BUG: Dependencies have disappeared! */
+#if SHARPDEV_DEPENDENCY_BUG
 				foreach (Package p in actual.Package)
 				{
 					Console.WriteLine(p.Name + ":");
@@ -75,6 +76,7 @@ namespace Premake.Tests.Framework
 						Console.WriteLine("  " + config.Name + ": " + config.Dependencies.Length);
 					}
 				}
+#endif
 				expected.CompareTo(actual);
 			}
 			finally
