@@ -15,8 +15,8 @@
 #include "util.h"
 #include "Lua/lua.h"
 
-#define VERSION   "@BUILD@"
-#define COPYRIGHT "Copyright (C) 2002-@YEAR@ Jason Perkins"
+#define VERSION   "3.0-beta1"
+#define COPYRIGHT "Copyright (C) 2002-2005 Jason Perkins"
 
 extern int  makeGnuScripts();
 extern int  makeSharpDevScripts(int version);
