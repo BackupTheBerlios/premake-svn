@@ -15,6 +15,12 @@ echo ""
 echo "Have you updated the version number in premake.c?"
 read line
 echo ""
+echo "Did you update README.txt?"
+read line
+echo ""
+echo "Did you update CHANGES.txt?"
+read line
+echo ""
 echo "Did you create a tag for version $1?"
 read line
 echo ""
