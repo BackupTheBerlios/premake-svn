@@ -37,7 +37,7 @@ static int  getArraySize(int ref);
 static int  getDeepArraySize(int ref);
 static int  getObjectFromArray(int ref, int i);
 static int  getObjectByName(int ref, const char* name);
-static const char* getString(int ref, char* name);
+static const char* getString(int ref, const char* name);
 static const char* getStringFromArray(int ref, int index);
 
 static int  addoption(lua_State* L);
@@ -268,9 +268,9 @@ FileConfig* getFileConfig(Package* package, const char* name)
 }
 
 
-static char* getConfigString(int package, int config, const char* name)
+static const char* getConfigString(int package, int config, const char* name)
 {
-	char* value = getString(config, name);
+	const char* value = getString(config, name);
 	if (value == NULL)
 		value = getString(package, name);
 	return value;
@@ -632,7 +632,7 @@ static int getObjectByName(int ref, const char* name)
 }
 
 
-static const char* getString(int ref, char* name)
+static const char* getString(int ref, const char* name)
 {
 	const char* str;
 	lua_getref(L, ref);
