@@ -339,7 +339,7 @@ static int writeCppPackage(Package* package)
 			strcat(cxxflags, " --no-exceptions");
 
 		if (inArray(config->buildFlags, "no-frame-pointer"))
-			strcat(cflags, "-fomit-frame-pointer");
+			strcat(cflags, " -fomit-frame-pointer");
 
 		if (inArray(config->buildFlags, "no-rtti"))
 			strcat(cxxflags, " --no-rtti");
