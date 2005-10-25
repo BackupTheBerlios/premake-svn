@@ -29,6 +29,7 @@ typedef struct _Config
 	struct _Package* package;
 	const char* name;
 	const char* target;
+	const char* prefix;
 	const char* extension;
 	const char** buildFlags;
 	const char** buildOptions;

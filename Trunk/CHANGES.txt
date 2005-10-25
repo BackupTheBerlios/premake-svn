@@ -11,6 +11,9 @@ Premake Changelog
   could cause some backward compatibility issues so I've
   bumped the major version number just in case.
 
+  The MonoDevelop generator is now fully supported, and is no
+  longer considered experimental.
+
   GNU make will now prepend the target namespace to the name
   of any .NET resources, in order to match the behavior of
   VS.NET.
@@ -26,6 +29,9 @@ Premake Changelog
   `fatal-warnings` build flags. The `package.warninglevel`
   value has been removed.
 
+  I added a new value `package.targetprefix` to control the
+  formatting of the target name. 
+
   I overhauled the structure of the GNU makefiles. This new
   version is simpler (my goal) and seems noticibly faster (a
   nice bonus).
@@ -35,9 +41,6 @@ Premake Changelog
   and you want to generate a Makefile for MacOS X you could use
   `premake --os macosx --target gnu`. This is really only useful
   for makefiles currently.
-
-  The MonoDevelop generator is now fully supported, and is no
-  longer considered experimental.
   
 
 2.4

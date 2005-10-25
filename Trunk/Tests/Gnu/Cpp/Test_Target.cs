@@ -79,6 +79,62 @@ namespace Premake.Tests.Gnu.Cpp
 		}
 		#endregion
 
+		#region Prefix/Extension Tests
+
+		[Test]
+		public void Test_TargetPrefixOnExe()
+		{
+			_script.Append("package.targetprefix = 'fi'");
+			_expects.Package[0].Config[0].Target = "fiMyPackage";
+			Run("--os linux");
+		}
+
+		[Test]
+		public void Test_TargetPrefixOnDll()
+		{
+			_script.Replace("'exe'", "'dll'");
+			_script.Append("package.targetprefix = 'fi'");
+			_expects.Package[0].Config[0].Target = "fiMyPackage.so";
+			Run("--os linux");
+		}
+
+		[Test]
+		public void Test_TargetPrefixOnLib()
+		{
+			_script.Replace("'exe'", "'lib'");
+			_script.Append("package.targetprefix = 'fi'");
+			_expects.Package[0].Config[0].Target = "fiMyPackage.a";
+			Run("--os linux");
+		}
+
+		[Test]
+		public void Test_TargetExtensionOnExe()
+		{
+			_script.Append("package.targetextension = 'zmf'");
+			_expects.Package[0].Config[0].Target = "MyPackage.zmf";
+			Run("--os linux");
+		}
+
+		[Test]
+		public void Test_TargetExtensionOnDll()
+		{
+			_script.Replace("'exe'", "'dll'");
+			_script.Append("package.targetextension = 'zmf'");
+			_expects.Package[0].Config[0].Target = "libMyPackage.zmf";
+			Run("--os linux");
+		}
+
+		[Test]
+		public void Test_TargetExtensionOnLib()
+		{
+			_script.Replace("'exe'", "'lib'");
+			_script.Append("package.targetextension = 'zmf'");
+			_expects.Package[0].Config[0].Target = "libMyPackage.zmf";
+			Run("--os linux");
+		}
+
+		#endregion
+
 		#region Windows Targets
 
 		[Test]

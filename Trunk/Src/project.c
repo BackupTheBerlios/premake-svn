@@ -268,6 +268,15 @@ FileConfig* getFileConfig(Package* package, const char* name)
 }
 
 
+static char* getConfigString(int package, int config, const char* name)
+{
+	char* value = getString(config, name);
+	if (value == NULL)
+		value = getString(package, name);
+	return value;
+}
+
+
 static void getConfigList(int package, int config, const char* list, const char*** array, int* length)
 {
 	const char** buffer;
@@ -423,13 +432,12 @@ static int finishProject()
 			configName = getStringFromArray(configs, j);
 			cfg = getObjectByName(pkgConfigs, configName);
 
-			config->name = getString(cfg, "name");
-			config->target = getString(cfg, "target");
-			if (config->target == NULL) config->target = getString(pkg, "target");
+			config->name   = getString(cfg, "name");
+			config->target = getConfigString(pkg, cfg, "target");
 			if (config->target == NULL) config->target = package->name;
-			config->extension = getString(cfg, "targetextension");
-			if (config->extension == NULL) config->extension = getString(pkg, "targetextension");
-
+			config->prefix    = getConfigString(pkg, cfg, "targetprefix");
+			config->extension = getConfigString(pkg, cfg, "targetextension");
+			
 			getConfigList(pkg, cfg, "buildflags", &config->buildFlags, &config->numBuildFlags);
 			getConfigList(pkg, cfg, "buildoptions", &config->buildOptions, &config->numBuildOptions);
 			getConfigList(pkg, cfg, "defines", &config->defines, &config->numDefines);

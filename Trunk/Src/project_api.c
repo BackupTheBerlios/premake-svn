@@ -317,9 +317,14 @@ const char* prj_get_target_for(Package* pkg)
 	Config* cfg = prj_get_config_for(pkg);
 	const char* filename = getFilename(cfg->target, 0);
 
+	strcpy(buffer, "");
+
+	if (cfg->prefix != NULL)
+		strcat(buffer, cfg->prefix);
+
 	if (matches(pkg->language, "c#"))
 	{
-		strcpy(buffer, filename);
+		strcat(buffer, filename);
 		if (matches(pkg->kind, "dll"))
 			extension = "dll";
 		else
@@ -328,7 +333,7 @@ const char* prj_get_target_for(Package* pkg)
 
 	else if (matches(os, "windows"))
 	{
-		strcpy(buffer, filename);
+		strcat(buffer, filename);
 		if (matches(pkg->kind, "lib"))
 			extension = "lib";
 		else if (matches(pkg->kind, "dll"))
@@ -341,31 +346,35 @@ const char* prj_get_target_for(Package* pkg)
 	{
 		if (matches(pkg->kind, "winexe"))
 		{
-			strcpy(buffer, filename);
+			strcat(buffer, filename);
 			strcat(buffer, ".app/Contents/MacOS/");
+			if (cfg->prefix != NULL)
+				strcat(buffer, cfg->prefix);
 			strcat(buffer, filename);
 		}
 		else if (matches(pkg->kind, "exe"))
 		{
-			strcpy(buffer, filename);
+			strcat(buffer, filename);
 		}
 		else if (matches(pkg->kind, "dll"))
 		{
 			if (inArray(cfg->buildFlags, "dylib"))
 			{
-				strcpy(buffer, filename);
+				strcat(buffer, filename);
 				extension = "dylib";
 			}
 			else
 			{
-				strcpy(buffer, "lib");
+				if (cfg->prefix == NULL)
+					strcat(buffer, "lib");
 				strcat(buffer, filename);
 				extension = "so";
 			}
 		}
 		else
 		{
-			strcpy(buffer, "lib");
+			if (cfg->prefix == NULL)
+				strcat(buffer, "lib");
 			strcat(buffer, filename);
 			extension = "a";
 		}
@@ -375,19 +384,21 @@ const char* prj_get_target_for(Package* pkg)
 	{
 		if (matches(pkg->kind, "lib"))
 		{
-			strcpy(buffer, "lib");
+			if (cfg->prefix == NULL)
+				strcat(buffer, "lib");
 			strcat(buffer, filename);
 			extension = "a";
 		}
 		else if (matches(pkg->kind, "dll"))
 		{
-			strcpy(buffer, "lib");
+			if (cfg->prefix == NULL)
+				strcat(buffer, "lib");
 			strcat(buffer, filename);
 			extension = "so";
 		}
 		else
 		{
-			strcpy(buffer, filename);
+			strcat(buffer, filename);
 		}
 	}
 
