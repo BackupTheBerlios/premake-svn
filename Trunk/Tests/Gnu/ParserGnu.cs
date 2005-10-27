@@ -498,16 +498,25 @@ namespace Premake.Tests.Gnu
 			{
 				matches = Regex("\t(.+?)[ ]\\\\", true);
 				if (matches != null)
-					package.File.Add(matches[0], "Content");
+					package.File.Add(matches[0], "Linked");
 			} while (matches != null);
 			Match("");
 
 			Match("LINKEDCOMMAND = \\");
 			foreach (SourceFile file in package.File)
 			{
-				if (file.BuildAction == "Content")
+				if (file.BuildAction == "Linked")
 					Match("\t/linkresource:" + file.Name + " \\");
 			}
+			Match("");
+
+			Match("CONTENTFILES = \\");
+			do
+			{
+				matches = Regex("\t(.+?)[ ]\\\\", true);
+				if (matches != null)
+					package.File.Add(matches[0], "Content");
+			} while (matches != null);
 			Match("");
 
 			Match("COMPILECOMMAND = $(SOURCES) $(EMBEDDEDCOMMAND) $(LINKEDCOMMAND)");
@@ -522,6 +531,7 @@ namespace Premake.Tests.Gnu
 					Match("\t$(BINDIR)/" + Path.GetFileName(file.Name) + " \\");
 			}
 			Match("");
+
 			Match("$(OUTDIR)/$(TARGET): $(SOURCES) $(EMBEDDEDFILES) $(LINKEDFILES) $(DEPS)");
 			Match("\t-@if [ ! -d $(OUTDIR) ]; then mkdir -p $(OUTDIR); fi");
 
@@ -535,6 +545,17 @@ namespace Premake.Tests.Gnu
 			}
 
 			Match("");
+
+			foreach (SourceFile file in package.File)
+			{
+				if (file.BuildAction == "Linked")
+				{
+					string basename = Path.GetFileName(file.Name);
+					Match("$(BINDIR)/" + basename + ": " + file.Name);
+					Match("\t-@cp -fR $^ $@");
+					Match("");
+				}
+			}
 
 			foreach (SourceFile file in package.File)
 			{

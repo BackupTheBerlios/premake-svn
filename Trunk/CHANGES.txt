@@ -14,9 +14,9 @@ Premake Changelog
   The MonoDevelop generator is now fully supported, and is no
   longer considered experimental.
 
-  GNU make will now prepend the target namespace to the name
-  of any .NET resources, in order to match the behavior of
-  VS.NET.
+  Overhauled the handling of resources and build actions in
+  the GNU C# generator. Resource compilation now works, and 
+  the behavior closely matches VS.NET.
 
   Scott Graham submitted a patch for a new `unicode` build
   flag. This flag switches the default character encoding for

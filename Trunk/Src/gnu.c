@@ -533,29 +533,6 @@ typedef struct BuildActionData
 	const char* fileExtension;
 } BuildActionData;
 
-/* Checks to see if a particular file fits a desired build action */
-int csMatchFile(const char* fileName, BuildActionData* data)
-{
-	FileConfig* config = getFileConfig(data->package, fileName);
-
-	if (NULL != config->buildAction)
-		return (0 == strcmp(config->buildAction, data->buildAction));
-
-	if (NULL != data->fileExtension && 0 == strcmp(getExtension(fileName), data->fileExtension))
-	{
-		config->buildAction = data->buildAction;
-		return 1;
-	}
-
-	if (NULL == data->fileExtension)
-	{
-		config->buildAction = data->buildAction;
-		return 1;
-	}
-
-	return 0;
-}
-
 /* Visual Studio .NET automatically adds some extra information
  * to resource names. Simulate that here */
 static const char* makeVsNetCompatName(const char* file, Package* pkg)
@@ -595,11 +572,25 @@ static const char* makeVsNetCompatName(const char* file, Package* pkg)
 	}
 }
 
+/* Assigns build actions to common file types */
+static const char* csAssignActions(const char* file, void* data)
+{
+	BuildActionData* bad = (BuildActionData*)data;
+	const char* ext = getExtension(file);
+	if (ext != NULL && matches(ext, bad->fileExtension))
+	{
+		FileConfig* config = getFileConfig(bad->package, file);
+		config->buildAction = bad->buildAction;
+	}
+	return NULL;
+}
+
 /* Filters the list of files against a desired build action */
 static const char* csBuildActionFilter(const char* file, void* data)
 {
 	BuildActionData* bad = (BuildActionData*)data;
-	if(csMatchFile(file, bad))
+	FileConfig* config = getFileConfig(bad->package, file);
+	if (config->buildAction != NULL && matches(config->buildAction, bad->buildAction))
 		return makeVsNetCompatName(file, bad->package);
 	return NULL;
 }
@@ -628,7 +619,8 @@ static const char* csResourceBuildStep(const char* file, void* data)
 static const char* csContentTargetsList(const char* file, void* data)
 {
 	BuildActionData* bad = (BuildActionData*)data;
-	if (csMatchFile(file, bad))
+	FileConfig* config = getFileConfig(bad->package, file);
+	if (config->buildAction != NULL && matches(config->buildAction, bad->buildAction))
 	{
 		sprintf(buffer, "$(BINDIR)/%s", getFilename(file,0));
 		return buffer;
@@ -640,7 +632,8 @@ static const char* csContentTargetsList(const char* file, void* data)
 static const char* csContentRuleList(const char* file, void* data)
 {
 	BuildActionData* bad = (BuildActionData*)data;
-	if (csMatchFile(file, bad))
+	FileConfig* config = getFileConfig(bad->package, file);
+	if (config->buildAction != NULL && matches(config->buildAction, bad->buildAction))
 	{
 		sprintf(buffer, "$(BINDIR)/%s: %s\n\t-@cp -fR $^ $@\n\n", getFilename(file,0), file);
 		return buffer;
@@ -765,10 +758,10 @@ static int writeCsPackage(Package* package)
 
 		fprintf(file, "ifeq ($(CONFIG),%s)\n", config->name);
 
-		fprintf(file, "  BINDIR = %s\n", prj_get_bindir(UNIX, 1));
+		fprintf(file, "  BINDIR = %s\n", prj_get_bindir(UNIX, 0));
 		fprintf(file, "  OUTDIR = ");
-			fprintf(file, prj_get_bindir(UNIX, 1));
-			insertPath(file, getDirectory(package->config[0]->target, 0), UNIX, 0);
+			fprintf(file, prj_get_bindir(UNIX, 0));
+			insertPath(file, getDirectory(package->config[0]->target, 0), UNIX, 1);
 			fprintf(file, "\n");
 	
 		fprintf(file, "  FLAGS +=");
@@ -795,15 +788,31 @@ static int writeCsPackage(Package* package)
 		fprintf(file, "endif\n\n");
 	}
 	
-	/* Sort out the files by build action */
-	fprintf(file, "SOURCES = \\\n");
+	/* Sort out the files by build action...start by assigning build actions
+	 * to well-known file extensions...these don't write anything to the file */
 	bad.package = package;
 	bad.fileExtension = ".cs";
+	bad.buildAction = "Code";
+	writeList(file, package->files, "", "", "", csAssignActions, &bad);
+
+	bad.fileExtension = ".resx";
+	bad.buildAction = "EmbeddedResource";
+	writeList(file, package->files, "", "", "", csAssignActions, &bad);
+
+	bad.fileExtension = ".asax";
+	bad.buildAction = "Content";
+	writeList(file, package->files, "", "", "", csAssignActions, &bad);
+
+	bad.fileExtension = ".aspx";
+	bad.buildAction = "Content";
+	writeList(file, package->files, "", "", "", csAssignActions, &bad);
+
+	/* Now write the files into the makefile, sorted by build action */
+	fprintf(file, "SOURCES = \\\n");
 	bad.buildAction = "Code";
 	writeList(file, package->files, "\t", " \\\n", "", csBuildActionFilter, &bad);
 	fprintf(file, "\n");
 
-	bad.fileExtension = ".resx";
 	bad.buildAction = "EmbeddedResource";
 	fprintf(file, "EMBEDDEDFILES = \\\n");
 	writeList(file, package->files, "\t", " \\\n", "", csBuildActionFilter, &bad);
@@ -813,7 +822,6 @@ static int writeCsPackage(Package* package)
 	writeList(file, package->files, "\t/resource:", " \\\n", "", csBuildActionFilter, &bad);
 	fprintf(file, "\n");
 
-	bad.fileExtension = NULL;
 	bad.buildAction = "LinkedResource";
 	fprintf(file, "LINKEDFILES = \\\n");
 	writeList(file, package->files, "\t", " \\\n", "", csBuildActionFilter, &bad);
@@ -821,6 +829,11 @@ static int writeCsPackage(Package* package)
 
 	fprintf(file, "LINKEDCOMMAND = \\\n");
 	writeList(file, package->files, "\t/linkresource:", " \\\n", "", csBuildActionFilter, &bad);
+	fprintf(file, "\n");
+
+	bad.buildAction = "Content";
+	fprintf(file, "CONTENTFILES = \\\n");
+	writeList(file, package->files, "\t", " \\\n", "", csBuildActionFilter, &bad);
 	fprintf(file, "\n");
 
 	fprintf(file, "COMPILECOMMAND = $(SOURCES) $(EMBEDDEDCOMMAND) $(LINKEDCOMMAND)\n");
@@ -832,10 +845,6 @@ static int writeCsPackage(Package* package)
 
 	fprintf(file, "all: \\\n");
 	fprintf(file, "\t$(OUTDIR)/$(TARGET) \\\n");
-
-	bad.fileExtension = NULL;
-	bad.buildAction = "LinkedResource";
-	writeList(file, package->files, "\t", " \\\n", "", csContentTargetsList, &bad);
 	bad.buildAction = "Content";
 	writeList(file, package->files, "\t", " \\\n", "", csContentTargetsList, &bad);
 	fprintf(file, "\n");

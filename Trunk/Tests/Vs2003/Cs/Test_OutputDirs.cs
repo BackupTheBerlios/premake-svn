@@ -34,8 +34,8 @@ namespace Premake.Tests.Vs2003.Cs
 		[Test]
 		public void Test_BinDir_Default()
 		{
-			_expects.Package[0].Config[0].BinDir = ".\\";
-			_expects.Package[0].Config[1].BinDir = ".\\";
+			_expects.Package[0].Config[0].BinDir = ".";
+			_expects.Package[0].Config[1].BinDir = ".";
 			Run();
 		}
 
@@ -43,8 +43,8 @@ namespace Premake.Tests.Vs2003.Cs
 		public void Test_BinDir_SetAtProject()
 		{
 			_script.Append("project.bindir = 'bin'");
-			_expects.Package[0].Config[0].BinDir = ".\\bin\\";
-			_expects.Package[0].Config[1].BinDir = ".\\bin\\";
+			_expects.Package[0].Config[0].BinDir = ".\\bin";
+			_expects.Package[0].Config[1].BinDir = ".\\bin";
 			Run();
 		}
 
@@ -53,8 +53,8 @@ namespace Premake.Tests.Vs2003.Cs
 		{
 			_script.Append("project.config['Debug'].bindir = 'bin/Debug'");
 			_script.Append("project.config['Release'].bindir = 'bin/Release'");
-			_expects.Package[0].Config[0].BinDir = ".\\bin\\Debug\\";
-			_expects.Package[0].Config[1].BinDir = ".\\bin\\Release\\";
+			_expects.Package[0].Config[0].BinDir = ".\\bin\\Debug";
+			_expects.Package[0].Config[1].BinDir = ".\\bin\\Release";
 			Run();
 		}
 		#endregion

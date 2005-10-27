@@ -236,7 +236,7 @@ int inArray(const char** list, const char* value)
 
 void insertPath(FILE* file, const char* path, int type, int leader)
 {
-	if (strcmp(path, ".") != 0 && strcmp(path, "./") != 0)
+	if (!matches(path,"") && !matches(path,".") && !matches(path,"./"))
 	{
 		if (leader)
 			fprintf(file, "%c", pathseps[type]);

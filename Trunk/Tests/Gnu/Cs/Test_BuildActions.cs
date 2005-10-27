@@ -83,7 +83,8 @@ namespace Premake.Tests.Gnu.Cs
 		[Test]
 		public void Test_DefaultBuildAction()
 		{
-			_expects.Package[0].File.Add("somefile.txt", "Content");
+			_script.Replace("'somefile.txt'", "'file0.cs','somefile.txt'");
+			_expects.Package[0].File.Add("file0.cs", "Compile");
 			Run();
 		}
 

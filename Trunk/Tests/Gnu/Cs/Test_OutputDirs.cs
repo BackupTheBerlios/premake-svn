@@ -34,8 +34,10 @@ namespace Premake.Tests.Gnu.Cs
 		[Test]
 		public void Test_BinDir_Default()
 		{
-			_expects.Package[0].Config[0].BinDir = "./";
-			_expects.Package[0].Config[1].BinDir = "./";
+			_expects.Package[0].Config[0].BinDir = ".";
+			_expects.Package[0].Config[1].BinDir = ".";
+			_expects.Package[0].Config[0].OutDir = ".";
+			_expects.Package[0].Config[1].OutDir = ".";
 			Run();
 		}
 
@@ -43,8 +45,10 @@ namespace Premake.Tests.Gnu.Cs
 		public void Test_BinDir_SetAtProject()
 		{
 			_script.Append("project.bindir = 'bin'");
-			_expects.Package[0].Config[0].BinDir = "./bin/";
-			_expects.Package[0].Config[1].BinDir = "./bin/";
+			_expects.Package[0].Config[0].BinDir = "./bin";
+			_expects.Package[0].Config[1].BinDir = "./bin";
+			_expects.Package[0].Config[0].OutDir = "./bin";
+			_expects.Package[0].Config[1].OutDir = "./bin";
 			Run();
 		}
 
@@ -53,8 +57,10 @@ namespace Premake.Tests.Gnu.Cs
 		{
 			_script.Append("project.config['Debug'].bindir = 'bin/Debug'");
 			_script.Append("project.config['Release'].bindir = 'bin/Release'");
-			_expects.Package[0].Config[0].BinDir = "./bin/Debug/";
-			_expects.Package[0].Config[1].BinDir = "./bin/Release/";
+			_expects.Package[0].Config[0].BinDir = "./bin/Debug";
+			_expects.Package[0].Config[1].BinDir = "./bin/Release";
+			_expects.Package[0].Config[0].OutDir = "./bin/Debug";
+			_expects.Package[0].Config[1].OutDir = "./bin/Release";
 			Run();
 		}
 		#endregion
