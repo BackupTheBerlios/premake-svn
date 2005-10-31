@@ -39,13 +39,13 @@ const char* path_getdir(const char* path)
 		/* Now split at last separator */
 		ptr = strrchr(working, '/');
 		if (ptr != NULL)
+		{
 			*ptr = '\0';
-		return working;
+			return working;
+		}
 	}
-	else
-	{
-		return "";
-	}
+
+	return "";
 }
 
 

@@ -8,24 +8,7 @@ namespace Premake.Tests.Framework
 {
 	public class TestEnvironment
 	{
-		private ArrayList _files;
-		private Hashtable _scripts;
-
-		public TestEnvironment()
-		{
-			_files = new ArrayList();
-			_scripts = new Hashtable();
-		}
-
-		public void AddFile(string filename)
-		{
-			_files.Add(filename);
-		}
-
-		public void AddScript(Script script)
-		{
-			_scripts["premake.lua"] = script;
-		}
+		public static string    Output;
 
 		public static void Run(Script script, Parser parser, Project expected, string[] options)
 		{
@@ -50,8 +33,15 @@ namespace Premake.Tests.Framework
 				process.StartInfo.Arguments = args + " --target " + parser.TargetName;
 				process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
 				process.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
+				process.StartInfo.RedirectStandardOutput = true;
 				process.Start();
 				process.WaitForExit();
+				Output = process.StandardOutput.ReadToEnd();
+				if (process.ExitCode != 0)
+				{
+					throw new InvalidOperationException("Premake aborted with code " + process.ExitCode + ": \n" + Output);
+				}
+
 
 				/* Start building the results right here */
 				Project actual = new Project();

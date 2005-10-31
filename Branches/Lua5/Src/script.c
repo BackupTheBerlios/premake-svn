@@ -40,14 +40,15 @@ static int         copyfile(lua_State* L);
 static int         docommand(lua_State* L);
 static int         findlib(lua_State* L);
 static int         getcwd_lua(lua_State* L);
-static int         initpkg(lua_State* L);
+static int         getglobal(lua_State* L);
 static int         matchfiles(lua_State* L);
+static int         newconfig(lua_State* L);
+static int         newpackage(lua_State* L);
 static int         panic(lua_State* L);
 static int         rmdir_lua(lua_State* L);
 
 static void        buildOptionsTable();
 static void        buildNewProject();
-static void        buildNewPackage();
 
 
 /**********************************************************************
@@ -71,7 +72,9 @@ int script_init()
 	lua_register(L, "addoption", addoption);
 	lua_register(L, "docommand", docommand);
 	lua_register(L, "matchfiles", matchfiles);
+	lua_register(L, "newpackage", newpackage);
 
+	/* Add some extensions to the built-in "os" table */
 	lua_getglobal(L, "os");
 
 	lua_pushstring(L, "copyfile");
@@ -113,7 +116,13 @@ int script_init()
 	buildNewProject();
 
 	/* Set hook to intercept creation of globals, used to create packages */
-	buildNewPackage();
+	lua_pushvalue(L, LUA_GLOBALSINDEX);
+	lua_newtable(L);
+	lua_pushstring(L, "__index");
+	lua_pushcfunction(L, getglobal);
+	lua_settable(L, -3);
+	lua_setmetatable(L, -2);
+	lua_pop(L, 1);
 
 	return 1;
 }
@@ -123,12 +132,15 @@ int script_run(const char* filename)
 {
 	int result;
 
+	currentScript = filename;
 	result = lua_dofile(L, filename);
+
 	if (result == LUA_ERRFILE)
 	{
 		char buffer[4096];
 		strcpy(buffer, filename);
 		strcat(buffer, ".lua");
+		currentScript = buffer;
 		result = lua_dofile(L, buffer);
 	}
 
@@ -245,27 +257,26 @@ static void buildNewProject()
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "path");
+	lua_pushstring(L, path_getdir(currentScript));
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "bindir");
 	lua_pushstring(L, ".");
 	lua_settable(L, -3);
 
-	lua_setglobal(L, "project");
-}
+	lua_pushstring(L, "libdir");
+	lua_pushstring(L, ".");
+	lua_settable(L, -3);
 
-
-/* Creates an empty package */
-static void buildNewPackage()
-{
+	lua_pushstring(L, "configs");
 	lua_newtable(L);
-
-	lua_getmetatable(L, -1);
-	lua_pushstring(L, "_newindex");
-	lua_pushcfunction(L, initpkg);
-	lua_settable(L, -3);
-	lua_pushstring(L, "_index");
-	lua_pushcfunction(L, initpkg);
+	lua_pushstring(L, "Debug");
+	lua_rawseti(L, -2, 1);
+	lua_pushstring(L, "Release");
+	lua_rawseti(L, -2, 2);
 	lua_settable(L, -3);
 
-	lua_setglobal(L, "package");
+	lua_setglobal(L, "project");
 }
 
 
@@ -425,10 +436,16 @@ static int getcwd_lua(lua_State* L)
 }
 
 
-static int initpkg(lua_State* L)
+static int getglobal(lua_State* L)
 {
-	const char* name = luaL_checkstring(L, 1);
-	puts(name);
+	const char* name = luaL_checkstring(L, 2);
+	if (matches(name, "package"))
+	{
+		newpackage(L);
+		lua_pushvalue(L, -1);
+		lua_setglobal(L, "package");
+		return 1;
+	}
 	return 0;
 }
 
@@ -457,6 +474,142 @@ static int matchfiles(lua_State* L)
 		}
 		io_mask_close();
 	}
+
+	return 1;
+}
+
+
+static int newconfig(lua_State* L)
+{
+	const char* name = luaL_checkstring(L, -1);
+
+	lua_newtable(L);
+
+	lua_pushstring(L, "name");
+	lua_pushstring(L, name);
+	lua_settable(L, -3);
+
+	/* Set defaults */
+	lua_pushstring(L, "buildflags");
+	lua_newtable(L);
+	if (matches(name, "Release")) 
+	{
+		lua_pushstring(L, "no-symbols");
+		lua_rawseti(L, -2, 1);
+		lua_pushstring(L, "optimize");
+		lua_rawseti(L, -2, 2);
+	}
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "buildoptions");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "defines");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "includepaths");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "libpaths");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "linkflags");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "linkoptions");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "links");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	return 1;
+}
+
+
+static int newpackage(lua_State* L)
+{
+	int count, i;
+
+	lua_newtable(L);
+
+	/* Add this package to the master list in the registry */
+	lua_getregistry(L);
+	lua_pushstring(L, "packages");
+	lua_gettable(L, -2);
+	count = luaL_getn(L, -1);
+
+	lua_pushvalue(L, -3);
+	lua_rawseti(L, -2, count + 1);
+
+	lua_pop(L, 2);
+
+	/* Set default values */
+	if (count == 0)
+	{
+		lua_getglobal(L, "project");
+		lua_pushstring(L, "name");
+		lua_pushstring(L, "name");
+		lua_gettable(L, -3);
+		lua_settable(L, -4);
+		lua_pop(L, 1);
+	}
+	else
+	{
+		lua_pushstring(L, "name");
+		lua_pushstring(L, "Package");
+		lua_pushnumber(L, count);
+		lua_concat(L, 2);
+		lua_settable(L, -3);
+	}
+
+	lua_pushstring(L, "script");
+	lua_pushstring(L, currentScript);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "path");
+	lua_pushstring(L, path_getdir(currentScript));
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "language");
+	lua_pushstring(L, "c++");
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "kind");
+	lua_pushstring(L, "exe");
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "files");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	/* Build list of configurations matching what is in the project, and
+	 * which can be indexed by name or number */
+	lua_pushstring(L, "config");
+	lua_newtable(L);
+
+	lua_getglobal(L, "project");
+	lua_pushstring(L, "configs");
+	lua_gettable(L, -2);
+	count = luaL_getn(L, -1);
+	
+	for (i = 1; i <= count; ++i)
+	{
+		lua_rawgeti(L, -1, i);
+		newconfig(L);
+		lua_pushvalue(L, -1);
+		lua_rawseti(L, -6, i);
+		lua_settable(L, -5);
+	}
+
+	lua_pop(L, 2);
+	lua_settable(L, -3);
 
 	return 1;
 }

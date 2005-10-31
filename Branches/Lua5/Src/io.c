@@ -28,6 +28,7 @@ static FILE* file;
 int io_closefile()
 {
 	fclose(file);
+	return 1;
 }
 
 
@@ -89,7 +90,7 @@ int io_openfile(const char* path)
 	file = fopen(path, "w");
 	if (file == NULL)
 	{
-		fprintf("** Unable to open file '%s' for writing\n", path);
+		printf("** Unable to open file '%s' for writing\n", path);
 		return 0;
 	}
 	else
