@@ -31,9 +31,10 @@ namespace Premake.Tests.Framework
 				Process process = new Process();
 				process.StartInfo.FileName = executable;
 				process.StartInfo.Arguments = args + " --target " + parser.TargetName;
-				process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+				process.StartInfo.CreateNoWindow = true;
 				process.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
 				process.StartInfo.RedirectStandardOutput = true;
+				process.StartInfo.UseShellExecute = false;
 				process.Start();
 				process.WaitForExit();
 				Output = process.StandardOutput.ReadToEnd();

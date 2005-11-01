@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 #include "io.h"
 #include "path.h"
 #include "platform.h"
@@ -97,6 +98,15 @@ int io_openfile(const char* path)
 	{
 		return 1;
 	}
+}
+
+
+void io_print(const char* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	vfprintf(file, format, args);
+	va_end(args);
 }
 
 

@@ -25,6 +25,7 @@ int         io_mask_getnext();
 int         io_mask_isfile();
 int         io_mask_open(const char* mask);
 int         io_openfile(const char* path);
+void        io_print(const char* format, ...);
 int         io_rmdir(const char* path, const char* dir);
 int         io_setcwd(const char* path);
 

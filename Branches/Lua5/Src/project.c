@@ -22,6 +22,14 @@
 
 Project* project = NULL;
 
+static Package*   my_pkg = NULL;
+static PkgConfig* my_cfg = NULL;
+static Option*    my_opt = NULL;
+
+
+/************************************************************************
+ * Project lifecycle routines
+ ***********************************************************************/
 
 void   prj_open()
 {
@@ -42,11 +50,98 @@ void   prj_close()
 }
 
 
-const char* prj_getpath()
+/************************************************************************
+ * Return the name of the active configuration
+ ***********************************************************************/
+
+const char* prj_get_cfgname()
+{
+	return my_cfg->prjConfig->name;
+}
+
+
+/************************************************************************
+ * Return the total number of configurations in the project
+ ***********************************************************************/
+
+int prj_get_numconfigs()
+{
+	return prj_getlistsize(project->configs);
+}
+
+
+/************************************************************************
+ * Return the total number of options in the project
+ ***********************************************************************/
+
+int prj_get_numoptions()
+{
+	return prj_getlistsize(project->options);
+}
+
+
+/************************************************************************
+ * Return the total number of packages in the project
+ ***********************************************************************/
+
+int prj_get_numpackages()
+{
+	return prj_getlistsize(project->packages);
+}
+
+
+
+/************************************************************************
+ * Return the name and description of the currently selected option.
+ ***********************************************************************/
+
+const char* prj_get_optdesc()
+{
+	return my_opt->desc;
+}
+
+const char* prj_get_optname()
+{
+	return my_opt->flag;
+}
+
+
+
+/************************************************************************
+ * Return the path to the generate project script.
+ ***********************************************************************/
+
+const char* prj_get_path()
 {
 	return project->path;
 }
 
+
+/************************************************************************
+ * Activate a project object.
+ ***********************************************************************/
+
+void prj_select_config(int i)
+{
+	if (my_pkg == NULL)
+		prj_select_package(0);
+	my_cfg = my_pkg->configs[i];
+}
+
+void prj_select_option(i)
+{
+	my_opt = project->options[i];
+}
+
+void prj_select_package(int i)
+{
+	my_pkg = project->packages[i];
+}
+
+
+/************************************************************************
+ * List management routines
+ ***********************************************************************/
 
 void** prj_newlist(int len)
 {
@@ -62,4 +157,17 @@ void prj_freelist(void** list)
 	while (list[i] != NULL)
 		free(list[i++]);
 	free(list);
+}
+
+
+int prj_getlistsize(void** list)
+{
+	int count = 0;
+	void** ptr = list;
+	while (*ptr != NULL)
+	{
+		ptr++;
+		count++;
+	}
+	return count;
 }

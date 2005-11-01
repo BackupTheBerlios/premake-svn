@@ -233,13 +233,16 @@ void showUsage()
 	puts(" --version         Display version information");
 	puts("");
 
-	if (project != NULL && project->numOptions > 0)
+	if (project != NULL && prj_get_numoptions() > 0)
 	{
 		puts("This premake configuration also supports the following custom options:");
 		puts("");
 
-		for (i = 0; i < project->numOptions; ++i)
-			printf(" --%-15s %s\n", project->options[i]->flag, project->options[i]->desc);
+		for (i = 0; i < prj_get_numoptions(); ++i)
+		{
+			prj_select_option(i);
+			printf(" --%-15s %s\n", prj_get_optname(), prj_get_optdesc());
+		}
 	}
 
 	puts("");

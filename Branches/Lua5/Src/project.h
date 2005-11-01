@@ -22,22 +22,49 @@ typedef struct tagOption
 } Option;
 
 
+typedef struct tagPrjConfig
+{
+	const char* name;
+} PrjConfig;
+
+typedef struct tagPkgConfig
+{
+	PrjConfig*  prjConfig;
+} PkgConfig;
+
+typedef struct tagPackage
+{
+	const char* name;
+	PkgConfig** configs;
+} Package;
+
 typedef struct tagProject
 {
 	const char* name;
 	const char* path;
-	Option** options;
-	int      numOptions;
+	Option**    options;
+	PrjConfig** configs;
+	Package**   packages;
 } Project;
 
 extern Project* project;
 
 
-void   prj_open();
-void   prj_close();
+void        prj_open();
+void        prj_close();
 
-const char* prj_getpath();
+const char* prj_get_cfgname();
+int         prj_get_numconfigs();
+int         prj_get_numoptions();
+int         prj_get_numpackages();
+const char* prj_get_optdesc();
+const char* prj_get_optname();
+const char* prj_get_path();
+void        prj_select_config(int i);
+void        prj_select_option(int i);
+void        prj_select_package(int i);
 
-void** prj_newlist(int len);
-void   prj_freelist(void** list);
+void**      prj_newlist(int len);
+void        prj_freelist(void** list);
+int         prj_getlistsize(void** list);
 

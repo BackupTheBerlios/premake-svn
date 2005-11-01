@@ -151,9 +151,30 @@ int script_run(const char* filename)
 }
 
 
+static int export_pkgconfig(Package* package, int tbl)
+{
+	int arr;
+	int len, i;
+
+	arr = tbl_get(tbl, "config");
+	len = tbl_getlen(arr);
+	package->configs = (PkgConfig**)prj_newlist(len);
+	for (i = 0; i < len; ++i)
+	{
+		PkgConfig* config = ALLOCT(PkgConfig);
+		package->configs[i] = config;
+
+		config->prjConfig = project->configs[i];
+	}
+
+	return 1;
+}
+
+
 int script_export()
 {
-	int tbl, len, i;
+	int tbl, arr, obj;
+	int len, i;
 
 	prj_open();
 
@@ -163,19 +184,44 @@ int script_export()
 	project->options = (Option**)prj_newlist(len);
 	for (i = 0; i < len; ++i)
 	{
-		int obj = tbl_geti(tbl, i + 1);
-
 		Option* option = ALLOCT(Option);
+		project->options[i] = option;
+
+		obj = tbl_geti(tbl, i + 1);
 		option->flag = tbl_getstringi(obj, 1);
 		option->desc = tbl_getstringi(obj, 2);
-
-		project->options[i] = option;
 	}
 
 	/* Copy out the project settings */
 	tbl = tbl_get(LUA_GLOBALSINDEX, "project");
 	project->name = tbl_getstring(tbl, "name");
 	project->path = tbl_getstring(tbl, "path");
+
+	/* Copy out the project configuration names */
+	arr = tbl_get(tbl, "configs");
+	len = tbl_getlen(arr);
+	project->configs = (PrjConfig**)prj_newlist(len);
+	for (i = 0; i < len; ++i)
+	{
+		PrjConfig* config = ALLOCT(PrjConfig);
+		project->configs[i] = config;
+
+		config->name = tbl_getstringi(arr, i + 1);
+	}
+
+	/* Copy out the packages */
+	tbl = tbl_get(LUA_REGISTRYINDEX, "packages");
+	len = tbl_getlen(tbl);
+	project->packages = (Package**)prj_newlist(len);
+	for (i = 0; i < len; ++i)
+	{
+		Package* package = ALLOCT(Package);
+		project->packages[i] = package;
+
+		obj = tbl_geti(tbl, i + 1);
+		export_pkgconfig(package, obj);
+	}
+
 	return 1;
 }
 
