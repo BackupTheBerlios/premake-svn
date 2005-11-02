@@ -23,6 +23,9 @@ enum PathKinds
 	WINDOWS
 };
 
+const char* path_build(const char* from, const char* to);
+const char* path_combine(const char* path0, const char* path1);
 const char* path_getdir(const char* path);
+const char* path_getname(const char* path);
 const char* path_join(const char* dir, const char* name, const char* ext);
 void        path_translateInPlace(char* buffer, int to);

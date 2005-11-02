@@ -39,6 +39,21 @@ int io_copyfile(const char* src, const char* dest)
 }
 
 
+int io_fileexists(const char* path)
+{
+	FILE* file = fopen(path, "r");
+	if (file != NULL)
+	{
+		fclose(file);
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
 const char* io_findlib(const char* name)
 {
 	if (platform_findlib(name, buffer, 8192))

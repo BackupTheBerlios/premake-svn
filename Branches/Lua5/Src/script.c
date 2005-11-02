@@ -32,12 +32,14 @@ static const char* currentScript = NULL;
 static int         tbl_get(int from, const char* name);
 static int         tbl_geti(int from, int i);
 static int         tbl_getlen(int tbl);
+static int         tbl_getlen_deep(int tbl);
 static const char* tbl_getstring(int from, const char* name);
 static const char* tbl_getstringi(int from, int i);
 
 static int         addoption(lua_State* L);
 static int         copyfile(lua_State* L);
 static int         docommand(lua_State* L);
+static int         dopackage(lua_State* L);
 static int         findlib(lua_State* L);
 static int         getcwd_lua(lua_State* L);
 static int         getglobal(lua_State* L);
@@ -52,7 +54,7 @@ static void        buildNewProject();
 
 
 /**********************************************************************
- * The public script functions
+ * Initialize the Lua environment
  **********************************************************************/
 
 int script_init()
@@ -69,8 +71,9 @@ int script_init()
 	lua_atpanic(L, panic);
 
 	/* Register my extensions to the Lua environment */
-	lua_register(L, "addoption", addoption);
-	lua_register(L, "docommand", docommand);
+	lua_register(L, "addoption",  addoption);
+	lua_register(L, "docommand",  docommand);
+	lua_register(L, "dopackage",  dopackage);
 	lua_register(L, "matchfiles", matchfiles);
 	lua_register(L, "newpackage", newpackage);
 
@@ -128,32 +131,59 @@ int script_init()
 }
 
 
+/**********************************************************************
+ * Execute the specified premake script. Contains some logic for
+ * locating the script file if an exact match isn't found
+ **********************************************************************/
+
 int script_run(const char* filename)
 {
+	char scriptname[8192];
 	int result;
 
-	currentScript = filename;
-	result = lua_dofile(L, filename);
+	strcpy(scriptname, filename);
+	if (!io_fileexists(scriptname))
+		strcat(scriptname, ".lua");
+	if (!io_fileexists(scriptname))
+		return 0;
 
-	if (result == LUA_ERRFILE)
-	{
-		char buffer[4096];
-		strcpy(buffer, filename);
-		strcat(buffer, ".lua");
-		currentScript = buffer;
-		result = lua_dofile(L, buffer);
-	}
+	currentScript = scriptname;
+	if (!script_init())
+		return 0;
 
-	if (result != 0)
-		lua_close(L);
-
+	result = lua_dofile(L, scriptname);
 	return (result == 0);
 }
 
 
+/**********************************************************************
+ * After the script has run, these functions pull the project data
+ * out into local objects
+ **********************************************************************/
+
+static int export_list(int parent, int object, const char* name, const char*** list)
+{
+	int i;
+
+	int parArr = tbl_get(parent, name);
+	int parLen = tbl_getlen_deep(parArr);
+	int objArr = tbl_get(object, name);
+	int objLen = tbl_getlen_deep(objArr);
+
+	*list = (char**)prj_newlist(parLen + objLen);
+
+	for (i = 0; i < parLen; ++i)
+		(*list)[i] = tbl_getstringi(parArr, i + 1);
+
+	for (i = 0; i < objLen; ++i)
+		(*list)[parLen + i] = tbl_getstringi(objArr, i + 1);
+
+	return (parLen + objLen);
+}
+
 static int export_pkgconfig(Package* package, int tbl)
 {
-	int arr;
+	int arr, obj;
 	int len, i;
 
 	arr = tbl_get(tbl, "config");
@@ -164,7 +194,10 @@ static int export_pkgconfig(Package* package, int tbl)
 		PkgConfig* config = ALLOCT(PkgConfig);
 		package->configs[i] = config;
 
+		obj = tbl_geti(arr, i + 1);
+
 		config->prjConfig = project->configs[i];
+		export_list(tbl, obj, "links", &config->links);
 	}
 
 	return 1;
@@ -196,6 +229,7 @@ int script_export()
 	tbl = tbl_get(LUA_GLOBALSINDEX, "project");
 	project->name = tbl_getstring(tbl, "name");
 	project->path = tbl_getstring(tbl, "path");
+	project->script = tbl_getstring(tbl, "script");
 
 	/* Copy out the project configuration names */
 	arr = tbl_get(tbl, "configs");
@@ -219,12 +253,20 @@ int script_export()
 		project->packages[i] = package;
 
 		obj = tbl_geti(tbl, i + 1);
+		package->name = tbl_getstring(obj, "name");
+		package->path = tbl_getstring(obj, "path");
+		package->script = tbl_getstring(obj, "script");
+
 		export_pkgconfig(package, obj);
 	}
 
 	return 1;
 }
 
+
+/**********************************************************************
+ * Callback for commands pulled from the program arguments
+ **********************************************************************/
 
 int script_docommand(const char* cmd)
 {
@@ -263,8 +305,6 @@ int script_close()
  * These function assist with setup of the script environment
  **********************************************************************/
 
-/* Creates a new global "options[]" table and populates it with the
- * flags from the command line */
 static void buildOptionsTable()
 {
 	const char* flag;
@@ -292,8 +332,6 @@ static void buildOptionsTable()
 	lua_setglobal(L, "options");
 }
 
-
-/* Creates an new project object with default settings */
 static void buildNewProject()
 {
 	lua_newtable(L);
@@ -304,6 +342,10 @@ static void buildNewProject()
 
 	lua_pushstring(L, "path");
 	lua_pushstring(L, path_getdir(currentScript));
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "script");
+	lua_pushstring(L, path_getname(currentScript));
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "bindir");
@@ -378,6 +420,31 @@ static int tbl_getlen(int tbl)
 	int size;
 	lua_getref(L, tbl);
 	size = luaL_getn(L, -1);
+	lua_pop(L, 1);
+	return size;
+}
+
+
+static int tbl_getlen_deep(int tbl)
+{
+	int size, i;
+	lua_getref(L, tbl);
+
+	size = 0;
+	for (i = 1; i <= luaL_getn(L, -1); ++i)
+	{
+		lua_rawgeti(L, -1, i);
+		if (lua_istable(L, -1))
+		{
+			size += tbl_getlen_deep(lua_ref(L, 0));
+		}
+		else
+		{
+			lua_pop(L, 1);
+			size++;
+		}
+	}
+
 	lua_pop(L, 1);
 	return size;
 }
@@ -462,6 +529,45 @@ static int copyfile(lua_State* L)
 }
 
 
+static int dopackage(lua_State* L)
+{
+	const char* oldScript;
+	char filename[8192];
+	int result;
+
+	/* Clear the current global so included script can create a new one */
+	lua_pushnil(L);
+	lua_setglobal(L, "package");
+
+	/* Search for the file */
+	oldScript = currentScript;
+	currentScript = filename;
+
+	strcpy(filename, lua_tostring(L, 1));
+	if (!io_fileexists(filename))
+	{
+		strcat(filename, ".lua");
+	}
+	if (!io_fileexists(filename))
+	{
+		strcpy(filename, lua_tostring(L, 1));
+		strcat(filename, "/premake.lua");
+	}
+	if (!io_fileexists(filename))
+	{
+		lua_pushstring(L, "Unable to open package '");
+		lua_pushvalue(L, 1);
+		lua_pushstring(L, "'");
+		lua_concat(L, 3);
+		lua_error(L);
+	}
+
+	result = lua_dofile(L, filename);
+	currentScript = oldScript;
+	return 0;
+}
+
+
 static int findlib(lua_State* L)
 {
 	const char* libname = luaL_check_string(L, 2);
@@ -527,9 +633,7 @@ static int matchfiles(lua_State* L)
 
 static int newconfig(lua_State* L)
 {
-	const char* name = luaL_checkstring(L, -1);
-
-	lua_newtable(L);
+	const char* name = luaL_checkstring(L, -2);
 
 	lua_pushstring(L, "name");
 	lua_pushstring(L, name);
@@ -635,6 +739,8 @@ static int newpackage(lua_State* L)
 	lua_newtable(L);
 	lua_settable(L, -3);
 
+	newconfig(L);
+
 	/* Build list of configurations matching what is in the project, and
 	 * which can be indexed by name or number */
 	lua_pushstring(L, "config");
@@ -648,7 +754,10 @@ static int newpackage(lua_State* L)
 	for (i = 1; i <= count; ++i)
 	{
 		lua_rawgeti(L, -1, i);
+		
+		lua_newtable(L);
 		newconfig(L);
+	
 		lua_pushvalue(L, -1);
 		lua_rawseti(L, -6, i);
 		lua_settable(L, -5);
@@ -666,7 +775,7 @@ static int panic(lua_State* L)
 	lua_Debug ar;
 	int stack;
 
-	const char* msg = lua_tostring(L, 1);
+	const char* msg = lua_tostring(L, 4);
 	printf("\n** Error: %s\n", msg);
 
 	for (stack = 0; lua_getstack(L, stack, &ar); ++stack)

@@ -24,7 +24,6 @@ extern const char* VERSION;
 extern const char* COPYRIGHT;
 extern const char* HELP_MSG;
 
-extern const char* g_projectScriptName;
 extern const char* g_cc;
 extern const char* g_dotnet;
 extern int         g_verbose;

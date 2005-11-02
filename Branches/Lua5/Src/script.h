@@ -15,7 +15,6 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-int script_init();
 int script_run(const char* filename);
 int script_export();
 int script_docommand();

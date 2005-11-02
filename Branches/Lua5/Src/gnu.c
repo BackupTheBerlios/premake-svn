@@ -17,9 +17,14 @@
 
 #include <stdio.h>
 #include "premake.h"
+#include "arg.h"
 #include "gnu.h"
 
-static int writeRootMakefile();
+static const char* DOT_MAKE = ".mak";
+
+static int         writeRootMakefile();
+static const char* listInterPackageDeps(const char* name);
+static int         packageOwnsPath();
 
 
 int makeGnuTarget()
@@ -36,6 +41,7 @@ int makeGnuTarget()
 
 static int writeRootMakefile()
 {
+	const char* arg;
 	int i;
 
 	if (!io_openfile(path_join(prj_get_path(), "Makefile", "")))
@@ -55,77 +61,123 @@ static int writeRootMakefile()
 	}
 	io_print("]\n\n");
 	
+	/* Set a default build config if none specified */
+	prj_select_config(0);
+	io_print("ifndef CONFIG\n");
+	io_print("  CONFIG=%s\n", prj_get_cfgname());
+	io_print("endif\n\n");
+	io_print("export CONFIG\n\n");
 
-#if 0
-
-	// Set a default build config if none specified
-	
-	fprintf(file, "ifndef CONFIG\n");
-	fprintf(file, "  CONFIG=%s\n", project->package[0]->config[0]->name);
-	fprintf(file, "endif\n\n");
-	fprintf(file, "export CONFIG\n\n");
-	
-	// List all of the available make targets
-
-	fprintf(file, ".PHONY: all clean");
-	for (i = 0; i < project->numPackages; ++i)
-		fprintf(file, " %s", project->package[i]->name);
-	fprintf(file, "\n\n");
-
-	// Make rules
-
-	fprintf(file, "all:");
-	for (i = 0; i < project->numPackages; ++i)
-		fprintf(file, " %s", project->package[i]->name);
-	fprintf(file, "\n\n");
-
-	// Target to regenerate the makefiles when the premake scripts change
-
-	fprintf(file, "Makefile: %s%s", reversePath(project->path, ".", UNIX, 1), rootProjectFile);
-	for (i = 0; i < project->numPackages; ++i)
+	/* List all of the available make targets */
+	io_print(".PHONY: all clean");
+	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
-		if (project->package[i]->script != NULL)
-			fprintf(file, " %s%s", reversePath(project->path, ".", UNIX, 1), project->package[i]->script);
+		prj_select_package(i);
+		io_print(" %s", prj_get_pkgname());
 	}
-	fprintf(file, "\n");
-	fprintf(file, "\t@echo ==== Regenerating Makefiles ====\n");
-	fprintf(file, "\t@premake");
-	for (i = 1; args[i] != NULL; ++i)
-		fprintf(file, " %s", args[i]);
-	fprintf(file, "\n\n");
+	io_print("\n\n");
+
+	/* Make rules */
+	io_print("all:");
+	for (i = 0; i < prj_get_numpackages(); ++i)
+	{
+		prj_select_package(i);
+		io_print(" %s", prj_get_pkgname());
+	}
+	io_print("\n\n");
+
+	/* Target to regenerate the makefiles when the premake scripts change */
+	io_print("Makefile: %s", path_combine(path_build(prj_get_path(), "."), prj_get_script()));
+	for (i = 0; i < prj_get_numpackages(); ++i)
+	{
+		prj_select_package(i);
+		if (!matches(prj_get_script(), prj_get_pkgscript()))
+			io_print(" %s", path_combine(path_build(prj_get_path(), "."), prj_get_pkgscript()));
+	}
+	io_print("\n");
+	io_print("\t@echo ==== Regenerating Makefiles ====\n");
+	io_print("\t@premake");
+	arg_reset();
+	arg = arg_getflag();
+	while (arg != NULL)
+	{
+		io_print(" %s", arg);
+		arg = arg_getflag();
+	}
+	io_print("\n\n");
 
 	/* Individual package targets */
-
-	for (i = 0; i < project->numPackages; ++i)
+	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
-		Package* package = project->package[i];
-		
-		fprintf(file, "%s:", package->name);
-			writeList(file, package->config[0]->links, " ", "", "", checkDeps, NULL);
-			fprintf(file, "\n");
+		prj_select_package(i);
+		prj_select_config(0);
 
-		fprintf(file, "\t@echo ==== Building %s ====\n", package->name);
-		fprintf(file, "\t@$(MAKE) ");
-		fprintf(file, "--no-print-directory -C %s", reversePath(project->path, package->path, UNIX, 1));
-		if (!packageOwnsPath(package))
-			fprintf(file, " -f %s%s", package->name, MAKEFILE_EXT);
-		fprintf(file, "\n\n");
+		io_print("%s:", prj_get_pkgname());
+		print_list(prj_get_links(), " ", "", "", listInterPackageDeps);
+		io_print("\n");
+
+		io_print("\t@echo ==== Building %s ====\n", prj_get_pkgname());
+		io_print("\t@$(MAKE) ");
+		io_print("--no-print-directory -C %s", path_build(prj_get_path(), prj_get_pkgpath()));
+		if (!packageOwnsPath())
+			io_print(" -f %s%s", prj_get_pkgname(), DOT_MAKE);
+		io_print("\n\n");
 	}
-	
-	fprintf(file, "clean:\n");
-	for (i = 0; i < project->numPackages; ++i)
+
+	io_print("clean:\n");
+	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
-		Package* package = project->package[i];
 		prj_select_package(i);
 
-		fprintf(file, "\t@$(MAKE) ");
-		fprintf(file, "--no-print-directory -C %s", reversePath(project->path, package->path, UNIX, 1));
-		if (!packageOwnsPath(package))
-			fprintf(file, " -f %s%s", package->name, MAKEFILE_EXT);
-		fprintf(file, " clean\n");
+		io_print("\t@$(MAKE) ");
+		io_print("--no-print-directory -C %s", path_build(prj_get_path(), prj_get_pkgpath()));
+		if (!packageOwnsPath())
+			io_print(" -f %s%s", prj_get_pkgname(), DOT_MAKE);
+		io_print(" clean\n");
 	}
-#endif
 	
 	io_closefile();
+	return 1;
+}
+
+
+/************************************************************************
+ * Checks if a package link matches the name of a sibling package. This
+ * is used to generate a Makefile dependency on the sibling.
+ ***********************************************************************/
+
+static const char* listInterPackageDeps(const char* name)
+{
+	int i;
+	for (i = 0; i < prj_get_numpackages(); ++i)
+	{
+		if (matches(name, prj_get_pkgnamefor(i)))
+			return name;
+	}
+	return NULL;
+}
+
+
+/************************************************************************
+ * Checks if the current package is the only one using a particular
+ * directory. Is so, I can use the name "Makefile" for the package
+ * makefile since it will be the only one in the directory. If more
+ * than one package uses the directory, then it will need to contain
+ * more than one makefile; then I use "PackageName.mak" instead.
+ ***********************************************************************/
+
+static int packageOwnsPath()
+{
+	int i;
+
+	if (matches(prj_get_pkgpath(), prj_get_path()))
+		return 0;
+
+	for (i = 0; i < prj_get_numpackages(); ++i)
+	{
+		if (prj_get_package() != prj_get_packagefor(i) && matches(prj_get_pkgpath(), prj_get_pkgpathfor(i)))
+			return 0;
+	}
+
 	return 1;
 }

@@ -24,11 +24,12 @@
 
 #include "gnu.h"
 
+const char* DEFAULT   = "premake.lua";
 const char* VERSION   = "3.0-cvs";
 const char* COPYRIGHT = "Copyright (C) 2002-2005 Jason Perkins and the Premake Project";
 const char* HELP_MSG  = "Type 'premake --help' for help";
 
-const char* g_projectScriptName;
+const char* g_filename;
 const char* g_cc;
 const char* g_dotnet;
 int         g_verbose;
@@ -51,10 +52,10 @@ int main(int argc, char** argv)
 
 	/* Set defaults */
 	os_detect();
-	g_projectScriptName = "premake.lua";
-	g_cc      = NULL;
-	g_dotnet  = NULL;
-	g_verbose = 0;
+	g_filename = DEFAULT;
+	g_cc       = NULL;
+	g_dotnet   = NULL;
+	g_verbose  = 0;
 
 	/* Process any options that will effect script processing */
 	arg_set(argc, argv);
@@ -63,16 +64,10 @@ int main(int argc, char** argv)
 
 	/* chdir() to the directory containing the project script, so that
 	 * relative paths may be used in the script */
-	io_setcwd(path_getdir(g_projectScriptName));
+	io_setcwd(path_getdir(g_filename));
 
 	/* Now run the script */
-	if (!script_init())
-	{
-		puts("** Script engine failed to initialize, aborting.");
-		return 1;
-	}
-
-	if (!script_run(g_projectScriptName))
+	if (!script_run(g_filename))
 	{
 		puts("** Script failed to run, ending.");
 		return 1;
@@ -97,8 +92,8 @@ static int preprocess()
 	{
 		if (matches(flag, "--file"))
 		{
-			g_projectScriptName = arg_getflagarg();
-			if (g_projectScriptName == NULL)
+			g_filename = arg_getflagarg();
+			if (g_filename == NULL)
 			{
 				puts("** Usage: --file filename");
 				puts(HELP_MSG);

@@ -16,8 +16,7 @@
  **********************************************************************/
 
 #include <stdlib.h>
-#include "project.h"
-#include "util.h"
+#include "premake.h"
 
 
 Project* project = NULL;
@@ -51,12 +50,32 @@ void   prj_close()
 
 
 /************************************************************************
- * Return the name of the active configuration
+ * Return the list of links for the current object
+ ***********************************************************************/
+
+const char** prj_get_links()
+{
+	return my_cfg->links;
+}
+
+
+/************************************************************************
+ * Return the name of the active object
  ***********************************************************************/
 
 const char* prj_get_cfgname()
 {
 	return my_cfg->prjConfig->name;
+}
+
+const char* prj_get_pkgname()
+{
+	return my_pkg->name;
+}
+
+const char* prj_get_pkgnamefor(int i)
+{
+	return project->packages[i]->name;
 }
 
 
@@ -106,14 +125,53 @@ const char* prj_get_optname()
 }
 
 
+/************************************************************************
+ * Return the active object
+ ***********************************************************************/
+
+Package* prj_get_package()
+{
+	return my_pkg;
+}
+
+Package* prj_get_packagefor(int i)
+{
+	return project->packages[i];
+}
+
 
 /************************************************************************
- * Return the path to the generate project script.
+ * Return the path to the generated object scripts.
  ***********************************************************************/
 
 const char* prj_get_path()
 {
 	return project->path;
+}
+
+const char* prj_get_pkgpath()
+{
+	return my_pkg->path;
+}
+
+const char* prj_get_pkgpathfor(int i)
+{
+	return project->packages[i]->path;
+}
+
+
+/************************************************************************
+ * Return the script name for an object.
+ ***********************************************************************/
+
+const char* prj_get_script()
+{
+	return project->script;
+}
+
+const char* prj_get_pkgscript()
+{
+	return my_pkg->script;
 }
 
 

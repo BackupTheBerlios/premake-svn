@@ -17,6 +17,7 @@
 
 int         io_closefile();
 int         io_copyfile(const char* src, const char* dst);
+int         io_fileexists(const char* path);
 const char* io_findlib(const char* name);
 const char* io_getcwd();
 int         io_mask_close();

@@ -16,12 +16,38 @@
  **********************************************************************/
 
 #include <string.h>
-#include "util.h"
+#include "premake.h"
 
 
-/* Checks to see if two strings match. Just a more readable version
- * of the standard strcmp() function */
+/************************************************************************
+ * Checks to see if two strings match. Just a more readable version
+ * of the standard strcmp() function
+ ***********************************************************************/
+
 int matches(const char* str0, const char* str1)
 {
 	return (strcmp(str0, str1) == 0);
 }
+
+
+/************************************************************************
+ * Iterate through an array of string, calling a function for each
+ ***********************************************************************/
+
+void print_list(const char** list, const char* prefix, const char* postfix, const char* infix, const char* (*func)(const char*))
+{
+	int i = 0;
+	while (*list)
+	{
+		const char* value = (func != NULL) ? func(*list) : *list;
+		if (value != NULL)
+		{
+			if (i++ > 0) 
+				io_print(infix);
+			io_print("%s%s%s", prefix, value, postfix);
+		}
+		++list;
+	}
+}
+
+
