@@ -38,7 +38,7 @@ static int  preprocess();
 static int  postprocess();
 static void showUsage();
 
-int makeClean();
+int clean();
 
 
 int main(int argc, char** argv)
@@ -152,7 +152,7 @@ int onCommand(const char* cmd, const char* arg)
 
 		if (matches(arg, "gnu"))
 		{
-			return makeGnuTarget();
+			return gnu_generate();
 		}
 		else
 		{
@@ -163,7 +163,7 @@ int onCommand(const char* cmd, const char* arg)
 
 	if (matches(cmd, "clean"))
 	{
-		return makeClean();
+		return clean();
 	}
 
 	if (matches(cmd, "cc"))

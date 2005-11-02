@@ -221,7 +221,7 @@ const char* path_join(const char* dir, const char* name, const char* ext)
 	if (strlen(working) > 0)
 		strcat(working, "/");
 	
-	strcpy(working, name);
+	strcat(working, name);
 	
 	if (ext != NULL && strlen(ext) > 0)
 	{

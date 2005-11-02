@@ -20,19 +20,44 @@
 #include "arg.h"
 #include "gnu.h"
 
-static const char* DOT_MAKE = ".mak";
-
 static int         writeRootMakefile();
 static const char* listInterPackageDeps(const char* name);
-static int         packageOwnsPath();
 
 
-int makeGnuTarget()
+int gnu_generate()
 {
+	int i;
+
 	puts("Generating GNU makefiles:");
 
 	if (!writeRootMakefile())
 		return 0;
+
+	for (i = 0; i < prj_get_numpackages(); ++i)
+	{
+		int result;
+
+		prj_select_package(i);
+
+		printf("...%s\n", prj_get_pkgname());
+
+		if (prj_is_lang("c#"))
+		{
+			result = gnu_cs();
+		}
+		else if (prj_is_lang("c++") || prj_is_lang("c"))
+		{
+			result = gnu_cpp();
+		}
+		else
+		{
+			printf("** Error: unrecognized language '%s'\n", prj_get_language());
+			return 0;
+		}
+
+		if (!result)
+			return 0;
+	}
 
 	return 1;
 }
@@ -119,8 +144,8 @@ static int writeRootMakefile()
 		io_print("\t@echo ==== Building %s ====\n", prj_get_pkgname());
 		io_print("\t@$(MAKE) ");
 		io_print("--no-print-directory -C %s", path_build(prj_get_path(), prj_get_pkgpath()));
-		if (!packageOwnsPath())
-			io_print(" -f %s%s", prj_get_pkgname(), DOT_MAKE);
+		if (!gnu_pkgOwnsPath())
+			io_print(" -f %s.%s", prj_get_pkgname(), DOT_MAKE);
 		io_print("\n\n");
 	}
 
@@ -131,8 +156,8 @@ static int writeRootMakefile()
 
 		io_print("\t@$(MAKE) ");
 		io_print("--no-print-directory -C %s", path_build(prj_get_path(), prj_get_pkgpath()));
-		if (!packageOwnsPath())
-			io_print(" -f %s%s", prj_get_pkgname(), DOT_MAKE);
+		if (!gnu_pkgOwnsPath())
+			io_print(" -f %s.%s", prj_get_pkgname(), DOT_MAKE);
 		io_print(" clean\n");
 	}
 	
@@ -158,26 +183,3 @@ static const char* listInterPackageDeps(const char* name)
 }
 
 
-/************************************************************************
- * Checks if the current package is the only one using a particular
- * directory. Is so, I can use the name "Makefile" for the package
- * makefile since it will be the only one in the directory. If more
- * than one package uses the directory, then it will need to contain
- * more than one makefile; then I use "PackageName.mak" instead.
- ***********************************************************************/
-
-static int packageOwnsPath()
-{
-	int i;
-
-	if (matches(prj_get_pkgpath(), prj_get_path()))
-		return 0;
-
-	for (i = 0; i < prj_get_numpackages(); ++i)
-	{
-		if (prj_get_package() != prj_get_packagefor(i) && matches(prj_get_pkgpath(), prj_get_pkgpathfor(i)))
-			return 0;
-	}
-
-	return 1;
-}

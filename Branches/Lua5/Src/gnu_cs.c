@@ -1,6 +1,6 @@
 /**********************************************************************
- * Premake - clean.c
- * The cleanup target.
+ * Premake - gnu_cs.c
+ * The GNU C# makefile target
  *
  * Copyright (c) 2002-2005 Jason Perkins.
  * 
@@ -17,10 +17,10 @@
 
 #include <stdio.h>
 #include "premake.h"
+#include "gnu.h"
 
 
-int clean()
+int gnu_cs()
 {
-	puts("** makeClean() not implemented");
-	return 0;
+	return 1;
 }

@@ -25,11 +25,16 @@ typedef struct tagOption
 typedef struct tagPrjConfig
 {
 	const char* name;
+	const char* bindir;
+	const char* libdir;
 } PrjConfig;
 
 typedef struct tagPkgConfig
 {
 	PrjConfig*   prjConfig;
+	const char*  objdir;
+	const char** defines;
+	const char** incpaths;
 	const char** links;
 } PkgConfig;
 
@@ -38,6 +43,9 @@ typedef struct tagPackage
 	const char* name;
 	const char* path;
 	const char* script;
+	const char* lang;
+	const char* kind;
+	const char* objdir;
 	PkgConfig** configs;
 } Package;
 
@@ -57,13 +65,21 @@ extern Project* project;
 void         prj_open();
 void         prj_close();
 
+const char*  prj_get_bindir();
 const char*  prj_get_cfgname();
+const char** prj_get_defines();
+const char*  prj_get_kind();
+const char** prj_get_incpaths();
+const char*  prj_get_language();
+const char*  prj_get_libdir();
 const char** prj_get_links();
+const char*  prj_get_objdir();
 int          prj_get_numconfigs();
 int          prj_get_numoptions();
 int          prj_get_numpackages();
 const char*  prj_get_optdesc();
 const char*  prj_get_optname();
+const char*  prj_get_outdir();
 Package*     prj_get_package();
 Package*     prj_get_packagefor();
 const char*  prj_get_path();
@@ -73,6 +89,8 @@ const char*  prj_get_pkgpath();
 const char*  prj_get_pkgpathfor(int i);
 const char*  prj_get_pkgscript();
 const char*  prj_get_script();
+int          prj_is_kind(const char* kind);
+int          prj_is_lang(const char* lang);
 void         prj_select_config(int i);
 void         prj_select_option(int i);
 void         prj_select_package(int i);

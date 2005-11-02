@@ -15,4 +15,12 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-int makeGnuTarget();
+#define DOT_MAKE   "mak"
+
+int gnu_generate();
+
+int gnu_cpp();
+int gnu_cs();
+
+/* Helpers */
+int gnu_pkgOwnsPath();

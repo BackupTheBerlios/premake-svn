@@ -26,6 +26,9 @@
 
 int matches(const char* str0, const char* str1)
 {
+	if (str0 == NULL || str1 == NULL)
+		return (str0 == str1);
+
 	return (strcmp(str0, str1) == 0);
 }
 

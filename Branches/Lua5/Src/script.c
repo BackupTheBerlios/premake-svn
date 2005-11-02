@@ -48,6 +48,7 @@ static int         newconfig(lua_State* L);
 static int         newpackage(lua_State* L);
 static int         panic(lua_State* L);
 static int         rmdir_lua(lua_State* L);
+static int         setconfigs(lua_State* L);
 
 static void        buildOptionsTable();
 static void        buildNewProject();
@@ -181,6 +182,15 @@ static int export_list(int parent, int object, const char* name, const char*** l
 	return (parLen + objLen);
 }
 
+static const char* export_value(int parent, int object, const char* name)
+{
+	const char* value;
+	value = tbl_getstring(object, name);
+	if (value == NULL)
+		value = tbl_getstring(parent, name);
+	return value;
+}
+
 static int export_pkgconfig(Package* package, int tbl)
 {
 	int arr, obj;
@@ -193,11 +203,13 @@ static int export_pkgconfig(Package* package, int tbl)
 	{
 		PkgConfig* config = ALLOCT(PkgConfig);
 		package->configs[i] = config;
+		config->prjConfig = project->configs[i];
 
 		obj = tbl_geti(arr, i + 1);
-
-		config->prjConfig = project->configs[i];
-		export_list(tbl, obj, "links", &config->links);
+		config->objdir = tbl_getstring(obj, "objdir");
+		export_list(tbl, obj, "defines",      &config->defines);
+		export_list(tbl, obj, "includepaths", &config->incpaths);
+		export_list(tbl, obj, "links",        &config->links);
 	}
 
 	return 1;
@@ -231,8 +243,8 @@ int script_export()
 	project->path = tbl_getstring(tbl, "path");
 	project->script = tbl_getstring(tbl, "script");
 
-	/* Copy out the project configuration names */
-	arr = tbl_get(tbl, "configs");
+	/* Copy out the project configurations */
+	arr = tbl_get(tbl, "config");
 	len = tbl_getlen(arr);
 	project->configs = (PrjConfig**)prj_newlist(len);
 	for (i = 0; i < len; ++i)
@@ -240,7 +252,10 @@ int script_export()
 		PrjConfig* config = ALLOCT(PrjConfig);
 		project->configs[i] = config;
 
-		config->name = tbl_getstringi(arr, i + 1);
+		obj = tbl_geti(arr, i + 1);
+		config->name   = tbl_getstring(obj, "name");
+		config->bindir = export_value(tbl, obj, "bindir");
+		config->libdir = export_value(tbl, obj, "libdir");
 	}
 
 	/* Copy out the packages */
@@ -253,9 +268,12 @@ int script_export()
 		project->packages[i] = package;
 
 		obj = tbl_geti(tbl, i + 1);
-		package->name = tbl_getstring(obj, "name");
-		package->path = tbl_getstring(obj, "path");
+		package->name   = tbl_getstring(obj, "name");
+		package->path   = tbl_getstring(obj, "path");
 		package->script = tbl_getstring(obj, "script");
+		package->lang   = tbl_getstring(obj, "language");
+		package->kind   = tbl_getstring(obj, "kind");
+		package->objdir = tbl_getstring(obj, "objdir");
 
 		export_pkgconfig(package, obj);
 	}
@@ -344,6 +362,14 @@ static void buildNewProject()
 	lua_pushstring(L, path_getdir(currentScript));
 	lua_settable(L, -3);
 
+	/* Hook "index" metamethod so I can tell when the config list changes */
+	lua_newtable(L);
+	lua_pushstring(L, "__newindex");
+	lua_pushcfunction(L, setconfigs);
+	lua_settable(L, -3);
+	lua_setmetatable(L, -2);
+
+	/* Set default values */
 	lua_pushstring(L, "script");
 	lua_pushstring(L, path_getname(currentScript));
 	lua_settable(L, -3);
@@ -735,6 +761,10 @@ static int newpackage(lua_State* L)
 	lua_pushstring(L, "exe");
 	lua_settable(L, -3);
 
+	lua_pushstring(L, "objdir");
+	lua_pushstring(L, "obj");
+	lua_settable(L, -3);
+
 	lua_pushstring(L, "files");
 	lua_newtable(L);
 	lua_settable(L, -3);
@@ -795,5 +825,49 @@ static int rmdir_lua(lua_State* L)
 {
 	const char* dir = luaL_check_string(L, 2);
 	io_rmdir(".", dir);
+	return 0;
+}
+
+
+static int setconfigs(lua_State* L)
+{
+	int i;
+
+	const char* name = luaL_checkstring(L, 2);
+	if (matches(name, "configs"))
+	{
+		if (!lua_istable(L, 3))
+		{
+			lua_pushstring(L, "Project configs must be a table of config names");
+			lua_error(L);
+		}
+
+		lua_pushstring(L, "config");
+		lua_newtable(L);
+		for (i = 1; i <= luaL_getn(L, 3); ++i)
+		{
+			/* Set up the new config table to be added by name */
+			lua_rawgeti(L, 3, i);
+
+			/* Create the config and set the config name */
+			lua_newtable(L);
+			lua_pushstring(L, "name");
+			lua_pushvalue(L, -3);
+			lua_rawset(L, -3);
+
+			/* Add the config by index */
+			lua_pushvalue(L, -1);
+			lua_rawseti(L, -4, i);
+
+			/* Add the config by name */
+			lua_rawset(L, -3);
+		}
+
+		/* Add the new config table to the project */
+		lua_rawset(L, 1);
+	}
+
+	/* Add the initially requested item to the list */
+	lua_rawset(L, 1);
 	return 0;
 }

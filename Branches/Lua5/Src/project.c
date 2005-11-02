@@ -16,6 +16,7 @@
  **********************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
 #include "premake.h"
 
 
@@ -24,6 +25,8 @@ Project* project = NULL;
 static Package*   my_pkg = NULL;
 static PkgConfig* my_cfg = NULL;
 static Option*    my_opt = NULL;
+
+static char buffer[8192];
 
 
 /************************************************************************
@@ -40,12 +43,120 @@ void   prj_open()
 
 void   prj_close()
 {
+	int i, j;
+
 	if (project != NULL)
 	{
+		for (i = 0; i < prj_get_numpackages(); ++i)
+		{
+			Package* package = project->packages[i];
+
+			for (j = 0; j < prj_get_numconfigs(); ++j)
+			{
+				PkgConfig* config = package->configs[j];
+				free((void*)config->defines);
+				free((void*)config->incpaths);
+				free((void*)config->links);
+			}
+
+			prj_freelist(package->configs);
+		}
+
 		prj_freelist(project->options);
+		prj_freelist(project->configs);
+		prj_freelist(project->packages);
 		free(project);
 		project = NULL;
 	}
+}
+
+
+/************************************************************************
+ * Return the list of defines for the current object
+ ***********************************************************************/
+
+const char** prj_get_defines()
+{
+	return my_cfg->defines;
+}
+
+
+/************************************************************************
+ * Query the object directories
+ ***********************************************************************/
+
+const char* prj_get_bindir()
+{
+	return path_build(my_pkg->path, my_cfg->prjConfig->bindir);
+}
+
+const char* prj_get_libdir()
+{
+	return path_build(my_pkg->path, my_cfg->prjConfig->libdir);
+}
+
+const char* prj_get_objdir()
+{
+	if (my_cfg->objdir != NULL)
+		return my_cfg->objdir;
+	else
+		return path_combine(my_pkg->objdir, my_cfg->prjConfig->name);
+}
+
+const char* prj_get_outdir()
+{
+	if (matches("lib", my_pkg->kind))
+	{
+		strcpy(buffer, prj_get_libdir());
+	}
+	else
+	{
+		strcpy(buffer, prj_get_bindir());
+	}
+
+	/* Append target path here */
+
+	return buffer;
+}
+
+
+/************************************************************************
+ * Query the target kind of the current object
+ ***********************************************************************/
+
+const char* prj_get_kind()
+{
+	return my_pkg->kind;
+}
+
+int prj_is_kind(const char* kind)
+{
+	return matches(my_pkg->kind, kind);
+}
+
+
+/************************************************************************
+ * Return the list of include paths for the current object
+ ***********************************************************************/
+
+const char** prj_get_incpaths()
+{
+	return my_cfg->incpaths;
+}
+
+
+/************************************************************************
+ * Query the language of the current object
+ ***********************************************************************/
+
+const char* prj_get_language()
+{
+	return my_pkg->lang;
+}
+
+int prj_is_lang(const char* lang)
+{
+	return matches(my_pkg->lang, lang);
 }
 
 
