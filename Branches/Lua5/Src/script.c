@@ -207,9 +207,21 @@ static int export_pkgconfig(Package* package, int tbl)
 
 		obj = tbl_geti(arr, i + 1);
 		config->objdir = tbl_getstring(obj, "objdir");
+
+		config->extension = export_value(tbl, obj, "targetextension");
+		config->prefix    = export_value(tbl, obj, "targetprefix");
+		config->target    = export_value(tbl, obj, "target");
+
+		export_list(tbl, obj, "buildflags",   &config->flags);
+		export_list(tbl, obj, "buildoptions", &config->buildopts);
 		export_list(tbl, obj, "defines",      &config->defines);
 		export_list(tbl, obj, "includepaths", &config->incpaths);
+		export_list(tbl, obj, "libpaths",     &config->libpaths);
+		export_list(tbl, obj, "linkoptions",  &config->linkopts);
 		export_list(tbl, obj, "links",        &config->links);
+
+		if (config->target == NULL)
+			config->target = package->name;
 	}
 
 	return 1;
@@ -265,6 +277,7 @@ int script_export()
 	for (i = 0; i < len; ++i)
 	{
 		Package* package = ALLOCT(Package);
+		package->index = i;
 		project->packages[i] = package;
 
 		obj = tbl_geti(tbl, i + 1);
@@ -690,10 +703,6 @@ static int newconfig(lua_State* L)
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "libpaths");
-	lua_newtable(L);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "linkflags");
 	lua_newtable(L);
 	lua_settable(L, -3);
 

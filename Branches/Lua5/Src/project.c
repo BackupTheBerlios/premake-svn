@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "premake.h"
-
+#include "os.h"
 
 Project* project = NULL;
 
@@ -72,6 +72,38 @@ void   prj_close()
 
 
 /************************************************************************
+ * Locate a package by name
+ ***********************************************************************/
+
+int prj_find_package(const char* name)
+{
+	int i;
+	for (i = 0; i < prj_get_numpackages(); ++i)
+	{
+		if (matches(name, project->packages[i]->name))
+			return i;
+	}
+	return -1;
+}
+
+
+/************************************************************************
+ * Retrieve the active configuration for the given package
+ ***********************************************************************/
+
+PkgConfig* prj_get_config_for(int i)
+{
+	int j;
+	for (j = 0; j < prj_get_numconfigs(); ++j)
+	{
+		if (my_pkg->configs[j] == my_cfg)
+			return project->packages[i]->configs[j];
+	}
+	return NULL;
+}
+
+
+/************************************************************************
  * Return the list of defines for the current object
  ***********************************************************************/
 
@@ -90,9 +122,27 @@ const char* prj_get_bindir()
 	return path_build(my_pkg->path, my_cfg->prjConfig->bindir);
 }
 
+const char* prj_get_bindir_for(int i)
+{
+	Package*   pkg = prj_get_package(i);
+	PkgConfig* cfg = prj_get_config_for(i);
+
+	strcpy(buffer, path_build(pkg->path, cfg->prjConfig->bindir));
+	return buffer;
+}
+
 const char* prj_get_libdir()
 {
 	return path_build(my_pkg->path, my_cfg->prjConfig->libdir);
+}
+
+const char* prj_get_libdir_for(int i)
+{
+	Package*   pkg = prj_get_package(i);
+	PkgConfig* cfg = prj_get_config_for(i);
+
+	strcpy(buffer, path_build(pkg->path, cfg->prjConfig->libdir));
+	return buffer;
 }
 
 const char* prj_get_objdir()
@@ -105,18 +155,63 @@ const char* prj_get_objdir()
 
 const char* prj_get_outdir()
 {
-	if (matches("lib", my_pkg->kind))
-	{
-		strcpy(buffer, prj_get_libdir());
-	}
-	else
-	{
-		strcpy(buffer, prj_get_bindir());
-	}
+	return prj_get_outdir_for(my_pkg->index);
+}
 
-	/* Append target path here */
+const char* prj_get_outdir_for(int i)
+{
+	const char* targetdir;
+
+	Package*   pkg = prj_get_package_for(i);
+	PkgConfig* cfg = prj_get_config_for(i);
+	
+	if (matches(pkg->kind, "lib"))
+		strcpy(buffer, prj_get_libdir_for(i));
+	else
+		strcpy(buffer, prj_get_bindir_for(i));
+
+	targetdir = path_getdir(cfg->target);
+	if (strlen(targetdir) > 0)
+	{
+		strcat(buffer, "/");
+		strcat(buffer, targetdir);
+	}
 
 	return buffer;
+}
+
+
+/************************************************************************
+ * Query the build flags
+ ***********************************************************************/
+
+int prj_has_flag(const char* flag)
+{
+	return prj_has_flag_for(my_pkg->index, flag);
+}
+
+int prj_has_flag_for(int i, const char* flag)
+{
+	PkgConfig* cfg = prj_get_config_for(i);
+	const char** ptr = cfg->flags;
+	while (*ptr != NULL)
+	{
+		if (matches(*ptr, flag))
+			return 1;
+		ptr++;
+	}
+
+	return 0;
+}
+
+const char** prj_get_buildoptions()
+{
+	return my_cfg->buildopts;
+}
+
+const char** prj_get_linkoptions()
+{
+	return my_cfg->linkopts;
 }
 
 
@@ -154,9 +249,24 @@ const char* prj_get_language()
 	return my_pkg->lang;
 }
 
+const char* prj_get_language_for(int i)
+{
+	return project->packages[i]->lang;
+}
+
 int prj_is_lang(const char* lang)
 {
 	return matches(my_pkg->lang, lang);
+}
+
+
+/************************************************************************
+ * Return the list of linker paths for the current object
+ ***********************************************************************/
+
+const char** prj_get_libpaths()
+{
+	return my_cfg->libpaths;
 }
 
 
@@ -184,7 +294,7 @@ const char* prj_get_pkgname()
 	return my_pkg->name;
 }
 
-const char* prj_get_pkgnamefor(int i)
+const char* prj_get_pkgname_for(int i)
 {
 	return project->packages[i]->name;
 }
@@ -245,7 +355,7 @@ Package* prj_get_package()
 	return my_pkg;
 }
 
-Package* prj_get_packagefor(int i)
+Package* prj_get_package_for(int i)
 {
 	return project->packages[i];
 }
@@ -265,7 +375,7 @@ const char* prj_get_pkgpath()
 	return my_pkg->path;
 }
 
-const char* prj_get_pkgpathfor(int i)
+const char* prj_get_pkgpath_for(int i)
 {
 	return project->packages[i]->path;
 }
@@ -283,6 +393,122 @@ const char* prj_get_script()
 const char* prj_get_pkgscript()
 {
 	return my_pkg->script;
+}
+
+
+/************************************************************************
+ * Return the target for the active object
+ ***********************************************************************/
+
+const char* prj_get_target()
+{
+	return prj_get_target_for(my_pkg->index);
+}
+
+const char* prj_get_target_for(int i)
+{
+	const char* extension = "";
+
+	/* Get the active configuration for this target */
+	Package* pkg = prj_get_package_for(i);
+	PkgConfig* cfg = prj_get_config_for(i);
+	const char* filename = path_getbasename(cfg->target);
+
+	strcpy(buffer, "");
+
+	if (cfg->prefix != NULL)
+		strcat(buffer, cfg->prefix);
+
+	if (matches(pkg->lang, "c#"))
+	{
+		strcat(buffer, filename);
+		if (matches(pkg->kind, "dll"))
+			extension = "dll";
+		else
+			extension = "exe";
+	}
+
+	else if (os_is("windows"))
+	{
+		strcat(buffer, filename);
+		if (matches(pkg->kind, "lib"))
+			extension = "lib";
+		else if (matches(pkg->kind, "dll"))
+			extension = "dll";
+		else
+			extension = "exe";
+	}
+
+	else if (os_is("macosx"))
+	{
+		if (matches(pkg->kind, "winexe"))
+		{
+			strcat(buffer, filename);
+			strcat(buffer, ".app/Contents/MacOS/");
+			if (cfg->prefix != NULL)
+				strcat(buffer, cfg->prefix);
+			strcat(buffer, filename);
+		}
+		else if (matches(pkg->kind, "exe"))
+		{
+			strcat(buffer, filename);
+		}
+		else if (matches(pkg->kind, "dll"))
+		{
+			if (prj_has_flag_for(i, "dylib"))
+			{
+				strcat(buffer, filename);
+				extension = "dylib";
+			}
+			else
+			{
+				if (cfg->prefix == NULL)
+					strcat(buffer, "lib");
+				strcat(buffer, filename);
+				extension = "so";
+			}
+		}
+		else
+		{
+			if (cfg->prefix == NULL)
+				strcat(buffer, "lib");
+			strcat(buffer, filename);
+			extension = "a";
+		}
+	}
+
+	else
+	{
+		if (matches(pkg->kind, "lib"))
+		{
+			if (cfg->prefix == NULL)
+				strcat(buffer, "lib");
+			strcat(buffer, filename);
+			extension = "a";
+		}
+		else if (matches(pkg->kind, "dll"))
+		{
+			if (cfg->prefix == NULL)
+				strcat(buffer, "lib");
+			strcat(buffer, filename);
+			extension = "so";
+		}
+		else
+		{
+			strcat(buffer, filename);
+		}
+	}
+
+	/* Apply the file extension, which can be customized */
+	if (cfg->extension != NULL)
+		extension = cfg->extension;
+
+	if (strlen(extension) > 0)
+		strcat(buffer, ".");
+
+	strcat(buffer, extension);
+	
+	return buffer;
 }
 
 

@@ -1,6 +1,6 @@
 /**********************************************************************
- * Premake - path.h
- * Path handling routines.
+ * Premake - gnu_helpers.c
+ * The GNU makefile target
  *
  * Copyright (c) 2002-2005 Jason Perkins.
  * 
@@ -15,18 +15,21 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-/* If you add items here, also add to separators[] in path.c */
-enum PathKinds
-{
-	NATIVE,
-	POSIX,
-	WINDOWS
-};
+#include "premake.h"
 
-const char* path_build(const char* from, const char* to);
-const char* path_combine(const char* path0, const char* path1);
-const char* path_getbasename(const char* path);
-const char* path_getdir(const char* path);
-const char* path_getname(const char* path);
-const char* path_join(const char* dir, const char* name, const char* ext);
-void        path_translateInPlace(char* buffer, int to);
+
+int gnu_pkgOwnsPath()
+{
+	int i;
+
+	if (matches(prj_get_pkgpath(), prj_get_path()))
+		return 0;
+
+	for (i = 0; i < prj_get_numpackages(); ++i)
+	{
+		if (prj_get_package() != prj_get_package_for(i) && matches(prj_get_pkgpath(), prj_get_pkgpath_for(i)))
+			return 0;
+	}
+
+	return 1;
+}

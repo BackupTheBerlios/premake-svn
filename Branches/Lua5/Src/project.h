@@ -32,14 +32,22 @@ typedef struct tagPrjConfig
 typedef struct tagPkgConfig
 {
 	PrjConfig*   prjConfig;
-	const char*  objdir;
+	const char** buildopts;
 	const char** defines;
+	const char*  extension;
+	const char** flags;
 	const char** incpaths;
+	const char** libpaths;
+	const char** linkopts;
 	const char** links;
+	const char*  objdir;
+	const char*  prefix;
+	const char*  target;
 } PkgConfig;
 
 typedef struct tagPackage
 {
+	int index;
 	const char* name;
 	const char* path;
 	const char* script;
@@ -65,13 +73,19 @@ extern Project* project;
 void         prj_open();
 void         prj_close();
 
+int          prj_find_package(const char* name);
 const char*  prj_get_bindir();
+const char** prj_get_buildoptions();
 const char*  prj_get_cfgname();
+PkgConfig*   prj_get_config_for(int i);
 const char** prj_get_defines();
 const char*  prj_get_kind();
 const char** prj_get_incpaths();
 const char*  prj_get_language();
+const char*  prj_get_language_for(int i);
 const char*  prj_get_libdir();
+const char** prj_get_libpaths();
+const char** prj_get_linkoptions();
 const char** prj_get_links();
 const char*  prj_get_objdir();
 int          prj_get_numconfigs();
@@ -80,15 +94,20 @@ int          prj_get_numpackages();
 const char*  prj_get_optdesc();
 const char*  prj_get_optname();
 const char*  prj_get_outdir();
+const char*  prj_get_outdir_for(int i);
 Package*     prj_get_package();
-Package*     prj_get_packagefor();
+Package*     prj_get_package_for();
 const char*  prj_get_path();
 const char*  prj_get_pkgname();
-const char*  prj_get_pkgnamefor();
+const char*  prj_get_pkgname_for();
 const char*  prj_get_pkgpath();
-const char*  prj_get_pkgpathfor(int i);
+const char*  prj_get_pkgpath_for(int i);
 const char*  prj_get_pkgscript();
 const char*  prj_get_script();
+const char*  prj_get_target();
+const char*  prj_get_target_for(int i);
+int          prj_has_flag(const char* flag);
+int          prj_has_flag_for(int i, const char* flag);
 int          prj_is_kind(const char* kind);
 int          prj_is_lang(const char* lang);
 void         prj_select_config(int i);

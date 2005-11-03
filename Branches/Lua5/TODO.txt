@@ -1,0 +1,13 @@
+When a package links to a sibling package, the sibling's target is added to the list
+of libraries to link. However, only the target name is added, not the path. This 
+usually works because the targets are all put in the same place. If I link to a lib
+that is kept in the package area (package.target = package.path.."/bin") I don't
+think linking will work.
+
+Test that paths in GNU LDDEPS variable are set properly when the package is in a
+subdirectory under the project.
+
+dopackage() should chdir() to the script directory so relative paths (like to a 
+library file as in wx.NET) will work. This will likely screw up my relative pathing
+back to the project, but ought to be able to fix by setting project.path to the
+full absolute path to the project, rather than just "."

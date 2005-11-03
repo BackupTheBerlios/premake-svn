@@ -176,7 +176,7 @@ static const char* listInterPackageDeps(const char* name)
 	int i;
 	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
-		if (matches(name, prj_get_pkgnamefor(i)))
+		if (matches(name, prj_get_pkgname_for(i)))
 			return name;
 	}
 	return NULL;

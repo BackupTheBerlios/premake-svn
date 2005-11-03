@@ -110,11 +110,11 @@ const char* path_build(const char* from, const char* to)
 	/* Build the connecting path */
 	if (strlen(fromFull) - start > 0)
 	{
-		strcpy(working, "..");
+		strcpy(working, "../");
 		for (i = start; fromFull[i] != '\0'; ++i)
 		{
 			if (fromFull[i] == '/' && fromFull[i + 1] != '\0')
-				strcat(working, "/..");
+				strcat(working, "../");
 		}
 	}
 	else
@@ -168,6 +168,15 @@ const char* path_combine(const char* path0, const char* path1)
 /************************************************************************
  * Retrieve the portions of a path
  ***********************************************************************/
+
+const char* path_getbasename(const char* path)
+{
+	const char* name = path_getname(path);
+	char* ptr = strrchr(name, '.');
+	if (ptr != NULL)
+		*ptr = '\0';
+	return name;
+}
 
 const char* path_getdir(const char* path)
 {

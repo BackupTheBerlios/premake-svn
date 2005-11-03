@@ -16,8 +16,15 @@
  **********************************************************************/
 
 #include <stdio.h>
+#include <string.h>
 #include "premake.h"
 #include "gnu.h"
+#include "os.h"
+
+static char buffer[8192];
+
+static const char* filterLinks(const char* name);
+static const char* listLinkerDeps(const char* name);
 
 
 int gnu_cpp()
@@ -69,8 +76,107 @@ int gnu_cpp()
 		print_list(prj_get_defines(), " -D \"", "\"", "", NULL);
 		print_list(prj_get_incpaths(), " -I \"", "\"", "", NULL);
 		io_print("\n");
+
+		/* Write C flags */
+		io_print("  CFLAGS += $(CPPFLAGS)");
+		if (prj_is_kind("dll"))
+			io_print(" -fPIC");
+		if (!prj_has_flag("no-symbols"))
+			io_print(" -g");
+		if (prj_has_flag("optimize-size"))
+			io_print(" -Os");
+		if (prj_has_flag("optimize-speed"))
+			io_print(" -O3");
+		if (prj_has_flag("optimize") && !prj_has_flag("optimize-size") && !prj_has_flag("optimize-speed"))
+			io_print(" -O2");
+		if (prj_has_flag("extra-warnings"))
+			io_print(" -Wall");
+		if (prj_has_flag("fatal-warnings"))
+			io_print(" -Werror");
+		if (prj_has_flag("no-frame-pointer"))
+			io_print(" -fomit-frame-pointer");
+		print_list(prj_get_buildoptions(), " ", "", "", NULL);
+		io_print("\n");
+
+		/* Write C++ flags */
+		io_print("  CXXFLAGS = $(CFLAGS)");
+		if (prj_has_flag("no-exceptions"))
+			io_print(" --no-exceptions");
+		if (prj_has_flag("no-rtti"))
+			io_print(" --no-rtti");
+		io_print("\n");
+
+		/* Write linker flags */
+		io_print("  LDFLAGS += -L$(BINDIR) -L$(LIBDIR)");
+		if (prj_is_kind("dll") && (g_cc == NULL || matches(g_cc, "gcc")))
+			io_print(" -shared");
+		if (prj_has_flag("no-symbols"))
+			io_print(" -s");
+		if (os_is("macosx") && prj_has_flag("dylib"))
+			io_print(" -dynamiclib -flat_namespace");
+		print_list(prj_get_linkoptions(), " ", "", "", NULL);
+		print_list(prj_get_libpaths(), " -L \"", "\"", "", NULL);
+		print_list(prj_get_links(), " -l", "", "", filterLinks);
+		io_print("\n");
+
+		/* Build a list of libraries this target depends on */
+		io_print("  LDDEPS =");
+		print_list(prj_get_links(), " ", "", "", listLinkerDeps);
+		io_print("\n");
+
+		/* Build the target name */
+		io_print("  TARGET = %s\n", prj_get_target());
+		if (os_is("macosx") && prj_is_kind("winexe"))
+			io_print("  MACAPP = %s\n", path_getname(prj_get_target()));
+
+		io_print("endif\n\n");
 	}
 
 	io_closefile();
 	return 1;
+}
+
+
+
+/************************************************************************
+ * Checks each entry in the list of package links. If the entry refers
+ * to a sibling package, returns the path to that package's output
+ ***********************************************************************/
+
+static const char* filterLinks(const char* name)
+{
+	int i = prj_find_package(name);
+	if (i >= 0)
+	{
+		const char* lang = prj_get_language_for(i);
+		if (matches(lang, "c++") || matches(lang, "c"))
+			return prj_get_target_for(i);
+		else
+			return NULL;
+	}
+	else
+	{
+		return name;
+	}
+}
+
+
+/************************************************************************
+ * This is called by the code that builds the list of dependencies for 
+ * the link step. It looks for sibling projects, and then returns the 
+ * full path to that target's output. So if an executable package 
+ * depends on a library package, the library filename will be listed 
+ * as a dependency
+ ***********************************************************************/
+
+static const char* listLinkerDeps(const char* name)
+{
+	int i = prj_find_package(name);
+	if (i >= 0)
+	{
+		strcpy(buffer, prj_get_outdir_for(i));
+		return path_combine(buffer, prj_get_target_for(i));
+	}
+
+	return NULL;
 }
