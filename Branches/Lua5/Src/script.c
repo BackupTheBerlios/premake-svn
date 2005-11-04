@@ -44,7 +44,6 @@ static int         findlib(lua_State* L);
 static int         getcwd_lua(lua_State* L);
 static int         getglobal(lua_State* L);
 static int         matchfiles(lua_State* L);
-static int         newconfig(lua_State* L);
 static int         newpackage(lua_State* L);
 static int         panic(lua_State* L);
 static int         rmdir_lua(lua_State* L);
@@ -215,6 +214,7 @@ static int export_pkgconfig(Package* package, int tbl)
 		export_list(tbl, obj, "buildflags",   &config->flags);
 		export_list(tbl, obj, "buildoptions", &config->buildopts);
 		export_list(tbl, obj, "defines",      &config->defines);
+		export_list(tbl, obj, "files",        &config->files);
 		export_list(tbl, obj, "includepaths", &config->incpaths);
 		export_list(tbl, obj, "libpaths",     &config->libpaths);
 		export_list(tbl, obj, "linkoptions",  &config->linkopts);
@@ -405,6 +405,58 @@ static void buildNewProject()
 
 	lua_setglobal(L, "project");
 }
+
+static void buildNewConfig(const char* name)
+{
+	/* Store the config name */
+	if (name != NULL)
+	{
+		lua_pushstring(L, "name");
+		lua_pushstring(L, name);
+		lua_settable(L, -3);
+	}
+
+	/* Set defaults */
+	lua_pushstring(L, "buildflags");
+	lua_newtable(L);
+	if (matches(name, "Release")) 
+	{
+		lua_pushstring(L, "no-symbols");
+		lua_rawseti(L, -2, 1);
+		lua_pushstring(L, "optimize");
+		lua_rawseti(L, -2, 2);
+	}
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "buildoptions");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "defines");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "files");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "includepaths");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "libpaths");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "linkoptions");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "links");
+	lua_newtable(L);
+	lua_settable(L, -3);
+}
+
 
 
 /**********************************************************************
@@ -670,54 +722,6 @@ static int matchfiles(lua_State* L)
 }
 
 
-static int newconfig(lua_State* L)
-{
-	const char* name = luaL_checkstring(L, -2);
-
-	lua_pushstring(L, "name");
-	lua_pushstring(L, name);
-	lua_settable(L, -3);
-
-	/* Set defaults */
-	lua_pushstring(L, "buildflags");
-	lua_newtable(L);
-	if (matches(name, "Release")) 
-	{
-		lua_pushstring(L, "no-symbols");
-		lua_rawseti(L, -2, 1);
-		lua_pushstring(L, "optimize");
-		lua_rawseti(L, -2, 2);
-	}
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "buildoptions");
-	lua_newtable(L);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "defines");
-	lua_newtable(L);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "includepaths");
-	lua_newtable(L);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "libpaths");
-	lua_newtable(L);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "linkoptions");
-	lua_newtable(L);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "links");
-	lua_newtable(L);
-	lua_settable(L, -3);
-
-	return 1;
-}
-
-
 static int newpackage(lua_State* L)
 {
 	int count, i;
@@ -774,11 +778,7 @@ static int newpackage(lua_State* L)
 	lua_pushstring(L, "obj");
 	lua_settable(L, -3);
 
-	lua_pushstring(L, "files");
-	lua_newtable(L);
-	lua_settable(L, -3);
-
-	newconfig(L);
+	buildNewConfig(NULL);
 
 	/* Build list of configurations matching what is in the project, and
 	 * which can be indexed by name or number */
@@ -793,9 +793,10 @@ static int newpackage(lua_State* L)
 	for (i = 1; i <= count; ++i)
 	{
 		lua_rawgeti(L, -1, i);
-		
+
 		lua_newtable(L);
-		newconfig(L);
+
+		buildNewConfig(lua_tostring(L, -2));
 	
 		lua_pushvalue(L, -1);
 		lua_rawseti(L, -6, i);

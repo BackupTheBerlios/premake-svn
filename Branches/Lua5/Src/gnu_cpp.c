@@ -24,6 +24,8 @@
 static char buffer[8192];
 
 static const char* filterLinks(const char* name);
+static const char* listCppSources(const char* name);
+static const char* listCppTargets(const char* name);
 static const char* listLinkerDeps(const char* name);
 
 
@@ -31,11 +33,14 @@ int gnu_cpp()
 {
 	int i;
 
+	const char* prefix = (g_verbose) ? "" : "@";
+
 	/* Open package makefile and write the header */
 	if (gnu_pkgOwnsPath())
-		io_openfile(path_join(prj_get_pkgpath(), "Makefile", ""));
+		strcpy(buffer, path_join(prj_get_pkgpath(), "Makefile", ""));
 	else
-		io_openfile(path_join(prj_get_pkgpath(), prj_get_pkgname(), DOT_MAKE));
+		strcpy(buffer, path_join(prj_get_pkgpath(), prj_get_pkgname(), DOT_MAKE));
+	io_openfile(buffer);
 
 	io_print("# %s ", prj_is_lang("c++") ? "C++" : "C");
 
@@ -132,6 +137,67 @@ int gnu_cpp()
 		io_print("endif\n\n");
 	}
 
+	/* Write out the list of object file targets for all C/C++ sources */
+	io_print("OBJECTS = \\\n");
+	print_list(prj_get_files(), "\t$(OBJDIR)/", " \\\n", "", listCppSources);
+	io_print("\n");
+
+	io_print(".PHONY: clean\n");
+	io_print("\n");
+
+	/* Write the main build target */
+	if (os_is("macosx") && prj_is_kind("winexe"))
+	{
+		io_print("all: $(BINDIR)/$(MACAPP).app/Contents/PkgInfo $(BINDIR)/$(MACAPP).app/Contents/Info.plist $(BINDIR)/$(TARGET)\n\n");
+	}
+	io_print("$(OUTDIR)/$(TARGET): $(OBJECTS) $(LDDEPS)\n");
+	if (!g_verbose)
+		io_print("\t@echo Linking %s\n", prj_get_pkgname());
+	io_print("\t-%sif [ ! -d $(BINDIR) ]; then mkdir -p $(BINDIR); fi\n", prefix);
+	io_print("\t-%sif [ ! -d $(LIBDIR) ]; then mkdir -p $(LIBDIR); fi\n", prefix);
+	if (os_is("macosx") && prj_is_kind("winexe"))
+		io_print("\t-%sif [ ! -d $(BINDIR)/$(MACAPP).app/Contents/MacOS ]; then mkdir -p $(BINDIR)/$(MACAPP).app/Contents/MacOS; fi\n", prefix);
+
+	if (prj_is_kind("lib"))
+	{
+		io_print("\t%sar -cr $@ $^\n", prefix);
+		io_print("\t%sranlib $@\n", prefix);
+	}
+	else
+	{
+		io_print("\t%s$(CXX) -o $@ $(OBJECTS) $(LDFLAGS)\n", prefix);
+	}
+	io_print("\n");
+
+	if (os_is("macosx") && prj_is_kind("winexe"))
+	{
+		io_print("$(BINDIR)/$(MACAPP).app/Contents/PkgInfo:\n\n");
+		io_print("$(BINDIR)/$(MACAPP).app/Contents/Info.plist:\n\n");
+	}
+
+	/* Write the "clean" target */
+	io_print("clean:\n");
+	io_print("\t@echo Cleaning %s\n", prj_get_pkgname());
+	if (os_is("macosx") && prj_is_kind("winexe"))
+	{
+		io_print("\t-%srm -rf $(OUTDIR)/$(MACAPP).app $(OBJDIR)/*\n", prefix);
+	}
+	else
+	{
+		io_print("\t-%srm -rf $(OUTDIR)/$(TARGET) $(OBJDIR)/*\n", prefix);
+	}
+	io_print("\n");
+
+	/* Write static patterns for each source file. Note that in earlier
+	 * versions I used pattern rules instead of listing each file. It worked
+	 * fine but made it more difficult to test and also required the use of
+	 * VPATH which I didn't like. This new approach of listing each file
+	 * helps testing and opens the way for per-file configurations */
+	print_list(prj_get_files(), "", "\n", "", listCppTargets);
+
+	/* Include the automatically generated dependency lists */
+	io_print("-include $(OBJECTS:%%.o=%%.d)\n\n");
+
 	io_closefile();
 	return 1;
 }
@@ -160,6 +226,74 @@ static const char* filterLinks(const char* name)
 	}
 }
 
+
+/************************************************************************
+ * Checks each source code file and filters out everything that is
+ * not a C or C++ file
+ ***********************************************************************/
+
+static const char* listCppSources(const char* name)
+{
+	if (is_cpp(name))
+	{
+		strcpy(buffer, path_getbasename(name));
+		strcat(buffer, ".o");
+		return buffer;
+	}
+
+	return NULL;
+}
+
+
+/************************************************************************
+ * Creates the makefile build rules for all source code files
+ ***********************************************************************/
+
+static const char* listCppTargets(const char* name)
+{
+	if (is_cpp(name))
+	{
+		const char* ext = path_getextension(name);
+
+		sprintf(buffer, "$(OBJDIR)/%s.o: %s\n", path_getbasename(name), name);
+		strcat(buffer, "\t-");
+		if (!g_verbose)
+			strcat(buffer, "@");
+		strcat(buffer, "if [ ! -d $(OBJDIR) ]; then mkdir -p $(OBJDIR); fi\n");
+
+		if (!g_verbose)
+			strcat(buffer, "\t@echo $(notdir $<)\n");
+      
+		strcat(buffer, "\t");
+		if (!g_verbose)
+			strcat(buffer, "@");
+		if (matches(g_cc, "dmc"))
+		{
+			/* Digital Mars compiler build step */
+			/* FIXME: How to handle assembly files with DMC? */
+			if (matches(ext, ".c"))
+				strcat(buffer, "dmc $(CFLAGS) -o $@ -c $<\n");
+			else if (!matches(ext, ".s"))
+				strcat(buffer, "dmc -cpp -Ae -Ar -mn $(CXXFLAGS) -o $@ -c $<\n");
+		}
+		else
+		{
+			/* GNU GCC compiler build step */
+			if (matches(ext, ".s"))
+				strcat(buffer, "$(CC) -x assembler-with-cpp $(CPPFLAGS) -o $@ -c $<\n");
+			else if (matches(ext, ".c"))
+				strcat(buffer, "$(CC) $(CFLAGS) -o $@ -c $<\n");
+			else
+				strcat(buffer, "$(CXX) $(CXXFLAGS) -o $@ -c $<\n");
+		}
+
+		return buffer;
+	}
+	else
+	{
+		return NULL;
+	}
+}
 
 /************************************************************************
  * This is called by the code that builds the list of dependencies for 

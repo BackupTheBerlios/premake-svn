@@ -18,6 +18,29 @@
 #include <string.h>
 #include "premake.h"
 
+static char* CPP_EXT[] = { ".cc", ".cpp", ".cxx", ".c", ".s", NULL };
+
+
+/************************************************************************
+ * Checks a file name against a list of known C/C++ file extensions
+ ***********************************************************************/
+
+int is_cpp(const char* name)
+{
+	int i;
+	const char* ext = path_getextension(name);
+	if (ext == NULL) 
+		return 0;
+
+	for (i = 0; CPP_EXT[i] != NULL; ++i)
+	{
+		if (matches(ext, CPP_EXT[i]))
+			return 1;
+	}
+
+	return 0;
+}
+
 
 /************************************************************************
  * Checks to see if two strings match. Just a more readable version

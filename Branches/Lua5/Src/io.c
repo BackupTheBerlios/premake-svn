@@ -101,8 +101,40 @@ int io_mask_open(const char* mask)
 }
 
 
+int io_mkdir(const char* path)
+{
+	/* Remember the current directory */
+	char cwd[8192];
+	platform_getcwd(cwd, 8192);
+
+	/* Split the path and check each part in turn */
+	strcpy(buffer, path);
+	path = buffer;
+
+	while (path != NULL)
+	{
+		char* ptr = strchr(path, '/');
+		if (ptr != NULL)
+			*ptr = '\0';
+
+		platform_mkdir(path);
+		platform_chdir(path);
+
+		path = (ptr != NULL) ? ptr + 1 : NULL;
+	}
+
+	/* Restore the original working directory */
+	platform_chdir(cwd);
+	return 1;
+}
+
+
 int io_openfile(const char* path)
 {
+	/* Make sure that all parts of the path exist */
+	io_mkdir(path_getdir(path));
+
+	/* Now I can open the file */
 	file = fopen(path, "w");
 	if (file == NULL)
 	{

@@ -15,7 +15,7 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-
+int         platform_chdir(const char* path);
 int         platform_copyfile(const char* src, const char* dest);
 int         platform_findlib(const char* name, char* buffer, int len);
 int         platform_getcwd(char* buffer, int len);
@@ -26,5 +26,6 @@ const char* platform_mask_getname();
 int         platform_mask_getnext();
 int         platform_mask_isfile();
 int         platform_mask_open(const char* mask);
+int         platform_mkdir(const char* path);
 int         platform_rmdir(const char* path);
 int         platform_setcwd(const char* path);

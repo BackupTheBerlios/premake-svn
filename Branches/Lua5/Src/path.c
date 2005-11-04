@@ -124,8 +124,6 @@ const char* path_build(const char* from, const char* to)
 
 	if (strlen(toFull) - start > 0)
 	{
-		if (strlen(working) > 0)
-			strcat(working, "/");
 		strcat(working, toFull + start);
 	}
 
@@ -176,6 +174,12 @@ const char* path_getbasename(const char* path)
 	if (ptr != NULL)
 		*ptr = '\0';
 	return name;
+}
+
+const char* path_getextension(const char* path)
+{
+	const char* ptr = strrchr(path, '.');
+	return ptr;
 }
 
 const char* path_getdir(const char* path)

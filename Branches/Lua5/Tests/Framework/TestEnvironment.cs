@@ -8,6 +8,7 @@ namespace Premake.Tests.Framework
 {
 	public class TestEnvironment
 	{
+		public static string    Errors;
 		public static string    Output;
 
 		public static void Run(Script script, Parser parser, Project expected, string[] options)
@@ -34,13 +35,15 @@ namespace Premake.Tests.Framework
 				process.StartInfo.CreateNoWindow = true;
 				process.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
 				process.StartInfo.RedirectStandardOutput = true;
+				process.StartInfo.RedirectStandardError = true;
 				process.StartInfo.UseShellExecute = false;
 				process.Start();
 				process.WaitForExit();
+				Errors = process.StandardError.ReadToEnd();
 				Output = process.StandardOutput.ReadToEnd();
 				if (process.ExitCode != 0)
 				{
-					throw new InvalidOperationException("Premake aborted with code " + process.ExitCode + ": \n" + Output);
+					throw new InvalidOperationException("Premake aborted with code " + process.ExitCode + ": \n" + Errors);
 				}
 
 

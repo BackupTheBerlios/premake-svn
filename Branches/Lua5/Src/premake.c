@@ -178,10 +178,6 @@ int onCommand(const char* cmd, const char* arg)
 	{
 		g_verbose = 1;
 	}
-	else if (matches(cmd, "very-verbose"))
-	{
-		g_verbose = 2;
-	}
 
 	return 1;
 }
@@ -199,7 +195,6 @@ void showUsage()
 	puts("");
 	puts(" --clean           Remove all binaries and build scripts");
 	puts(" --verbose       Generate verbose makefiles (where applicable)");
-	puts(" --very-verbose  Generate very verbose makefiles (where applicable)");
 	puts("");
 	puts(" --cc name         Choose a C/C++ compiler, if supported by target; one of:");
 	puts("      gcc       GNU gcc compiler");

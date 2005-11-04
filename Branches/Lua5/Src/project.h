@@ -35,6 +35,7 @@ typedef struct tagPkgConfig
 	const char** buildopts;
 	const char** defines;
 	const char*  extension;
+	const char** files;
 	const char** flags;
 	const char** incpaths;
 	const char** libpaths;
@@ -48,13 +49,13 @@ typedef struct tagPkgConfig
 typedef struct tagPackage
 {
 	int index;
-	const char* name;
-	const char* path;
-	const char* script;
-	const char* lang;
-	const char* kind;
-	const char* objdir;
-	PkgConfig** configs;
+	const char*  name;
+	const char*  path;
+	const char*  script;
+	const char*  lang;
+	const char*  kind;
+	const char*  objdir;
+	PkgConfig**  configs;
 } Package;
 
 typedef struct tagProject
@@ -79,6 +80,7 @@ const char** prj_get_buildoptions();
 const char*  prj_get_cfgname();
 PkgConfig*   prj_get_config_for(int i);
 const char** prj_get_defines();
+const char** prj_get_files();
 const char*  prj_get_kind();
 const char** prj_get_incpaths();
 const char*  prj_get_language();

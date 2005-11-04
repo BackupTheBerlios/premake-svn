@@ -31,6 +31,12 @@ static WIN32_FIND_DATA entry;
 static int isFirst;
 
 
+int platform_chdir(const char* path)
+{
+	return SetCurrentDirectory(path);
+}
+
+
 int platform_copyfile(const char* src, const char* dest)
 {
 	return CopyFile(src, dest, FALSE);
@@ -118,6 +124,12 @@ int platform_mask_open(const char* mask)
 	hDir = FindFirstFile(mask, &entry);
 	isFirst = 1;
 	return (hDir != INVALID_HANDLE_VALUE);
+}
+
+
+int platform_mkdir(const char* path)
+{
+	return CreateDirectory(path, NULL);
 }
 
 
