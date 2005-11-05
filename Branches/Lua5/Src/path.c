@@ -24,6 +24,7 @@
 static const char separators[] = { '/', '/', '\\' };
 
 static char working[8192];
+static char forpart[8192];
 
 
 /************************************************************************
@@ -189,15 +190,15 @@ const char* path_getdir(const char* path)
 	if (path != NULL)
 	{
 		/* Convert path to neutral separators */
-		strcpy(working, path);
-		path_translateInPlace(working, POSIX);
+		strcpy(forpart, path);
+		path_translateInPlace(forpart, POSIX);
 
 		/* Now split at last separator */
-		ptr = strrchr(working, '/');
+		ptr = strrchr(forpart, '/');
 		if (ptr != NULL)
 		{
 			*ptr = '\0';
-			return working;
+			return forpart;
 		}
 	}
 
@@ -211,11 +212,11 @@ const char* path_getname(const char* path)
 	if (path == NULL)
 		return NULL;
 
-	strcpy(working, path);
-	path_translateInPlace(working, POSIX);
+	strcpy(forpart, path);
+	path_translateInPlace(forpart, POSIX);
 
-	ptr = strrchr(working, '/');
-	ptr = (ptr != NULL) ? ++ptr : working;
+	ptr = strrchr(forpart, '/');
+	ptr = (ptr != NULL) ? ++ptr : forpart;
 	return ptr;
 }
 

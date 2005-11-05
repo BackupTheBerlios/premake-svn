@@ -15,6 +15,7 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-void os_detect();
-int  os_is(const char* name);
-int  os_set(const char* name);
+void        os_detect();
+const char* os_get();
+int         os_is(const char* name);
+int         os_set(const char* name);

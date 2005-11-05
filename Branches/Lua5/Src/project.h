@@ -29,6 +29,11 @@ typedef struct tagPrjConfig
 	const char* libdir;
 } PrjConfig;
 
+typedef struct tagFileConfig
+{
+	const char* buildaction;
+} FileConfig;
+
 typedef struct tagPkgConfig
 {
 	PrjConfig*   prjConfig;
@@ -44,6 +49,7 @@ typedef struct tagPkgConfig
 	const char*  objdir;
 	const char*  prefix;
 	const char*  target;
+	FileConfig** fileconfigs;
 } PkgConfig;
 
 typedef struct tagPackage
@@ -110,11 +116,14 @@ const char*  prj_get_target();
 const char*  prj_get_target_for(int i);
 int          prj_has_flag(const char* flag);
 int          prj_has_flag_for(int i, const char* flag);
+int          prj_is_buildaction(const char* action);
 int          prj_is_kind(const char* kind);
 int          prj_is_lang(const char* lang);
 void         prj_select_config(int i);
+void         prj_select_file(const char* name);
 void         prj_select_option(int i);
 void         prj_select_package(int i);
+void         prj_set_buildaction(const char* action);
 
 void**       prj_newlist(int len);
 void         prj_freelist(void** list);

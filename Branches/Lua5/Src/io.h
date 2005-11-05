@@ -15,6 +15,7 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
+int         io_chdir(const char* path);
 int         io_closefile();
 int         io_copyfile(const char* src, const char* dst);
 int         io_fileexists(const char* path);
@@ -28,5 +29,4 @@ int         io_mask_open(const char* mask);
 int         io_openfile(const char* path);
 void        io_print(const char* format, ...);
 int         io_rmdir(const char* path, const char* dir);
-int         io_setcwd(const char* path);
 

@@ -32,7 +32,7 @@ namespace Premake.Tests.Gnu
 		[Test]
 		public void Test_AllInSameDirectory()
 		{
-			_expects.Package[0].Path = "./";
+			_expects.Package[0].Path = ".";
 			Run();
 		}
 
@@ -40,7 +40,7 @@ namespace Premake.Tests.Gnu
 		public void Test_PackageInSubDir()
 		{
 			_script.Append("package.path = 'MySubDir'");
-			_expects.Package[0].Path = "./MySubDir/";
+			_expects.Package[0].Path = "MySubDir";
 			Run();
 		}
 
@@ -49,7 +49,7 @@ namespace Premake.Tests.Gnu
 		{
 			_script.Append("project.path = 'Build'");
 			_expects.Path = "Build";
-			_expects.Package[0].Path = "../";
+			_expects.Package[0].Path = "..";
 			Run();
 		}
 
@@ -59,7 +59,7 @@ namespace Premake.Tests.Gnu
 			_script.Append("project.path = 'BuildDir'");
 			_script.Append("package.path = 'PkgDir'");
 			_expects.Path = "BuildDir";
-			_expects.Package[0].Path = "../PkgDir/";
+			_expects.Package[0].Path = "../PkgDir";
 			Run();
 		}
 
@@ -69,7 +69,7 @@ namespace Premake.Tests.Gnu
 			_script.Append("project.path = 'Build'");
 			_script.Append("package.path = 'Build'");
 			_expects.Path = "Build";
-			_expects.Package[0].Path = "../Build/";
+			_expects.Package[0].Path = ".";
 			Run();
 		}
 

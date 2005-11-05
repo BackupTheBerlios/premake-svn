@@ -26,6 +26,11 @@ static char buffer[8192];
 static FILE* file;
 
 
+int io_chdir(const char* path)
+{
+	return platform_setcwd(path);
+}
+
 int io_closefile()
 {
 	fclose(file);
@@ -167,10 +172,5 @@ int io_rmdir(const char* path, const char* dir)
 	return platform_rmdir(buffer);
 }
 
-
-int io_setcwd(const char* path)
-{
-	return platform_setcwd(path);
-}
 
 

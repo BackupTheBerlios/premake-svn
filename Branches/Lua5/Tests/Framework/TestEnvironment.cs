@@ -14,7 +14,7 @@ namespace Premake.Tests.Framework
 		public static void Run(Script script, Parser parser, Project expected, string[] options)
 		{
 			/* Remember where Premake is located */
-			string executable = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "premake"; // "premake.exe";
+			string executable = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "premake";
 
 			/* Create a temporary directory for this run */
 			string temp = Path.GetTempPath() + Guid.NewGuid().ToString() + Path.DirectorySeparatorChar;
@@ -43,7 +43,8 @@ namespace Premake.Tests.Framework
 				Output = process.StandardOutput.ReadToEnd();
 				if (process.ExitCode != 0)
 				{
-					throw new InvalidOperationException("Premake aborted with code " + process.ExitCode + ": \n" + Errors);
+					string message = (Errors != String.Empty) ? Errors : Output;
+					throw new InvalidOperationException("Premake aborted with code " + process.ExitCode + ": \n" + message);
 				}
 
 

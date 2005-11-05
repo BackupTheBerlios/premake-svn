@@ -41,6 +41,13 @@ void os_detect()
 }
 
 
+/* Retrieve the identification string */
+const char* os_get()
+{
+	return os;
+}
+
+
 /* Does this identifier match the selected OS? */
 int os_is(const char* name)
 {

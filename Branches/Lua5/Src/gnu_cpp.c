@@ -216,9 +216,13 @@ static const char* filterLinks(const char* name)
 	{
 		const char* lang = prj_get_language_for(i);
 		if (matches(lang, "c++") || matches(lang, "c"))
+		{
 			return prj_get_target_for(i);
+		}
 		else
+		{
 			return NULL;
+		}
 	}
 	else
 	{

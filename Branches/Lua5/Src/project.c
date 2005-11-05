@@ -22,9 +22,10 @@
 
 Project* project = NULL;
 
-static Package*   my_pkg = NULL;
-static PkgConfig* my_cfg = NULL;
-static Option*    my_opt = NULL;
+static Package*    my_pkg  = NULL;
+static PkgConfig*  my_cfg  = NULL;
+static FileConfig* my_fcfg = NULL;
+static Option*     my_opt  = NULL;
 
 static char buffer[8192];
 
@@ -100,6 +101,21 @@ PkgConfig* prj_get_config_for(int i)
 			return project->packages[i]->configs[j];
 	}
 	return NULL;
+}
+
+
+/************************************************************************
+ * Get/set a file build action
+ ***********************************************************************/
+
+int prj_is_buildaction(const char* action)
+{
+	return matches(my_fcfg->buildaction, action);
+}
+
+void prj_set_buildaction(const char* action)
+{
+	my_fcfg->buildaction = action;
 }
 
 
@@ -531,6 +547,16 @@ void prj_select_config(int i)
 	if (my_pkg == NULL)
 		prj_select_package(0);
 	my_cfg = my_pkg->configs[i];
+}
+
+void prj_select_file(const char* name)
+{
+	int i;
+	for (i = 0; i < prj_getlistsize((void**)my_cfg->files); ++i)
+	{
+		if (matches(my_cfg->files[i], name))
+			my_fcfg = my_cfg->fileconfigs[i];
+	}
 }
 
 void prj_select_option(i)

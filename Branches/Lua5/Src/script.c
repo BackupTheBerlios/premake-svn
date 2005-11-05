@@ -20,6 +20,7 @@
 #include "premake.h"
 #include "script.h"
 #include "arg.h"
+#include "os.h"
 #include "Lua/lua.h"
 #include "Lua/lualib.h"
 #include "Lua/lauxlib.h"
@@ -37,6 +38,7 @@ static const char* tbl_getstring(int from, const char* name);
 static const char* tbl_getstringi(int from, int i);
 
 static int         addoption(lua_State* L);
+static int         chdir_lua(lua_State* L);
 static int         copyfile(lua_State* L);
 static int         docommand(lua_State* L);
 static int         dopackage(lua_State* L);
@@ -44,6 +46,7 @@ static int         findlib(lua_State* L);
 static int         getcwd_lua(lua_State* L);
 static int         getglobal(lua_State* L);
 static int         matchfiles(lua_State* L);
+static int         newfileconfig(lua_State* L);
 static int         newpackage(lua_State* L);
 static int         panic(lua_State* L);
 static int         rmdir_lua(lua_State* L);
@@ -80,6 +83,10 @@ int script_init()
 	/* Add some extensions to the built-in "os" table */
 	lua_getglobal(L, "os");
 
+	lua_pushstring(L, "chdir");
+	lua_pushcfunction(L, chdir_lua);
+	lua_settable(L, -3);
+
 	lua_pushstring(L, "copyfile");
 	lua_pushcfunction(L, copyfile);
 	lua_settable(L, -3);
@@ -97,6 +104,13 @@ int script_init()
 	lua_settable(L, -3);
 
 	lua_pop(L, 1);
+
+	/* Set the global OS identifiers */
+	lua_pushstring(L, os_get());
+	lua_setglobal(L, "OS");
+
+	lua_pushnumber(L, 1);
+	lua_setglobal(L, os_get());
 
 	/* Create a list of option descriptions for addoption() */
 	lua_getregistry(L);
@@ -190,6 +204,31 @@ static const char* export_value(int parent, int object, const char* name)
 	return value;
 }
 
+static int export_fileconfig(PkgConfig* config, int arr)
+{
+	int obj, count, i;
+
+	count = prj_getlistsize((void**)config->files);
+	config->fileconfigs = (FileConfig**)prj_newlist(count);
+	for (i = 0; i < count; ++i)
+	{
+		FileConfig* fconfig = ALLOCT(FileConfig);
+		config->fileconfigs[i] = fconfig;
+
+		obj = tbl_get(arr, config->files[i]);
+		if (obj > 0)
+		{
+			fconfig->buildaction = tbl_getstring(obj, "buildaction");
+		}
+		else
+		{
+			fconfig->buildaction = NULL;
+		}
+	}
+
+	return 1;
+}
+
 static int export_pkgconfig(Package* package, int tbl)
 {
 	int arr, obj;
@@ -222,6 +261,9 @@ static int export_pkgconfig(Package* package, int tbl)
 
 		if (config->target == NULL)
 			config->target = package->name;
+
+		/* Build a list of file configurations */
+		export_fileconfig(config, arr);
 	}
 
 	return 1;
@@ -479,6 +521,9 @@ static int tbl_get(int from, const char* name)
 	lua_pushstring(L, name);
 	lua_gettable(L, -2);
 
+	if (lua_isnil(L, -1))
+		return 0;
+
 	if (!lua_istable(L, -1))
 	{
 		char msg[512];
@@ -527,7 +572,7 @@ static int tbl_getlen_deep(int tbl)
 		lua_rawgeti(L, -1, i);
 		if (lua_istable(L, -1))
 		{
-			size += tbl_getlen_deep(lua_ref(L, 0));
+			size += tbl_getlen_deep(lua_ref(L, -1));
 		}
 		else
 		{
@@ -605,6 +650,17 @@ static int docommand(lua_State* L)
 	if (!onCommand(cmd, arg))
 		exit(1);
 	return 0;
+}
+
+
+static int chdir_lua(lua_State* L)
+{
+	const char* path = luaL_checkstring(L, 2);
+	if (io_chdir(path))
+		lua_pushnumber(L, 1);
+	else
+		lua_pushnil(L);
+	return 1;
 }
 
 
@@ -722,6 +778,18 @@ static int matchfiles(lua_State* L)
 }
 
 
+static int newfileconfig(lua_State* L)
+{
+	lua_newtable(L);
+	lua_pushvalue(L, 1);
+	lua_pushvalue(L, 2);
+	lua_pushvalue(L, 3);
+	lua_rawset(L, -3);
+	lua_pop(L, 1);
+	return 1;
+}
+
+
 static int newpackage(lua_State* L)
 {
 	int count, i;
@@ -804,6 +872,14 @@ static int newpackage(lua_State* L)
 	}
 
 	lua_pop(L, 2);
+
+	/* Hook the index metamethod so I can dynamically add file configs */
+	lua_newtable(L);
+	lua_pushstring(L, "__index");
+	lua_pushcfunction(L, newfileconfig);
+	lua_settable(L, -3);
+	lua_setmetatable(L, -2);
+
 	lua_settable(L, -3);
 
 	return 1;

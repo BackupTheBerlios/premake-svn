@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 
 	/* chdir() to the directory containing the project script, so that
 	 * relative paths may be used in the script */
-	io_setcwd(path_getdir(g_filename));
+	io_chdir(path_getdir(g_filename));
 
 	/* Now run the script */
 	if (!script_run(g_filename))
@@ -127,6 +127,9 @@ static int postprocess()
 	const char* flag = arg_getflag();
 	while (flag != NULL)
 	{
+		if (!script_export())
+			return 0;
+
 		if (matches(flag, "--help"))
 		{
 			showUsage();
@@ -147,9 +150,6 @@ int onCommand(const char* cmd, const char* arg)
 {
 	if (matches(cmd, "target"))
 	{
-		if (!script_export())
-			return 0;
-
 		if (matches(arg, "gnu"))
 		{
 			return gnu_generate();
