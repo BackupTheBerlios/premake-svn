@@ -60,12 +60,12 @@ void   prj_close()
 				free((void*)config->links);
 			}
 
-			prj_freelist(package->configs);
+			prj_freelist((void**)package->configs);
 		}
 
-		prj_freelist(project->options);
-		prj_freelist(project->configs);
-		prj_freelist(project->packages);
+		prj_freelist((void**)project->options);
+		prj_freelist((void**)project->configs);
+		prj_freelist((void**)project->packages);
 		free(project);
 		project = NULL;
 	}
@@ -332,7 +332,7 @@ const char* prj_get_pkgname_for(int i)
 
 int prj_get_numconfigs()
 {
-	return prj_getlistsize(project->configs);
+	return prj_getlistsize((void**)project->configs);
 }
 
 
@@ -342,7 +342,7 @@ int prj_get_numconfigs()
 
 int prj_get_numoptions()
 {
-	return prj_getlistsize(project->options);
+	return prj_getlistsize((void**)project->options);
 }
 
 
@@ -352,7 +352,7 @@ int prj_get_numoptions()
 
 int prj_get_numpackages()
 {
-	return prj_getlistsize(project->packages);
+	return prj_getlistsize((void**)project->packages);
 }
 
 

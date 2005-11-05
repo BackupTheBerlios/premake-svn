@@ -169,10 +169,4 @@ int platform_rmdir(const char* path)
 	return 1;
 }
 
-
-int platform_setcwd(const char* path)
-{
-	return SetCurrentDirectory(path);
-}
-
 #endif

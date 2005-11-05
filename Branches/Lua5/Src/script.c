@@ -184,7 +184,7 @@ static int export_list(int parent, int object, const char* name, const char*** l
 	int objArr = tbl_get(object, name);
 	int objLen = tbl_getlen_deep(objArr);
 
-	*list = (char**)prj_newlist(parLen + objLen);
+	*list = (const char**)prj_newlist(parLen + objLen);
 
 	for (i = 0; i < parLen; ++i)
 		(*list)[i] = tbl_getstringi(parArr, i + 1);

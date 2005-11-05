@@ -28,7 +28,7 @@ static FILE* file;
 
 int io_chdir(const char* path)
 {
-	return platform_setcwd(path);
+	return platform_chdir(path);
 }
 
 int io_closefile()

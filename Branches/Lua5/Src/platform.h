@@ -28,4 +28,3 @@ int         platform_mask_isfile();
 int         platform_mask_open(const char* mask);
 int         platform_mkdir(const char* path);
 int         platform_rmdir(const char* path);
-int         platform_setcwd(const char* path);
