@@ -606,7 +606,7 @@ static const char* tbl_getstringi_worker(int arr, int* index)
 	const char* result = NULL;
 
 	lua_getref(L, arr);
-	for (i = 1; i < luaL_getn(L, -1) && *index > 0; ++i)
+	for (i = 1; i <= luaL_getn(L, -1) && *index > 0; ++i)
 	{
 		lua_rawgeti(L, -1, i);
 		if (lua_istable(L, -1))

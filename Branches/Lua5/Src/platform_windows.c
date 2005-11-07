@@ -89,7 +89,8 @@ int platform_mask_close()
 const char* platform_mask_getname()
 {
 	strcpy(buffer, maskPath);
-	strcat(buffer, "/");
+	if (strlen(buffer) > 0)
+		strcat(buffer, "/");
 	strcat(buffer, entry.cFileName);
 	return buffer;
 }
