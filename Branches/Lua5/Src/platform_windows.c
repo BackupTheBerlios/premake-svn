@@ -77,6 +77,7 @@ int platform_isAbsolutePath(const char* path)
 	return (path[0] == '/' || path[0] == '\\' || (strlen(path) > 1 && path[1] == ':'));
 }
 
+
 int platform_mask_close()
 {
 	if (hDir != INVALID_HANDLE_VALUE)
@@ -119,6 +120,8 @@ int platform_mask_isfile()
 
 int platform_mask_open(const char* mask)
 {
+	platform_getcwd(buffer, 1024);
+
 	maskPath = path_getdir(mask);
 
 	hDir = FindFirstFile(mask, &entry);

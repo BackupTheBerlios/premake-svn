@@ -8,8 +8,27 @@ namespace Premake.Tests.Framework
 {
 	public class TestEnvironment
 	{
+		private static ArrayList _files;
+		private static Hashtable _scripts;
+
 		public static string    Errors;
 		public static string    Output;
+
+		static TestEnvironment()
+		{
+			_files = new ArrayList();
+			_scripts = new Hashtable();
+		}
+
+		public static void AddFile(string filename)
+		{
+			_files.Add(filename);
+		}
+
+		public static void AddScript(Script script)
+		{
+			_scripts["premake.lua"] = script;
+		}
 
 		public static void Run(Script script, Parser parser, Project expected, string[] options)
 		{
@@ -20,6 +39,15 @@ namespace Premake.Tests.Framework
 			string temp = Path.GetTempPath() + Guid.NewGuid().ToString() + Path.DirectorySeparatorChar;
 			Directory.CreateDirectory(temp);
 			Directory.SetCurrentDirectory(temp);
+
+			/* Create any required files */
+			foreach (string filename in _files)
+			{
+				string dirname = Path.GetDirectoryName(filename);
+				if (dirname != String.Empty && !Directory.Exists(dirname))
+					Directory.CreateDirectory(dirname);
+				File.Create(filename).Close();
+			}
 
 			try
 			{

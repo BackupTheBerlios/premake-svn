@@ -600,16 +600,42 @@ static const char* tbl_getstring(int from, const char* name)
 }
 
 
+static const char* tbl_getstringi_worker(int arr, int* index)
+{
+	int i;
+	const char* result = NULL;
+
+	lua_getref(L, arr);
+	for (i = 1; i < luaL_getn(L, -1) && *index > 0; ++i)
+	{
+		lua_rawgeti(L, -1, i);
+		if (lua_istable(L, -1))
+		{
+			int ref = lua_ref(L, -1);
+			result = tbl_getstringi_worker(ref, index);
+		}
+		else if (*index == 1)
+		{
+			result = lua_tostring(L, -1);
+			lua_pop(L, 1);
+			(*index)--;
+		}
+		else
+		{
+			lua_pop(L, 1);
+			(*index)--;
+		}
+	}
+
+	lua_pop(L, 1);
+	return result;
+}
+
 static const char* tbl_getstringi(int from, int i)
 {
-	const char* str;
-	
-	lua_getref(L, from);
-	lua_rawgeti(L, -1, i);
-	str = lua_tostring(L, -1);
-	lua_pop(L, 2);
-
-	return str;
+	int index = i;
+	const char* result = tbl_getstringi_worker(from, &index);
+	return result;
 }
 
 
@@ -679,6 +705,7 @@ static int copyfile(lua_State* L)
 static int dopackage(lua_State* L)
 {
 	const char* oldScript;
+	char oldcwd[8192];
 	char filename[8192];
 	int result;
 
@@ -686,20 +713,21 @@ static int dopackage(lua_State* L)
 	lua_pushnil(L);
 	lua_setglobal(L, "package");
 
-	/* Search for the file */
+	/* Remember the current state of things so I can restore after script runs */
 	oldScript = currentScript;
-	currentScript = filename;
+	strcpy(oldcwd, io_getcwd());
 
+	/* Try to locate the script file */
 	strcpy(filename, lua_tostring(L, 1));
 	if (!io_fileexists(filename))
 	{
-		strcat(filename, ".lua");
+		strcpy(filename, path_join("", lua_tostring(L, 1), "lua"));
 	}
 	if (!io_fileexists(filename))
 	{
-		strcpy(filename, lua_tostring(L, 1));
-		strcat(filename, "/premake.lua");
+		strcpy(filename, path_join(lua_tostring(L, 1), "premake.lua", ""));
 	}
+
 	if (!io_fileexists(filename))
 	{
 		lua_pushstring(L, "Unable to open package '");
@@ -709,8 +737,14 @@ static int dopackage(lua_State* L)
 		lua_error(L);
 	}
 
-	result = lua_dofile(L, filename);
+	currentScript = filename;
+	io_chdir(path_getdir(filename));
+
+	result = lua_dofile(L, path_getname(filename));
+	
+	/* Restore the previous state */
 	currentScript = oldScript;
+	io_chdir(oldcwd);
 	return 0;
 }
 
