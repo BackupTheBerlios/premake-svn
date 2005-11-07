@@ -1,6 +1,6 @@
 /**********************************************************************
- * Premake - script.h
- * Interface to the Lua scripting engine.
+ * Premake - vs6.h
+ * The Visual C++ 6 target
  *
  * Copyright (c) 2002-2005 Jason Perkins and the Premake project
  * 
@@ -15,7 +15,6 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-int script_run(const char* filename);
-int script_export();
-int script_docommand();
-int script_close();
+int vs6_generate();
+
+int vs6_cpp();

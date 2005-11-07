@@ -2,7 +2,7 @@
  * Premake - project.h
  * An interface around the project data.
  *
- * Copyright (c) 2002-2005 Jason Perkins.
+ * Copyright (c) 2002-2005 Jason Perkins and the Premake project
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -96,6 +96,7 @@ const char** prj_get_libpaths();
 const char** prj_get_linkoptions();
 const char** prj_get_links();
 const char*  prj_get_objdir();
+const char*  prj_get_name();
 int          prj_get_numconfigs();
 int          prj_get_numoptions();
 int          prj_get_numpackages();

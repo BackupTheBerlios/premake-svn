@@ -2,7 +2,7 @@
  * Premake - premake.c
  * The program entry point.
  *
- * Copyright (c) 2002-2005 Jason Perkins.
+ * Copyright (c) 2002-2005 Jason Perkins and the Premake project
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@
 #include "Lua/lua.h"
 
 #include "gnu.h"
+#include "vs6.h"
 
 const char* DEFAULT   = "premake.lua";
 const char* VERSION   = "3.0-cvs";
@@ -40,6 +41,10 @@ static void showUsage();
 
 int clean();
 
+
+/**********************************************************************
+ * Program entry point
+ **********************************************************************/
 
 int main(int argc, char** argv)
 {
@@ -85,6 +90,10 @@ int main(int argc, char** argv)
 }
 
 
+/**********************************************************************
+ * Command-line processing that is done before the script is run
+ **********************************************************************/
+
 static int preprocess()
 {
 	const char* flag = arg_getflag();
@@ -122,6 +131,10 @@ static int preprocess()
 }
 
 
+/**********************************************************************
+ * Command-line processing that happens after the script has run
+ **********************************************************************/
+
 static int postprocess()
 {
 	const char* flag = arg_getflag();
@@ -146,6 +159,10 @@ static int postprocess()
 }
 
 
+/**********************************************************************
+ * Default command handler
+ **********************************************************************/
+
 int onCommand(const char* cmd, const char* arg)
 {
 	if (matches(cmd, "target"))
@@ -153,6 +170,10 @@ int onCommand(const char* cmd, const char* arg)
 		if (matches(arg, "gnu"))
 		{
 			return gnu_generate();
+		}
+		else if (matches(arg, "vs6"))
+		{
+			return vs6_generate();
 		}
 		else
 		{
@@ -182,6 +203,10 @@ int onCommand(const char* cmd, const char* arg)
 	return 1;
 }
 
+
+/**********************************************************************
+ * Help message text
+ **********************************************************************/
 
 void showUsage()
 {

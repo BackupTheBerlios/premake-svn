@@ -2,7 +2,7 @@
  * Premake - project.c
  * An interface around the project data.
  *
- * Copyright (c) 2002-2005 Jason Perkins.
+ * Copyright (c) 2002-2005 Jason Perkins and the Premake project
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -309,6 +309,11 @@ const char** prj_get_links()
 /************************************************************************
  * Return the name of the active object
  ***********************************************************************/
+
+const char* prj_get_name()
+{
+	return project->name;
+}
 
 const char* prj_get_cfgname()
 {

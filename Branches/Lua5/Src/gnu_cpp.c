@@ -2,7 +2,7 @@
  * Premake - gnu_cpp.c
  * The GNU C/C++ makefile target
  *
- * Copyright (c) 2002-2005 Jason Perkins.
+ * Copyright (c) 2002-2005 Jason Perkins and the Premake project
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

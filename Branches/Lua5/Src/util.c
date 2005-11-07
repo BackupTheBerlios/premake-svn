@@ -2,7 +2,7 @@
  * Premake - util.c
  * Support functions.
  *
- * Copyright (c) 2002-2005 Jason Perkins.
+ * Copyright (c) 2002-2005 Jason Perkins and the Premake project
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,10 +15,12 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
+#include <stdlib.h>
 #include <string.h>
 #include "premake.h"
 
 static char* CPP_EXT[] = { ".cc", ".cpp", ".cxx", ".c", ".s", NULL };
+static char buffer[8192];
 
 
 /************************************************************************
@@ -76,4 +78,73 @@ void print_list(const char** list, const char* prefix, const char* postfix, cons
 	}
 }
 
+
+/************************************************************************
+ * Iterate through the list of files, build a tree structure
+ ***********************************************************************/
+
+void print_source_tree(const char* path, void (*cb)(const char*, int))
+{
+	const char** i;
+
+	/* Open an enclosing group */
+	strcpy(buffer, path);
+	if (buffer[strlen(buffer) - 1] == '/')   /* Trim off trailing path separator */
+		buffer[strlen(buffer) - 1] = '\0';
+	cb(buffer, WST_OPENGROUP);
+
+	for (i = prj_get_files(); *i != NULL; ++i)
+	{
+		const char* source = (*i);
+
+		/* For each file in the target directory... */
+		if (strlen(source) > strlen(path) && strncmp(source, path, strlen(path)) == 0)
+		{
+			/* Look for a subdirectory... */
+			const char* ptr = strchr(source + strlen(path), '/');
+			if (ptr != NULL)
+			{
+				const char** j;
+
+				/* Pull out the subdirectory name */
+				strncpy(buffer, source, ptr - source + 1);
+				buffer[ptr - source + 1] = '\0';
+
+				/* Have I processed this subdirectory already? Check to see if
+				 * I encountered the same subdir name earlier in the list */
+				for (j = prj_get_files(); *j != NULL; ++j)
+				{
+					if (strncmp(buffer, *j, strlen(buffer)) == 0)
+						break;
+				}
+
+				if (i == j)
+				{
+					/* Not processed earlier, process it now. Make a local copy
+					 * because 'buffer' will be reused in the next call */
+					char* newpath = (char*)malloc(strlen(buffer) + 1);
+					strcpy(newpath, buffer);
+					print_source_tree(newpath, cb);
+					free(newpath);
+				}
+			}
+		}
+	}
+
+	/* Now send all files that live in 'path' */
+	for (i = prj_get_files(); *i != NULL; ++i)
+	{
+		const char* source = (*i);
+		const char* ptr = strrchr(source, '/');
+		/* Make sure file is in path and not a subdir under path */
+		if (strncmp(path, source, strlen(path)) == 0 && ptr <= source + strlen(path))
+			cb(source, WST_SOURCEFILE);
+	}
+
+	/* Close the enclosing group */
+	strcpy(buffer, path);
+	if (buffer[strlen(buffer)-1] == '/')   /* Trim off trailing path separator */
+		buffer[strlen(buffer)-1] = '\0';
+	cb(buffer, WST_CLOSEGROUP);
+}
 
