@@ -42,8 +42,8 @@ namespace Premake.Tests.Vs2003.Cpp
 		public void Test_PathsOnPackage()
 		{
 			_script.Append("package.includepaths = { '../src', '../include' }");
-			_expects.Package[0].Config[0].IncludePaths = new string[] { "..\\src", "..\\include" };
-			_expects.Package[0].Config[1].IncludePaths = new string[] { "..\\src", "..\\include" };
+			_expects.Package[0].Config[0].IncludePaths = new string[] { "../src", "../include" };
+			_expects.Package[0].Config[1].IncludePaths = new string[] { "../src", "../include" };
 			Run();
 		}
 
@@ -52,8 +52,8 @@ namespace Premake.Tests.Vs2003.Cpp
 		{
 			_script.Append("package.config['Debug'].includepaths = { '../debug' }");
 			_script.Append("package.config['Release'].includepaths = { '../release' }");
-			_expects.Package[0].Config[0].IncludePaths = new string[] { "..\\debug" };
-			_expects.Package[0].Config[1].IncludePaths = new string[] { "..\\release" };
+			_expects.Package[0].Config[0].IncludePaths = new string[] { "../debug" };
+			_expects.Package[0].Config[1].IncludePaths = new string[] { "../release" };
 			Run();
 		}
 			
@@ -63,8 +63,8 @@ namespace Premake.Tests.Vs2003.Cpp
 			_script.Append("package.includepaths = { '../package' }");
 			_script.Append("package.config['Debug'].includepaths = { '../debug' }");
 			_script.Append("package.config['Release'].includepaths = { '../release' }");
-			_expects.Package[0].Config[0].IncludePaths = new string[] { "..\\package", "..\\debug" };
-			_expects.Package[0].Config[1].IncludePaths = new string[] { "..\\package", "..\\release" };
+			_expects.Package[0].Config[0].IncludePaths = new string[] { "../package", "../debug" };
+			_expects.Package[0].Config[1].IncludePaths = new string[] { "../package", "../release" };
 			Run();
 		}
 	}

@@ -33,7 +33,8 @@ int vs6_cpp()
 	int i;
 
 	/* Start the file */
-	io_openfile(path_join(prj_get_pkgpath(), prj_get_pkgname(), "dsp"));
+	if (!io_openfile(path_join(prj_get_pkgpath(), prj_get_pkgname(), "dsp")))
+		return 0;
 
 	if (prj_is_kind("winexe"))
 	{

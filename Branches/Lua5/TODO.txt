@@ -11,5 +11,6 @@ Add tinsert() as alias to table.insert()
 
 Add global functions back as aliases to os.xxx() functions
 
+Add package.linkflags back and wrap under prj_has_flag(), but don't document
 
 

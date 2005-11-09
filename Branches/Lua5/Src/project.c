@@ -156,6 +156,11 @@ void prj_set_data(void* data)
  * Return the list of defines for the current object
  ***********************************************************************/
 
+int prj_get_numdefines()
+{
+	return prj_getlistsize((void**)prj_get_defines());
+}
+
 const char** prj_get_defines()
 {
 	return my_cfg->defines;
@@ -252,6 +257,19 @@ int prj_has_file(const char* name)
 	return 0;
 }
 
+const char* prj_find_filetype(const char* extension)
+{
+	const char** ptr = my_cfg->files;
+	while (*ptr != NULL)
+	{
+		if (matches(path_getextension(*ptr), extension))
+			return *ptr;
+		ptr++;
+	}
+
+	return NULL;
+}
+
 
 /************************************************************************
  * Query the build flags
@@ -276,9 +294,19 @@ int prj_has_flag_for(int i, const char* flag)
 	return 0;
 }
 
+int prj_get_numbuildoptions()
+{
+	return prj_getlistsize((void**)prj_get_buildoptions());
+}
+
 const char** prj_get_buildoptions()
 {
 	return my_cfg->buildopts;
+}
+
+int prj_get_numlinkoptions()
+{
+	return prj_getlistsize((void**)prj_get_linkoptions());
 }
 
 const char** prj_get_linkoptions()
@@ -305,6 +333,11 @@ int prj_is_kind(const char* kind)
 /************************************************************************
  * Return the list of include paths for the current object
  ***********************************************************************/
+
+int prj_get_numincpaths()
+{
+	return prj_getlistsize((void**)prj_get_incpaths());
+}
 
 const char** prj_get_incpaths()
 {
@@ -345,6 +378,11 @@ const char** prj_get_libpaths()
 /************************************************************************
  * Return the list of links for the current object
  ***********************************************************************/
+
+int prj_get_numlinks()
+{
+	return prj_getlistsize((void**)prj_get_links());
+}
 
 const char** prj_get_links()
 {

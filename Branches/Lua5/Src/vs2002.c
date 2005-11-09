@@ -32,12 +32,37 @@ static const char* listPackageDeps(const char* name);
 
 int vs2002_generate(int target)
 {
+	int i;
+
 	vs_target = target;
 
 	printf("Generating Visual Studio %d solution and project files:\n", vs_target);
 
 	/* Assign GUIDs to packages */
 	assignPackageData();
+
+	/* Generate the project files */
+	for (i = 0; i < prj_get_numpackages(); ++i)
+	{
+		prj_select_package(i);
+
+		printf("...%s\n", prj_get_pkgname());
+
+		if (prj_is_lang("c++") || prj_is_lang("c"))
+		{
+			if (!vs2002_cpp())
+				return 0;
+		}
+		else if (prj_is_lang("c#"))
+		{
+			if (!vs2002_cs())
+				return 0;
+		}
+		else
+		{
+			printf("** Warning: %s packages are not supported by this generator\n", prj_get_language());
+		}
+	}
 
 	return writeSolution();
 }

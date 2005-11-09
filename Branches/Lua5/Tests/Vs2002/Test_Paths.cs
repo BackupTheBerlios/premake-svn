@@ -32,7 +32,7 @@ namespace Premake.Tests.Vs2002
 		[Test]
 		public void Test_AllInSameDirectory()
 		{
-			_expects.Package[0].Path = "";
+			_expects.Package[0].Path = ".\\";
 			Run();
 		}
 
@@ -69,7 +69,7 @@ namespace Premake.Tests.Vs2002
 			_script.Append("project.path = 'Build'");
 			_script.Append("package.path = 'Build'");
 			_expects.Path = "Build";
-			_expects.Package[0].Path = "..\\Build\\";
+			_expects.Package[0].Path = ".\\";
 			Run();
 		}
 

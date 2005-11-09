@@ -43,8 +43,8 @@ namespace Premake.Tests.Vs2003.Cpp
 		public void Test_BinDir_SetAtProject()
 		{
 			_script.Append("project.bindir = 'bin'");
-			_expects.Package[0].Config[0].BinDir = ".\\bin";
-			_expects.Package[0].Config[1].BinDir = ".\\bin";
+			_expects.Package[0].Config[0].BinDir = "bin";
+			_expects.Package[0].Config[1].BinDir = "bin";
 			Run();
 		}
 
@@ -53,8 +53,8 @@ namespace Premake.Tests.Vs2003.Cpp
 		{
 			_script.Append("project.config['Debug'].bindir = 'bin/Debug'");
 			_script.Append("project.config['Release'].bindir = 'bin/Release'");
-			_expects.Package[0].Config[0].BinDir = ".\\bin\\Debug";
-			_expects.Package[0].Config[1].BinDir = ".\\bin\\Release";
+			_expects.Package[0].Config[0].BinDir = "bin/Debug";
+			_expects.Package[0].Config[1].BinDir = "bin/Release";
 			Run();
 		}
 		#endregion
@@ -72,8 +72,8 @@ namespace Premake.Tests.Vs2003.Cpp
 		public void Test_LibDir_SetAtProject()
 		{
 			_script.Append("project.libdir = 'lib'");
-			_expects.Package[0].Config[0].LibDir = ".\\lib";
-			_expects.Package[0].Config[1].LibDir = ".\\lib";
+			_expects.Package[0].Config[0].LibDir = "lib";
+			_expects.Package[0].Config[1].LibDir = "lib";
 			Run();
 		}
 
@@ -82,8 +82,8 @@ namespace Premake.Tests.Vs2003.Cpp
 		{
 			_script.Append("project.config['Debug'].libdir = 'lib/Debug'");
 			_script.Append("project.config['Release'].libdir = 'lib/Release'");
-			_expects.Package[0].Config[0].LibDir = ".\\lib\\Debug";
-			_expects.Package[0].Config[1].LibDir = ".\\lib\\Release";
+			_expects.Package[0].Config[0].LibDir = "lib/Debug";
+			_expects.Package[0].Config[1].LibDir = "lib/Release";
 			Run();
 		}
 		#endregion
@@ -92,8 +92,8 @@ namespace Premake.Tests.Vs2003.Cpp
 		[Test]
 		public void Test_ObjDir_Default()
 		{
-			_expects.Package[0].Config[0].ObjDir = "obj\\Debug";
-			_expects.Package[0].Config[1].ObjDir = "obj\\Release";
+			_expects.Package[0].Config[0].ObjDir = "obj/Debug";
+			_expects.Package[0].Config[1].ObjDir = "obj/Release";
 			Run();
 		}
 
@@ -101,8 +101,8 @@ namespace Premake.Tests.Vs2003.Cpp
 		public void Test_ObjDir_SetAtPackage()
 		{
 			_script.Append("package.objdir = 'temp'");
-			_expects.Package[0].Config[0].ObjDir = "temp\\Debug";
-			_expects.Package[0].Config[1].ObjDir = "temp\\Release";
+			_expects.Package[0].Config[0].ObjDir = "temp/Debug";
+			_expects.Package[0].Config[1].ObjDir = "temp/Release";
 			Run();
 		}
 		#endregion
