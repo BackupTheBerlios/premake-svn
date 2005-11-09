@@ -168,7 +168,7 @@ int gnu_cs()
 		/* VS.NET doesn't allow per-config libraries or link paths */
 		prj_select_config(0);
 		print_list(prj_get_libpaths(), " /lib:\"", "\"", "", NULL);
-		print_list(prj_get_links(), " /r:", ".dll", "", listReferences);
+		print_list(prj_get_links(), " /r:", "", "", listReferences);
 		io_print("\n");
 
 		/* List any sibling packages as dependencies */
@@ -177,7 +177,7 @@ int gnu_cs()
 		io_print("\n");
 
 		/* VS.NET doesn't allow per-config target names */
-		io_print("  TARGET = %s\n", prj_get_target());
+		io_print("  TARGET = %s\n", path_getname(prj_get_target()));
 		io_print("endif\n\n");
 	}
 
@@ -332,7 +332,7 @@ static const char* listCodeFiles(const char* name)
 {
 	prj_select_file(name);
 	if (prj_is_buildaction("Code"))
-		return name;
+		return path_translate(name, NULL);
 	else
 		return NULL;
 }
@@ -386,7 +386,7 @@ static const char* listReferences(const char* name)
 	}
 	else
 	{
-		return name;
+		return path_join("", name, "dll");
 	}
 }
 
@@ -404,8 +404,7 @@ static const char* listReferenceDeps(const char* name)
 	int i = prj_find_package(name);
 	if (i >= 0)
 	{
-		strcpy(buffer, prj_get_outdir_for(i));
-		return path_combine(buffer, prj_get_target_for(i));
+		return prj_get_target_for(i);
 	}
 
 	return NULL;

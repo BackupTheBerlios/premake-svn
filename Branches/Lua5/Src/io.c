@@ -168,7 +168,7 @@ int io_rmdir(const char* path, const char* dir)
 	if (strlen(buffer) > 0) 
 		strcat(buffer, "/");
 	strcat(buffer, dir);
-	path_translateInPlace(buffer, NATIVE);
+	path_translateInPlace(buffer, NULL);
 	return platform_rmdir(buffer);
 }
 

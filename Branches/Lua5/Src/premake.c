@@ -23,6 +23,7 @@
 #include "Lua/lua.h"
 
 #include "gnu.h"
+#include "sharpdev.h"
 #include "vs6.h"
 
 const char* DEFAULT   = "premake.lua";
@@ -170,6 +171,14 @@ int onCommand(const char* cmd, const char* arg)
 		if (matches(arg, "gnu"))
 		{
 			return gnu_generate();
+		}
+		else if (matches(arg, "monodev") || matches(arg, "md"))
+		{
+			return sharpdev_generate("monodev");
+		}
+		else if (matches(arg, "sharpdev") || matches(arg, "sd"))
+		{
+			return sharpdev_generate("sharpdev");
 		}
 		else if (matches(arg, "vs6"))
 		{

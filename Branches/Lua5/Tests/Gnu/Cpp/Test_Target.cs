@@ -249,7 +249,7 @@ namespace Premake.Tests.Gnu.Cpp
 		public void Test_MacOSX_WinExeTarget()
 		{
 			_script.Replace("'exe'", "'winexe'");
-			_expects.Package[0].Config[0].Target = "MyPackage.app/Contents/MacOS/MyPackage";
+			_expects.Package[0].Config[0].Target = "MyPackage";
 			Run("--os macosx");
 		}
 
@@ -261,7 +261,7 @@ namespace Premake.Tests.Gnu.Cpp
 		}
 
 		[Test]
-		public void Test_MacOS_XDllTarget()
+		public void Test_MacOSX_DllTarget()
 		{
 			_script.Replace("'exe'", "'dll'");
 			_expects.Package[0].Config[0].Target = "libMyPackage.so";

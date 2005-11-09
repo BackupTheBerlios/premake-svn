@@ -84,7 +84,7 @@ int gnu_cpp()
 
 		/* Write C flags */
 		io_print("  CFLAGS += $(CPPFLAGS)");
-		if (prj_is_kind("dll"))
+		if (prj_is_kind("dll") && !os_is("windows"))
 			io_print(" -fPIC");
 		if (!prj_has_flag("no-symbols"))
 			io_print(" -g");
@@ -130,9 +130,9 @@ int gnu_cpp()
 		io_print("\n");
 
 		/* Build the target name */
-		io_print("  TARGET = %s\n", prj_get_target());
+		io_print("  TARGET = %s\n", path_getname(prj_get_target()));
 		if (os_is("macosx") && prj_is_kind("winexe"))
-			io_print("  MACAPP = %s\n", path_getname(prj_get_target()));
+			io_print("  MACAPP = %s.app/Contents\n", path_getname(prj_get_target()));
 
 		io_print("endif\n\n");
 	}
@@ -148,15 +148,22 @@ int gnu_cpp()
 	/* Write the main build target */
 	if (os_is("macosx") && prj_is_kind("winexe"))
 	{
-		io_print("all: $(BINDIR)/$(MACAPP).app/Contents/PkgInfo $(BINDIR)/$(MACAPP).app/Contents/Info.plist $(BINDIR)/$(TARGET)\n\n");
+		io_print("all: $(OUTDIR)/$(MACAPP)/PkgInfo $(OUTDIR)/$(MACAPP)/Info.plist $(OUTDIR)/$(MACAPP)/MacOS/$(TARGET)\n\n");
+		io_print("$(OUTDIR)/$(MACAPP)/MacOS/$(TARGET)");
 	}
-	io_print("$(OUTDIR)/$(TARGET): $(OBJECTS) $(LDDEPS)\n");
+	else
+	{
+		io_print("$(OUTDIR)/$(TARGET)");
+	}
+
+	io_print(": $(OBJECTS) $(LDDEPS)\n");
 	if (!g_verbose)
 		io_print("\t@echo Linking %s\n", prj_get_pkgname());
 	io_print("\t-%sif [ ! -d $(BINDIR) ]; then mkdir -p $(BINDIR); fi\n", prefix);
 	io_print("\t-%sif [ ! -d $(LIBDIR) ]; then mkdir -p $(LIBDIR); fi\n", prefix);
+	io_print("\t-%sif [ ! -d $(OUTDIR) ]; then mkdir -p $(OUTDIR); fi\n", prefix);
 	if (os_is("macosx") && prj_is_kind("winexe"))
-		io_print("\t-%sif [ ! -d $(BINDIR)/$(MACAPP).app/Contents/MacOS ]; then mkdir -p $(BINDIR)/$(MACAPP).app/Contents/MacOS; fi\n", prefix);
+		io_print("\t-%sif [ ! -d $(OUTDIR)/$(MACAPP)/MacOS ]; then mkdir -p $(OUTDIR)/$(MACAPP)/MacOS; fi\n", prefix);
 
 	if (prj_is_kind("lib"))
 	{
@@ -171,8 +178,8 @@ int gnu_cpp()
 
 	if (os_is("macosx") && prj_is_kind("winexe"))
 	{
-		io_print("$(BINDIR)/$(MACAPP).app/Contents/PkgInfo:\n\n");
-		io_print("$(BINDIR)/$(MACAPP).app/Contents/Info.plist:\n\n");
+		io_print("$(OUTDIR)/$(MACAPP)/PkgInfo:\n\n");
+		io_print("$(OUTDIR)/$(MACAPP)/Info.plist:\n\n");
 	}
 
 	/* Write the "clean" target */
@@ -180,11 +187,11 @@ int gnu_cpp()
 	io_print("\t@echo Cleaning %s\n", prj_get_pkgname());
 	if (os_is("macosx") && prj_is_kind("winexe"))
 	{
-		io_print("\t-%srm -rf $(OUTDIR)/$(MACAPP).app $(OBJDIR)/*\n", prefix);
+		io_print("\t-%srm -rf $(OUTDIR)/$(TARGET).app $(OBJDIR)\n", prefix);
 	}
 	else
 	{
-		io_print("\t-%srm -rf $(OUTDIR)/$(TARGET) $(OBJDIR)/*\n", prefix);
+		io_print("\t-%srm -rf $(OUTDIR)/$(TARGET) $(OBJDIR)\n", prefix);
 	}
 	io_print("\n");
 
@@ -312,8 +319,7 @@ static const char* listLinkerDeps(const char* name)
 	int i = prj_find_package(name);
 	if (i >= 0)
 	{
-		strcpy(buffer, prj_get_outdir_for(i));
-		return path_combine(buffer, prj_get_target_for(i));
+		return prj_get_target_for(i);
 	}
 
 	return NULL;

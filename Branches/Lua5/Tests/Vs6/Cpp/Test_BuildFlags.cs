@@ -161,7 +161,7 @@ namespace Premake.Tests.Vs6.Cpp
 		[Test]
 		public void Test_StaticRuntime()
 		{
-			_script.Append("package.linkflags = { 'static-runtime' }");
+			_script.Append("package.buildflags = { 'static-runtime' }");
 			_expects.Package[0].Config[0].LinkFlags = new string[] { "static-runtime" };
 			_expects.Package[0].Config[1].LinkFlags = new string[] { "static-runtime" };
 			Run();

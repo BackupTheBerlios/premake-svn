@@ -76,7 +76,7 @@ static int writeWorkspace()
 	{
 		prj_select_package(i);
 
-		io_print("Project: \"%s\"=%s/%s.dsp - Package Owner=<4>\n", prj_get_pkgname(), path_build(prj_get_path(), prj_get_pkgpath()), prj_get_pkgname());
+		io_print("Project: \"%s\"=%s - Package Owner=<4>\n", prj_get_pkgname(), prj_get_pkgfilename("dsp"));
 		io_print("\n");
 		io_print("Package=<5>\n");
 		io_print("{{{\n");
@@ -125,7 +125,7 @@ static const char* listPackageDeps(const char* name)
 	{
 		strcpy(buffer, "    Begin Project Dependency\n");
 		strcat(buffer, "    Project_Dep_Name ");
-		strcat(buffer, prj_get_pkgname());
+		strcat(buffer, prj_get_pkgname_for(i));
 		strcat(buffer, "\n");
 		strcat(buffer, "    End Project Dependency\n");
 		return buffer;

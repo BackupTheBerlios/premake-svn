@@ -7,7 +7,9 @@ think linking will work.
 Test that paths in GNU LDDEPS variable are set properly when the package is in a
 subdirectory under the project.
 
-dopackage() should chdir() to the script directory so relative paths (like to a 
-library file as in wx.NET) will work. This will likely screw up my relative pathing
-back to the project, but ought to be able to fix by setting project.path to the
-full absolute path to the project, rather than just "."
+Add tinsert() as alias to table.insert()
+
+Add global functions back as aliases to os.xxx() functions
+
+
+

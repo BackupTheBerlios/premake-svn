@@ -394,7 +394,8 @@ namespace Premake.Tests.Vs6
 					}
 
 					config.Target = matches[i].Substring(6, matches[i].Length - 7);
-					config.Target = config.Target.Substring(config.OutDir.Length + 1);
+					if (config.Target.StartsWith(config.OutDir))
+						config.Target = config.Target.Substring(config.OutDir.Length + 1);
 					++i;
 
 					if (!bldflags.Contains("no-symbols"))
@@ -456,9 +457,9 @@ namespace Premake.Tests.Vs6
 				filename = matches[0];
 				package.File.Add(filename);
 
-				if (filename.StartsWith(".\\"))
+				if (filename.StartsWith("./"))
 					filename = filename.Substring(2);
-				while (filename.StartsWith("..\\"))
+				while (filename.StartsWith("../"))
 					filename = filename.Substring(3);
 				if (Path.GetDirectoryName(filename) != folder)
 					throw new FormatException("File '" + matches[0] + "' is in folder '" + folder + "'");

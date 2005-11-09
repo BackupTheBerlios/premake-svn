@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using Premake.Tests.Framework;
 
-namespace Premake.Tests.Vs6
+namespace Premake.Tests.SharpDev
 {
 	[TestFixture]
 	public class Test_Paths
@@ -15,12 +15,12 @@ namespace Premake.Tests.Vs6
 		[SetUp]
 		public void Test_Setup()
 		{
-			_script = Script.MakeBasic("exe", "c++");
+			_script = Script.MakeBasic("exe", "c#");
 
 			_expects = new Project();
 			_expects.Package.Add(1);
 
-			_parser = new Vs6Parser();
+			_parser = new SharpDevParser();
 		}
 
 		public void Run()
@@ -59,7 +59,7 @@ namespace Premake.Tests.Vs6
 			_script.Append("project.path = 'BuildDir'");
 			_script.Append("package.path = 'PkgDir'");
 			_expects.Path = "BuildDir";
-			_expects.Package[0].Path = "..\\PkgDir";
+			_expects.Package[0].Path = "../PkgDir";
 			Run();
 		}
 

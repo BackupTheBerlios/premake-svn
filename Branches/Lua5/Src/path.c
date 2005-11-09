@@ -19,9 +19,8 @@
 #include <string.h>
 #include "premake.h"
 #include "platform.h"
+#include "os.h"
 
-
-static const char separators[] = { '/', '/', '\\' };
 
 static char working[8192];
 static char forpart[8192];
@@ -40,7 +39,7 @@ const char* path_absolute(const char* path)
 	strcpy(relative, path);
 	if (strlen(relative) == 0)
 		strcpy(relative, ".");
-	path_translateInPlace(relative, POSIX);
+	path_translateInPlace(relative, "posix");
 
 	/* If the directory is already absolute I don't have to do anything */
 	if (platform_isAbsolutePath(relative))
@@ -48,7 +47,7 @@ const char* path_absolute(const char* path)
 
 	/* Figure out where I am currently */
 	platform_getcwd(working, 8192);
-	path_translateInPlace(working, POSIX);
+	path_translateInPlace(working, "posix");
 
 	/* Split the target path and add it in piece by piece */
 	ptr = relative;
@@ -150,7 +149,7 @@ const char* path_combine(const char* path0, const char* path1)
 	if (!matches(path0, ".") && !matches(path0, "./"))
 		strcat(working, path0);
 
-	path_translateInPlace(working, POSIX);
+	path_translateInPlace(working, "posix");
 
 	if (!matches(path1, "") && !matches(path1, ".") && !matches(path1, "./"))
 	{
@@ -159,7 +158,7 @@ const char* path_combine(const char* path0, const char* path1)
 		strcat(working, path1);
 	}
 
-	path_translateInPlace(working, POSIX);
+	path_translateInPlace(working, "posix");
 	return working;
 }
 
@@ -167,6 +166,17 @@ const char* path_combine(const char* path0, const char* path1)
 /************************************************************************
  * Retrieve the portions of a path
  ***********************************************************************/
+
+char path_getseparator(const char* type)
+{
+	if (type == NULL)
+		type = os_get();
+
+	if (matches(type, "windows"))
+		return '\\';
+	else
+		return '/';
+}
 
 const char* path_getbasename(const char* path)
 {
@@ -191,7 +201,7 @@ const char* path_getdir(const char* path)
 	{
 		/* Convert path to neutral separators */
 		strcpy(forpart, path);
-		path_translateInPlace(forpart, POSIX);
+		path_translateInPlace(forpart, "posix");
 
 		/* Now split at last separator */
 		ptr = strrchr(forpart, '/');
@@ -213,7 +223,7 @@ const char* path_getname(const char* path)
 		return NULL;
 
 	strcpy(forpart, path);
-	path_translateInPlace(forpart, POSIX);
+	path_translateInPlace(forpart, "posix");
 
 	ptr = strrchr(forpart, '/');
 	ptr = (ptr != NULL) ? ++ptr : forpart;
@@ -251,14 +261,19 @@ const char* path_join(const char* dir, const char* name, const char* ext)
  * Translate the separators used in a path
  ***********************************************************************/
 
-void path_translateInPlace(char* buffer, int to)
+const char* path_translate(const char* path, const char* type)
+{
+	strcpy(working, path);
+	path_translateInPlace(working, type);
+	return working;
+}
+
+void path_translateInPlace(char* buffer, const char* type)
 {
 	char* ptr;
-	char  sep = (to == NATIVE) ? platform_getseparator() : separators[to];
-	
 	for (ptr = buffer; *ptr != '\0'; ++ptr)
 	{
 		if (*ptr == '\\' || *ptr == '/')
-			*ptr = sep;
+			*ptr = path_getseparator(type);
 	}
 }

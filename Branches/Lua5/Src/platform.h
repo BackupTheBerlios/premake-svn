@@ -19,7 +19,6 @@ int         platform_chdir(const char* path);
 int         platform_copyfile(const char* src, const char* dest);
 int         platform_findlib(const char* name, char* buffer, int len);
 int         platform_getcwd(char* buffer, int len);
-char        platform_getseparator();
 int         platform_isAbsolutePath(const char* path);
 int         platform_mask_close();
 const char* platform_mask_getname();

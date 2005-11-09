@@ -66,12 +66,6 @@ int platform_getcwd(char* buffer, int len)
 }
 
 
-char platform_getseparator()
-{
-	return '\\';
-}
-
-
 int platform_isAbsolutePath(const char* path)
 {
 	return (path[0] == '/' || path[0] == '\\' || (strlen(path) > 1 && path[1] == ':'));

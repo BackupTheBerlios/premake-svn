@@ -108,6 +108,11 @@ PkgConfig* prj_get_config_for(int i)
  * Get/set a file build action
  ***********************************************************************/
 
+const char* prj_get_buildaction()
+{
+	return my_fcfg->buildaction;
+}
+
 int prj_is_buildaction(const char* action)
 {
 	return matches(my_fcfg->buildaction, action);
@@ -204,6 +209,19 @@ const char* prj_get_outdir_for(int i)
 const char** prj_get_files()
 {
 	return my_cfg->files;
+}
+
+int prj_has_file(const char* name)
+{
+	const char** ptr = my_cfg->files;
+	while (*ptr != NULL)
+	{
+		if (matches(*ptr, name))
+			return 1;
+		ptr++;
+	}
+
+	return 0;
 }
 
 
@@ -411,6 +429,20 @@ const char* prj_get_pkgpath_for(int i)
 	return project->packages[i]->path;
 }
 
+const char* prj_get_pkgfilename(const char* extension)
+{
+	strcpy(buffer, path_build(project->path, my_pkg->path));
+	if (strlen(buffer) > 0)
+		strcat(buffer, "/");
+	strcat(buffer, my_pkg->name);
+	if (extension != NULL)
+	{
+		strcat(buffer, ".");
+		strcat(buffer, extension);
+	}
+	return buffer;
+}
+
 
 /************************************************************************
  * Return the script name for an object.
@@ -445,7 +477,12 @@ const char* prj_get_target_for(int i)
 	PkgConfig* cfg = prj_get_config_for(i);
 	const char* filename = path_getbasename(cfg->target);
 
-	strcpy(buffer, "");
+	/* Prepopulate the buffer with the output directory */
+	prj_get_outdir_for(i);
+	if (matches(buffer, "."))
+		strcpy(buffer, "");
+	if (strlen(buffer) > 0)
+		strcat(buffer, "/");
 
 	if (cfg->prefix != NULL)
 		strcat(buffer, cfg->prefix);
@@ -470,41 +507,19 @@ const char* prj_get_target_for(int i)
 			extension = "exe";
 	}
 
-	else if (os_is("macosx"))
+	else if (os_is("macosx") && matches(pkg->kind, "dll"))
 	{
-		if (matches(pkg->kind, "winexe"))
+		if (prj_has_flag_for(i, "dylib"))
 		{
 			strcat(buffer, filename);
-			strcat(buffer, ".app/Contents/MacOS/");
-			if (cfg->prefix != NULL)
-				strcat(buffer, cfg->prefix);
-			strcat(buffer, filename);
-		}
-		else if (matches(pkg->kind, "exe"))
-		{
-			strcat(buffer, filename);
-		}
-		else if (matches(pkg->kind, "dll"))
-		{
-			if (prj_has_flag_for(i, "dylib"))
-			{
-				strcat(buffer, filename);
-				extension = "dylib";
-			}
-			else
-			{
-				if (cfg->prefix == NULL)
-					strcat(buffer, "lib");
-				strcat(buffer, filename);
-				extension = "so";
-			}
+			extension = "dylib";
 		}
 		else
 		{
 			if (cfg->prefix == NULL)
 				strcat(buffer, "lib");
 			strcat(buffer, filename);
-			extension = "a";
+			extension = "so";
 		}
 	}
 

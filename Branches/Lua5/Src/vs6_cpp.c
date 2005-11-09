@@ -277,12 +277,12 @@ static void writeLinkFlags()
 		io_print("/%s.lib\"", path_getbasename(prj_get_target()));
 	}
 
-	io_print(" /out:\"%s\"", path_combine(prj_get_outdir(), prj_get_target()));
+	io_print(" /out:\"%s\"", prj_get_target());
 
 	if (!prj_has_flag("no-symbols"))
 		io_print(" /pdbtype:sept");
 
-	io_print(" /libpath:\"%s\"", prj_get_libdir(WINDOWS,0));
+	io_print(" /libpath:\"%s\"", prj_get_libdir());
 	print_list(prj_get_libpaths(), " /libpath:\"", "\"", "", NULL);
 	print_list(prj_get_linkoptions(), " ", "", "", NULL);
 

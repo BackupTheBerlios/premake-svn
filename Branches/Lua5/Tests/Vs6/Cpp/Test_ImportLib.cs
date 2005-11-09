@@ -35,8 +35,8 @@ namespace Premake.Tests.Vs6.Cpp
 		[Test]
 		public void Test_WithImportLib()
 		{
-			_expects.Package[0].Config[0].ImportLib = ".\\lib\\MyPackage.lib";
-			_expects.Package[0].Config[1].ImportLib = ".\\lib\\MyPackage.lib";
+			_expects.Package[0].Config[0].ImportLib = "lib/MyPackage.lib";
+			_expects.Package[0].Config[1].ImportLib = "lib/MyPackage.lib";
 			Run();
 		}
 
@@ -44,8 +44,8 @@ namespace Premake.Tests.Vs6.Cpp
 		public void Test_NoImportLib()
 		{
 			_script.Append("package.buildflags = { 'no-import-lib' }");
-			_expects.Package[0].Config[0].ImportLib = "obj\\Debug\\MyPackage.lib";
-			_expects.Package[0].Config[1].ImportLib = "obj\\Release\\MyPackage.lib";
+			_expects.Package[0].Config[0].ImportLib = "obj/Debug/MyPackage.lib";
+			_expects.Package[0].Config[1].ImportLib = "obj/Release/MyPackage.lib";
 			Run();
 		}
 	}

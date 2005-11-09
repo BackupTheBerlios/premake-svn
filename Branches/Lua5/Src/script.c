@@ -389,6 +389,9 @@ static void buildOptionsTable()
 	flag = arg_getflag();
 	while (flag != NULL)
 	{
+		if (strncmp(flag, "--", 2) == 0)
+			flag += 2;
+
 		lua_pushstring(L, flag);
 
 		/* If the flag has an argument, push that too */
@@ -396,7 +399,7 @@ static void buildOptionsTable()
 		if (arg != NULL)
 			lua_pushstring(L, arg);
 		else
-			lua_pushnil(L);
+			lua_pushboolean(L, 1);
 
 		lua_settable(L, -3);
 		flag = arg_getflag();
