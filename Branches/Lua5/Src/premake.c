@@ -25,6 +25,7 @@
 #include "gnu.h"
 #include "sharpdev.h"
 #include "vs6.h"
+#include "vs2002.h"
 
 const char* DEFAULT   = "premake.lua";
 const char* VERSION   = "3.0-cvs";
@@ -183,6 +184,14 @@ int onCommand(const char* cmd, const char* arg)
 		else if (matches(arg, "vs6"))
 		{
 			return vs6_generate();
+		}
+		else if (matches(arg, "vs2002") || matches(arg, "vs7"))
+		{
+			return vs2002_generate(2002);
+		}
+		else if (matches(arg, "vs2003"))
+		{
+			return vs2002_generate(2003);
 		}
 		else
 		{

@@ -55,12 +55,20 @@ void   prj_close()
 			for (j = 0; j < prj_get_numconfigs(); ++j)
 			{
 				PkgConfig* config = package->configs[j];
+				free((void*)config->buildopts);
 				free((void*)config->defines);
+				free((void*)config->files);
+				free((void*)config->flags);
 				free((void*)config->incpaths);
+				free((void*)config->libpaths);
+				free((void*)config->linkopts);
 				free((void*)config->links);
+				prj_freelist((void**)config->fileconfigs);
 			}
 
 			prj_freelist((void**)package->configs);
+			if (package->data != NULL)
+				free(package->data);
 		}
 
 		prj_freelist((void**)project->options);
@@ -121,6 +129,26 @@ int prj_is_buildaction(const char* action)
 void prj_set_buildaction(const char* action)
 {
 	my_fcfg->buildaction = action;
+}
+
+
+/************************************************************************
+ * Get/set generator-specific data
+ ***********************************************************************/
+
+void* prj_get_data()
+{
+	return prj_get_data_for(my_pkg->index);
+}
+
+void* prj_get_data_for(int i)
+{
+	return project->packages[i]->data;
+}
+
+void prj_set_data(void* data)
+{
+	my_pkg->data = data;
 }
 
 

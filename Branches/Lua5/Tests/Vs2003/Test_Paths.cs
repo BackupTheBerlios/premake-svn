@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using Premake.Tests.Framework;
 
-namespace Premake.Tests.SharpDev
+namespace Premake.Tests.Vs2003
 {
 	[TestFixture]
 	public class Test_Paths
@@ -15,12 +15,12 @@ namespace Premake.Tests.SharpDev
 		[SetUp]
 		public void Test_Setup()
 		{
-			_script = Script.MakeBasic("exe", "c#");
+			_script = Script.MakeBasic("exe", "c++");
 
 			_expects = new Project();
 			_expects.Package.Add(1);
 
-			_parser = new SharpDevParser();
+			_parser = new Vs2003Parser();
 		}
 
 		public void Run()
@@ -32,7 +32,7 @@ namespace Premake.Tests.SharpDev
 		[Test]
 		public void Test_AllInSameDirectory()
 		{
-			_expects.Package[0].Path = ".";
+			_expects.Package[0].Path = "";
 			Run();
 		}
 
@@ -40,7 +40,7 @@ namespace Premake.Tests.SharpDev
 		public void Test_PackageInSubDir()
 		{
 			_script.Append("package.path = 'MySubDir'");
-			_expects.Package[0].Path = "./MySubDir";
+			_expects.Package[0].Path = "MySubDir";
 			Run();
 		}
 
@@ -59,7 +59,7 @@ namespace Premake.Tests.SharpDev
 			_script.Append("project.path = 'BuildDir'");
 			_script.Append("package.path = 'PkgDir'");
 			_expects.Path = "BuildDir";
-			_expects.Package[0].Path = "../PkgDir";
+			_expects.Package[0].Path = "..\\PkgDir";
 			Run();
 		}
 
@@ -69,7 +69,7 @@ namespace Premake.Tests.SharpDev
 			_script.Append("project.path = 'Build'");
 			_script.Append("package.path = 'Build'");
 			_expects.Path = "Build";
-			_expects.Package[0].Path = ".";
+			_expects.Package[0].Path = "..\\Build";
 			Run();
 		}
 

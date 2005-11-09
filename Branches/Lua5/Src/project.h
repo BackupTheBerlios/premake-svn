@@ -62,6 +62,7 @@ typedef struct tagPackage
 	const char*  kind;
 	const char*  objdir;
 	PkgConfig**  configs;
+	void*        data;
 } Package;
 
 typedef struct tagProject
@@ -86,6 +87,8 @@ const char*  prj_get_buildaction();
 const char** prj_get_buildoptions();
 const char*  prj_get_cfgname();
 PkgConfig*   prj_get_config_for(int i);
+void*        prj_get_data();
+void*        prj_get_data_for(int i);
 const char** prj_get_defines();
 const char** prj_get_files();
 const char*  prj_get_kind();
@@ -128,6 +131,7 @@ void         prj_select_file(const char* name);
 void         prj_select_option(int i);
 void         prj_select_package(int i);
 void         prj_set_buildaction(const char* action);
+void         prj_set_data(void* data);
 
 void**       prj_newlist(int len);
 void         prj_freelist(void** list);

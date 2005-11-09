@@ -1,6 +1,6 @@
 /**********************************************************************
- * Premake - platform.h
- * Platform-specific functions.
+ * Premake - vs2002.h
+ * The Visual Studio 2002 and 2003 target
  *
  * Copyright (c) 2002-2005 Jason Perkins and the Premake project
  * 
@@ -15,16 +15,19 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-int         platform_chdir(const char* path);
-int         platform_copyfile(const char* src, const char* dest);
-int         platform_findlib(const char* name, char* buffer, int len);
-int         platform_getcwd(char* buffer, int len);
-void        platform_getuuid(char* uuid);
-int         platform_isAbsolutePath(const char* path);
-int         platform_mask_close();
-const char* platform_mask_getname();
-int         platform_mask_getnext();
-int         platform_mask_isfile();
-int         platform_mask_open(const char* mask);
-int         platform_mkdir(const char* path);
-int         platform_rmdir(const char* path);
+typedef struct tagVsPkgData
+{
+	char projGuid[38];
+	char toolGuid[38];
+	char projExt[8];
+	char projType[8];
+	int  numDependencies;
+} VsPkgData;
+
+int vs2002_generate();
+
+int vs2002_cpp();
+int vs2002_cs();
+
+extern int vs_target;
+

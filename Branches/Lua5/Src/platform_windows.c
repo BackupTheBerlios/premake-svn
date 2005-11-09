@@ -25,10 +25,13 @@
 #include <windows.h>
 
 static char buffer[8192];
+
 static const char* maskPath;
 static HANDLE hDir;
 static WIN32_FIND_DATA entry;
 static int isFirst;
+
+static int (__stdcall *CoCreateGuid)(char*) = NULL;
 
 
 int platform_chdir(const char* path)
@@ -63,6 +66,18 @@ int platform_getcwd(char* buffer, int len)
 {
 	GetCurrentDirectory(len, buffer);
 	return 1;
+}
+
+
+void platform_getuuid(char* uuid)
+{
+	if (CoCreateGuid == NULL)
+	{
+		HMODULE hOleDll = LoadLibrary("OLE32.DLL");
+		*((void**)&CoCreateGuid) = GetProcAddress(hOleDll, "CoCreateGuid");
+	}
+
+	CoCreateGuid((char*)uuid);
 }
 
 

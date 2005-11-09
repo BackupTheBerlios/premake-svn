@@ -40,7 +40,7 @@ namespace Premake.Tests.MonoDev
 		public void Test_PackageInSubDir()
 		{
 			_script.Append("package.path = 'MySubDir'");
-			_expects.Package[0].Path = "MySubDir";
+			_expects.Package[0].Path = "./MySubDir";
 			Run("--os linux");
 		}
 

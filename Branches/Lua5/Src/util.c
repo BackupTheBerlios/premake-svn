@@ -15,12 +15,57 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "premake.h"
+#include "platform.h"
 
 static char* CPP_EXT[] = { ".cc", ".cpp", ".cxx", ".c", ".s", NULL };
 static char buffer[8192];
+
+
+/************************************************************************
+ * Create a pseudo-UUID, good enough for Premake's purposes
+ ***********************************************************************/
+
+static void stringify(unsigned char* src, char* dst, int count)
+{
+	char buffer[4];
+	int  i;
+
+	for (i = 0; i < count; ++i)
+	{
+		sprintf(buffer, "%X", (int)src[i]);
+
+		if (src[i] >= 0x10)
+		{
+			*(dst++) = buffer[0];
+			*(dst++) = buffer[1];
+		}
+		else
+		{
+			*(dst++) = '0';
+			*(dst++) = buffer[0];
+		}
+	}
+}
+
+void generateUUID(char* uuid)
+{
+	platform_getuuid(buffer);
+
+	stringify(buffer, uuid, 4);
+	uuid[8] = '-';
+	stringify(buffer + 4, uuid + 9, 2);
+	uuid[13] = '-';
+	stringify(buffer + 6, uuid + 14, 2);
+	uuid[18] = '-';
+	stringify(buffer + 8, uuid + 19, 2);
+	uuid[23] = '-';
+	stringify(buffer + 10, uuid + 24, 6);
+	uuid[36] = '\0';
+}
 
 
 /************************************************************************

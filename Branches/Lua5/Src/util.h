@@ -19,6 +19,7 @@
 
 enum { WST_OPENGROUP, WST_CLOSEGROUP, WST_SOURCEFILE };
 
+void  generateUUID(char* uuid);
 int   is_cpp(const char* name);
 int   matches(const char* str0, const char* str1);
 void  print_list(const char** list, const char* prefix, const char* postfix, const char* infix, const char* (*func)(const char*));
