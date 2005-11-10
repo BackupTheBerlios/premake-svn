@@ -61,6 +61,7 @@ typedef struct tagPackage
 	const char*  lang;
 	const char*  kind;
 	const char*  objdir;
+	const char*  url;
 	PkgConfig**  configs;
 	void*        data;
 } Package;
@@ -126,6 +127,7 @@ const char*  prj_get_pkgscript();
 const char*  prj_get_script();
 const char*  prj_get_target();
 const char*  prj_get_target_for(int i);
+const char*  prj_get_url();
 int          prj_has_file(const char* name);
 int          prj_has_flag(const char* flag);
 int          prj_has_flag_for(int i, const char* flag);

@@ -26,6 +26,20 @@ static char buffer[8192];
 
 
 /************************************************************************
+ * Checks a pattern against the end of a string
+ ***********************************************************************/
+
+int endsWith(const char* haystack, const char* needle)
+{
+	if (strlen(haystack) < strlen(needle))
+		return 0;
+
+	haystack = haystack + strlen(haystack) - strlen(needle);
+	return (strcmp(haystack, needle) == 0);
+}
+
+
+/************************************************************************
  * Create a pseudo-UUID, good enough for Premake's purposes
  ***********************************************************************/
 

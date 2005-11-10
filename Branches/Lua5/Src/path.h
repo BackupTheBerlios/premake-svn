@@ -15,6 +15,7 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
+const char* path_absolute(const char* path);
 const char* path_build(const char* from, const char* to);
 const char* path_combine(const char* path0, const char* path1);
 const char* path_getbasename(const char* path);
