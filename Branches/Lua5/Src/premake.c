@@ -200,12 +200,12 @@ int onCommand(const char* cmd, const char* arg)
 		}
 	}
 
-	if (matches(cmd, "clean"))
+	else if (matches(cmd, "clean"))
 	{
 		return clean();
 	}
 
-	if (matches(cmd, "cc"))
+	else if (matches(cmd, "cc"))
 	{
 		g_cc = arg;
 	}

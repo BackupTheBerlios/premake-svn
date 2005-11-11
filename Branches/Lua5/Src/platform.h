@@ -27,4 +27,5 @@ int         platform_mask_getnext();
 int         platform_mask_isfile();
 int         platform_mask_open(const char* mask);
 int         platform_mkdir(const char* path);
+int         platform_remove(const char* path);
 int         platform_rmdir(const char* path);

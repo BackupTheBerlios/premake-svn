@@ -146,6 +146,13 @@ int platform_mkdir(const char* path)
 }
 
 
+int platform_remove(const char* path)
+{
+	DeleteFile(path);
+	return 1;
+}
+
+
 int platform_rmdir(const char* path)
 {
 	WIN32_FIND_DATA data;

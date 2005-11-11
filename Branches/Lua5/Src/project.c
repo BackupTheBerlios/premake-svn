@@ -236,6 +236,21 @@ const char* prj_get_outdir_for(int i)
 
 
 /************************************************************************
+ * Custom target decorations
+ ***********************************************************************/
+
+const char* prj_get_prefix()
+{
+	return my_cfg->prefix;
+}
+
+const char* prj_get_extension()
+{
+	return my_cfg->extension;
+}
+
+
+/************************************************************************
  * Return the files associated with the active object
  ***********************************************************************/
 

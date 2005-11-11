@@ -162,6 +162,12 @@ void io_print(const char* format, ...)
 }
 
 
+int io_remove(const char* path)
+{
+	return platform_remove(path);
+}
+
+
 int io_rmdir(const char* path, const char* dir)
 {
 	strcpy(buffer, path);

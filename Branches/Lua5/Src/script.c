@@ -105,6 +105,15 @@ int script_init()
 
 	lua_pop(L, 1);
 
+	/* Register some commonly used Lua4 functions */
+	lua_register(L, "rmdir", rmdir_lua);
+
+	lua_getglobal(L, "table");
+	lua_pushstring(L, "insert");
+	lua_gettable(L, -2);
+	lua_setglobal(L, "tinsert");
+	lua_pop(L, 1);
+
 	/* Set the global OS identifiers */
 	lua_pushstring(L, os_get());
 	lua_setglobal(L, "OS");
@@ -948,7 +957,7 @@ static int panic(lua_State* L)
 
 static int rmdir_lua(lua_State* L)
 {
-	const char* dir = luaL_check_string(L, 2);
+	const char* dir = luaL_check_string(L, 1);
 	io_rmdir(".", dir);
 	return 0;
 }
