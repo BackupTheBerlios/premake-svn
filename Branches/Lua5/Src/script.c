@@ -354,18 +354,30 @@ int script_export()
 
 int script_docommand(const char* cmd)
 {
+	char buffer[512];
 	const char* arg;
 
+	/* Trim off the leading '--' */
+	if (strncmp(cmd, "--", 2) == 0)
+		cmd += 2;
+
 	/* Look for a handler */
-	lua_getglobal(L, "docommand");
+	strcpy(buffer, "do");
+	strcat(buffer, cmd);
+	lua_getglobal(L, buffer);
 	if (!lua_isfunction(L, -1))
 	{
-		lua_pop(L, 1);
-		return 0;
+		/* Fall back to the default handler */
+		lua_getglobal(L, "docommand");
+		if (!lua_isfunction(L, -1))
+		{
+			lua_pop(L, 1);
+			return 0;
+		}
 	}
 
 	/* Push the command and arguments onto the stack */
-	lua_pushstring(L, cmd + 2);
+	lua_pushstring(L, cmd);
 	arg = arg_getflagarg();
 	if (arg != NULL)
 		lua_pushstring(L, arg);

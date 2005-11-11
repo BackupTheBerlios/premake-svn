@@ -639,6 +639,16 @@ const char* prj_get_target_for(int i)
 }
 
 
+const char* prj_get_targetname_for(int i)
+{
+	Package* pkg = prj_get_package_for(i);
+	PkgConfig* cfg = prj_get_config_for(i);
+
+	strcpy(buffer, path_getname(cfg->target));
+	return buffer;
+}
+
+
 /************************************************************************
  * Return package URL
  ***********************************************************************/

@@ -88,6 +88,9 @@ int clean()
 			/* Windows DLL exports library */
 			io_remove(path_join(prj_get_libdir(), buffer, "lib"));
 			io_remove(path_join(prj_get_libdir(), buffer, "exp"));
+
+			/* All */
+			io_rmdir(prj_get_pkgpath(), prj_get_objdir());
 		}
 
 		/* VS.NET 200x */
@@ -111,9 +114,6 @@ int clean()
 		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "cmbx"));
 		io_remove(path_join(prj_get_pkgpath(), "Makefile", prj_get_pkgname()));
 		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "pidb"));
-
-		/* All */
-		io_rmdir(prj_get_pkgpath(), prj_get_objdir());
 	}
 
 	return 1;

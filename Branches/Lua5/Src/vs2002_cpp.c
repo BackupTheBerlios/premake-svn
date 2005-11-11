@@ -21,6 +21,8 @@
 #include "premake.h"
 #include "vs2002.h"
 
+static char buffer[8192];
+
 static const char* filterLinks(const char* name);
 static void listFiles(const char* path, int stage);
 
@@ -314,7 +316,10 @@ static const char* filterLinks(const char* name)
 	{
 		const char* lang = prj_get_language_for(i);
 		if (matches(lang, "c") || matches(lang, "c++"))
-			return prj_get_target_for(i);
+		{
+			strcpy(buffer, prj_get_libdir_for(i));
+			return path_combine(buffer, prj_get_targetname_for(i));
+		}
 		else
 			return NULL;
 	}
