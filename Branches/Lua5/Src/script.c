@@ -75,8 +75,10 @@ int script_init()
 
 	/* Register my extensions to the Lua environment */
 	lua_register(L, "addoption",  addoption);
+	lua_register(L, "copyfile",   copyfile);
 	lua_register(L, "docommand",  docommand);
 	lua_register(L, "dopackage",  dopackage);
+	lua_register(L, "findlib",    findlib);
 	lua_register(L, "matchfiles", matchfiles);
 	lua_register(L, "newpackage", newpackage);
 
