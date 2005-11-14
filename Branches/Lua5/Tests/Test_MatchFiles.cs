@@ -51,5 +51,22 @@ namespace Premake.Tests
 			_expects.Package[0].File.Add("Code/file1.cpp");
 			Run();
 		}
+
+		[Test]
+		public void Test_WithBuildActions()
+		{
+			_script.Replace("'c++'", "'c#'");
+			_script.Replace("'somefile.txt'", "matchfiles('*.cs', '*.bmp')");
+			_script.Append("package.config[matchfiles('*.bmp')].buildaction = 'EmbeddedResource'");
+			TestEnvironment.AddFile("file0.cs");
+			TestEnvironment.AddFile("file1.cs");
+			TestEnvironment.AddFile("image0.bmp");
+			TestEnvironment.AddFile("image1.bmp");
+			_expects.Package[0].File.Add("file0.cs");
+			_expects.Package[0].File.Add("file1.cs");
+			_expects.Package[0].File.Add("image0.bmp");
+			_expects.Package[0].File.Add("image1.bmp");
+			Run();
+		}
 	}
 }

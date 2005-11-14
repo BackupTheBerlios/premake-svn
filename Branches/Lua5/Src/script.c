@@ -533,10 +533,37 @@ static void buildNewConfig(const char* name)
  * These function help get data out of the Lua tables
  **********************************************************************/
 
+static int tbl_matchkey(const char* name, int index)
+{
+	int result, i;
+
+	if (lua_isnumber(L, index))
+		return 0;
+
+	if (!lua_istable(L, index))
+	{
+		const char* key = lua_tostring(L, index);
+		return matches(key, name);
+	}
+
+	/* If key is a table, scan for value */
+	for (i = 1; i <= luaL_getn(L, index); ++i)
+	{
+		lua_rawgeti(L, index, i);
+		result = tbl_matchkey(name, -1);
+		lua_pop(L, 1);
+		if (result)
+			return 1;
+	}
+
+	return 0;
+}
+
 static int tbl_get(int from, const char* name)
 {
 	int ref;
 
+	/* Retrieve the `from` object */
 	if (from == LUA_REGISTRYINDEX || from == LUA_GLOBALSINDEX)
 	{
 		lua_pushvalue(L, from);
@@ -546,6 +573,35 @@ static int tbl_get(int from, const char* name)
 		lua_getref(L, from);
 	}
 
+	/* Do a deep key search for the requested object */
+	lua_pushnil(L);
+	while (lua_next(L, -2))
+	{
+		if (tbl_matchkey(name, -2))
+		{
+			/* Validate result */
+			if (!lua_istable(L, -1))
+			{
+				char msg[512];
+				sprintf(msg, "'%s' should be a table.\nPlace value between brackets like: { values }", name);
+				lua_pushstring(L, msg);
+				lua_error(L);
+			}
+
+			/* Reference and return */
+			ref = lua_ref(L, -1);
+			lua_pop(L, 2);
+			return ref;
+		}
+
+		lua_pop(L, 1);
+	}
+
+	/* Not found */
+	lua_pop(L, 1);
+	return 0;
+
+/*
 	lua_pushstring(L, name);
 	lua_gettable(L, -2);
 
@@ -562,7 +618,9 @@ static int tbl_get(int from, const char* name)
 
 	ref = lua_ref(L, -1);
 	lua_pop(L, 1);
+
 	return ref;
+*/
 }
 
 
