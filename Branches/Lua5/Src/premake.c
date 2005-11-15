@@ -36,6 +36,7 @@ const char* g_filename;
 const char* g_cc;
 const char* g_dotnet;
 int         g_verbose;
+int         g_hasScript;
 
 static int  preprocess();
 static int  postprocess();
@@ -74,7 +75,8 @@ int main(int argc, char** argv)
 	io_chdir(path_getdir(g_filename));
 
 	/* Now run the script */
-	if (!script_run(g_filename))
+	g_hasScript = script_run(g_filename);
+	if (g_hasScript < 0)
 	{
 		puts("** Script failed to run, ending.");
 		return 1;
@@ -86,7 +88,8 @@ int main(int argc, char** argv)
 		return 1;
 
 	/* All done */
-	script_close();
+	if (g_hasScript)
+		script_close();
 	prj_close();
 	return 0;
 }
@@ -139,19 +142,33 @@ static int preprocess()
 
 static int postprocess()
 {
+	int noScriptWarning = 0;
+
 	const char* flag = arg_getflag();
 	while (flag != NULL)
 	{
-		if (!script_export())
+		if (g_hasScript && !script_export())
 			return 0;
 
 		if (matches(flag, "--help"))
 		{
 			showUsage();
 		}
+		else if (matches(flag, "--version"))
+		{
+			/* ignore quietly */
+		}
 		else
 		{
-			script_docommand(flag);
+			if (!g_hasScript && !noScriptWarning)
+			{
+				puts("** No Premake script found!");
+				noScriptWarning = 1;
+			}
+			else
+			{
+				script_docommand(flag);
+			}
 		}
 
 		flag = arg_getflag();

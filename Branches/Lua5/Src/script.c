@@ -168,16 +168,20 @@ int script_run(const char* filename)
 
 	strcpy(scriptname, filename);
 	if (!io_fileexists(scriptname))
+	{
 		strcat(scriptname, ".lua");
+	}
 	if (!io_fileexists(scriptname))
+	{
 		return 0;
+	}
 
 	currentScript = scriptname;
 	if (!script_init())
-		return 0;
+		return -1;
 
 	result = lua_dofile(L, scriptname);
-	return (result == 0);
+	return (result == 0) ? 1 : -1;
 }
 
 
