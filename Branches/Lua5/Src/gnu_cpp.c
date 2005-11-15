@@ -121,7 +121,7 @@ int gnu_cpp()
 			io_print(" -dynamiclib -flat_namespace");
 		print_list(prj_get_linkoptions(), " ", "", "", NULL);
 		print_list(prj_get_libpaths(), " -L \"", "\"", "", NULL);
-		print_list(prj_get_links(), " -l", "", "", filterLinks);
+		print_list(prj_get_links(), " ", "", "", filterLinks);
 		io_print("\n");
 
 		/* Build a list of libraries this target depends on */
@@ -233,7 +233,9 @@ static const char* filterLinks(const char* name)
 	}
 	else
 	{
-		return name;
+		strcpy(buffer, "-l");
+		strcat(buffer, name);
+		return buffer;
 	}
 }
 

@@ -838,7 +838,7 @@ static int dopackage(lua_State* L)
 
 static int findlib(lua_State* L)
 {
-	const char* libname = luaL_check_string(L, 2);
+	const char* libname = luaL_check_string(L, 1);
 	const char* result = io_findlib(libname);
 	if (result)
 		lua_pushstring(L, result);
