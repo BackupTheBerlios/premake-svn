@@ -1,16 +1,21 @@
 project.name     = "Premake"
-project.bindir   = "bin"
 
-addoption("with-tests", "Include the unit tests (requires NUnit)")
+-- Options
 
-dopackage("Src")
-if (options["with-tests"]) then
-	dopackage("Tests")
-end
+	addoption("with-tests", "Include the unit tests (requires NUnit)")
 
-function docommand(cmd, ...)
-  %docommand(cmd, arg)
-  if (cmd == "clean") then
-		rmdir("bin")
+-- Project Settings
+
+	project.bindir   = "bin"
+
+	dopackage("Src")
+	if (options["with-tests"]) then
+		dopackage("Tests")
 	end
-end
+
+-- A little extra cleanup
+
+	function doclean(cmd, arg)
+		docommand(cmd, arg)
+		os.rmdir("bin")
+	end

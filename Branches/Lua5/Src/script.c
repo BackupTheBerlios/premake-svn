@@ -332,7 +332,7 @@ int script_export()
 		Package* package = ALLOCT(Package);
 		package->index = i;
 		project->packages[i] = package;
-
+		
 		obj = tbl_geti(tbl, i + 1);
 		package->name   = tbl_getstring(obj, "name");
 		package->path   = tbl_getstring(obj, "path");
@@ -831,6 +831,7 @@ static int dopackage(lua_State* L)
 	/* Restore the previous state */
 	currentScript = oldScript;
 	io_chdir(oldcwd);
+	
 	return 0;
 }
 

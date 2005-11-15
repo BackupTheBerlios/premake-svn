@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <sys/stat.h>
 #include "io.h"
 #include "path.h"
 #include "platform.h"
@@ -46,6 +47,19 @@ int io_copyfile(const char* src, const char* dest)
 
 int io_fileexists(const char* path)
 {
+	struct stat buf;
+	if (stat(path, &buf) == 0)
+	{
+		if (buf.st_mode & S_IFDIR)
+			return 0;
+		else
+			return 1;
+	}
+	else
+	{
+		return 0;
+	}
+/* This version returns true for directories under Linux
 	FILE* file = fopen(path, "r");
 	if (file != NULL)
 	{
@@ -56,6 +70,7 @@ int io_fileexists(const char* path)
 	{
 		return 0;
 	}
+*/	
 }
 
 
