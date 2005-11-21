@@ -633,6 +633,7 @@ namespace Premake.Tests.Vs2002
 					path += thisdir[k] + '\\';
 
 				libpaths[i] = path.Substring(0, path.Length - 1);
+				libpaths[i] = libpaths[i].Replace("/", "\\");
 			}
 			
 			foreach (Configuration config in package.Config)

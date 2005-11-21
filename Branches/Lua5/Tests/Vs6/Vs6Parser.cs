@@ -383,7 +383,10 @@ namespace Premake.Tests.Vs6
 						Expect(matches[i++], "/dll");
 
 					if (!bldflags.Contains("no-symbols"))
+					{
+						Expect(matches[i++], "/incremental:yes");
 						Expect(matches[i++], "/debug");
+					}
 
 					Expect(matches[i++], "/machine:I386");
 
