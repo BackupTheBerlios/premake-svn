@@ -124,6 +124,7 @@ const char*  prj_get_path();
 const char*  prj_get_pkgfilename(const char* extension);
 const char*  prj_get_pkgname();
 const char*  prj_get_pkgname_for();
+const char*  prj_get_pkgobjdir();
 const char*  prj_get_pkgpath();
 const char*  prj_get_pkgpath_for(int i);
 const char*  prj_get_pkgscript();

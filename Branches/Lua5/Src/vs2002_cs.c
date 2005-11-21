@@ -162,6 +162,9 @@ int vs2002_cs()
 		if (!io_openfile(path_join(prj_get_pkgpath(), prj_get_pkgname(), "csproj.user")))
 			return 0;
 
+		strcpy(buffer, io_getcwd());
+		io_chdir(prj_get_pkgpath());
+
 		io_print("<VisualStudioProject>\n");
 		io_print("\t<CSHARP>\n");
 		io_print("\t\t<Build>\n");
@@ -169,6 +172,8 @@ int vs2002_cs()
 		print_list(prj_get_libpaths(), "", ";", "", listRefPaths);
 		io_print(path_absolute(prj_get_bindir()));
 		io_print("\" >\n");
+
+		io_chdir(buffer);
 
 		for (i = 0; i < prj_get_numconfigs(); ++i)
 		{
@@ -366,7 +371,8 @@ static const char* listFiles(const char* name)
 
 static const char* listRefPaths(const char* name)
 {
-	strcpy(buffer, path_absolute(name));
-	return path_translate(buffer, "windows");
+	return path_absolute(name);
+//	strcpy(buffer, path_absolute(name));
+//	return path_translate(buffer, "windows");
 }
 

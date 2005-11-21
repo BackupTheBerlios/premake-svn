@@ -114,6 +114,10 @@ int clean()
 		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "cmbx"));
 		io_remove(path_join(prj_get_pkgpath(), "Makefile", prj_get_pkgname()));
 		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "pidb"));
+
+		/* All */
+		if (prj_get_pkgobjdir() != NULL)
+			io_rmdir(prj_get_pkgpath(), prj_get_pkgobjdir());
 	}
 
 	return 1;

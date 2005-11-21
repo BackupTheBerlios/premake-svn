@@ -264,7 +264,7 @@ static void writeLinkFlags()
 		io_print(" /dll");
 
 	if (!prj_has_flag("no-symbols"))
-		io_print(" /debug");
+		io_print(" /incremental:yes /debug");
 
 	io_print(" /machine:I386");
 

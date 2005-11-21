@@ -207,6 +207,14 @@ const char* prj_get_objdir()
 		return path_combine(my_pkg->objdir, my_cfg->prjConfig->name);
 }
 
+const char* prj_get_pkgobjdir()
+{
+	if (my_cfg->objdir == NULL)
+		return my_pkg->objdir;
+	else
+		return NULL;
+}
+
 const char* prj_get_outdir()
 {
 	return prj_get_outdir_for(my_pkg->index);
