@@ -307,7 +307,7 @@ static const char* listReferences(const char* name)
 
 static const char* listFiles(const char* name)
 {
-	strcpy(buffer, name);
+	strcpy(buffer, path_translate(name, "windows"));
 	strcat(buffer, "\"\n");
 
 	if (endsWith(name, ".aspx.cs") || endsWith(name, ".asax.cs"))
@@ -372,7 +372,5 @@ static const char* listFiles(const char* name)
 static const char* listRefPaths(const char* name)
 {
 	return path_absolute(name);
-//	strcpy(buffer, path_absolute(name));
-//	return path_translate(buffer, "windows");
 }
 

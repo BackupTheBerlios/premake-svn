@@ -49,7 +49,12 @@ int clean()
 
 	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
+		char cwd[8192];
+
 		prj_select_package(i);
+
+		strcpy(cwd, io_getcwd());
+		io_chdir(prj_get_pkgpath());
 
 		for (j = 0; j < prj_get_numconfigs(); ++j)
 		{
@@ -90,34 +95,36 @@ int clean()
 			io_remove(path_join(prj_get_libdir(), buffer, "exp"));
 
 			/* All */
-			io_rmdir(prj_get_pkgpath(), prj_get_objdir());
+			io_rmdir(".", prj_get_objdir());
 		}
 
 		/* VS.NET 200x */
-		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "csproj"));
-		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "csproj.user"));
-		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "csproj.webinfo"));
-		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "vcproj"));
+		io_remove(path_join(".", prj_get_pkgname(), "csproj"));
+		io_remove(path_join(".", prj_get_pkgname(), "csproj.user"));
+		io_remove(path_join(".", prj_get_pkgname(), "csproj.webinfo"));
+		io_remove(path_join(".", prj_get_pkgname(), "vcproj"));
 
 		/* VS6 */
-		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "dsp"));
-		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "plg"));
+		io_remove(path_join(".", prj_get_pkgname(), "dsp"));
+		io_remove(path_join(".", prj_get_pkgname(), "plg"));
 
 		/* GNU */
-		io_remove(path_join(prj_get_pkgpath(), "Makefile", ""));
-		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "mak"));
+		io_remove(path_join(".", "Makefile", ""));
+		io_remove(path_join(".", prj_get_pkgname(), "mak"));
 
 		/* SharpDevelop */
-		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "prjx"));
+		io_remove(path_join(".", prj_get_pkgname(), "prjx"));
 
 		/* MonoDevelop */
-		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "cmbx"));
-		io_remove(path_join(prj_get_pkgpath(), "Makefile", prj_get_pkgname()));
-		io_remove(path_join(prj_get_pkgpath(), prj_get_pkgname(), "pidb"));
+		io_remove(path_join(".", prj_get_pkgname(), "cmbx"));
+		io_remove(path_join(".", "Makefile", prj_get_pkgname()));
+		io_remove(path_join(".", prj_get_pkgname(), "pidb"));
 
 		/* All */
 		if (prj_get_pkgobjdir() != NULL)
-			io_rmdir(prj_get_pkgpath(), prj_get_pkgobjdir());
+			io_rmdir(".", prj_get_pkgobjdir());
+
+		io_chdir(cwd);
 	}
 
 	return 1;

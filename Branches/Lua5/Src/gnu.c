@@ -77,6 +77,7 @@ static int writeRootMakefile()
 	io_print("# Don't edit this file! Instead edit `premake.lua` then rerun `make`\n");
 	io_print("# Options:\n");
 	io_print("#   CONFIG=[");
+	prj_select_package(0);
 	for (i = 0; i < prj_get_numconfigs(); ++i)
 	{
 		prj_select_config(i);

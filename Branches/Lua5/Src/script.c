@@ -116,6 +116,12 @@ int script_init()
 	lua_setglobal(L, "tinsert");
 	lua_pop(L, 1);
 
+	lua_getglobal(L, "os");
+	lua_pushstring(L, "remove");
+	lua_gettable(L, -2);
+	lua_setglobal(L, "remove");
+	lua_pop(L, 1);
+
 	/* Set the global OS identifiers */
 	lua_pushstring(L, os_get());
 	lua_setglobal(L, "OS");
@@ -782,8 +788,8 @@ static int chdir_lua(lua_State* L)
 
 static int copyfile(lua_State* L)
 {
-	const char* src  = luaL_checkstring(L, 2);
-	const char* dest = luaL_checkstring(L, 3);
+	const char* src  = luaL_checkstring(L, 1);
+	const char* dest = luaL_checkstring(L, 2);
 	if (io_copyfile(src, dest))
 		lua_pushnumber(L, 1);
 	else
@@ -1016,7 +1022,8 @@ static int panic(lua_State* L)
 	lua_Debug ar;
 	int stack;
 
-	const char* msg = lua_tostring(L, 4);
+	int top = lua_gettop(L);
+	const char* msg = lua_tostring(L, top);
 	printf("\n** Error: %s\n", msg);
 
 	for (stack = 0; lua_getstack(L, stack, &ar); ++stack)
