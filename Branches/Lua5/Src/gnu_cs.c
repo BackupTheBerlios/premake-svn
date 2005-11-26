@@ -332,9 +332,30 @@ static const char* listCodeFiles(const char* name)
 {
 	prj_select_file(name);
 	if (prj_is_buildaction("Code"))
-		return path_translate(name, NULL);
+	{
+		/* Csc needs backslashes, which GNU make doesn't like */
+		const char* src = path_translate(name, NULL);
+		char* dst = buffer;
+		while (*src)
+		{
+			if (*src == '\\')
+			{
+				*(dst++) = '\\';
+				*(dst++) = '\\';
+			}
+			else
+			{
+				*(dst++) = *src;
+			}
+			src++;
+		}
+		*dst ='\0';
+		return buffer;
+	}
 	else
+	{
 		return NULL;
+	}
 }
 
 static const char* listEmbeddedFiles(const char* name)

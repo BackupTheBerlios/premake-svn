@@ -51,9 +51,10 @@ namespace Premake.Tests.Gnu.Cs
 		[Test]
 		public void Test_FilesInSubDirs_Windows()
 		{
+			/* Backslashes must be escaped in makefiles */
 			_script.Replace("'somefile.txt'", "'Src/file1.cs','Src/Base/file2.cs'");
-			_expects.Package[0].File.Add("Src\\file1.cs");
-			_expects.Package[0].File.Add("Src\\Base\\file2.cs");
+			_expects.Package[0].File.Add("Src\\\\file1.cs");
+			_expects.Package[0].File.Add("Src\\\\Base\\\\file2.cs");
 			Run("--os windows");
 		}
 
