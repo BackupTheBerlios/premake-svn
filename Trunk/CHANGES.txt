@@ -2,50 +2,15 @@ Premake Changelog
 -----------------
 
 3.0 (in progress)
-
-  I figured out a way to unit test this beast and coded up a
-  comprehensive set of tests. I found a number of small bugs,
-  along with quite a few inconsistencies between generators.
-  These have all been fixed; if you weren't having problems
-  before you probably won't notice the change. However, this
-  could cause some backward compatibility issues so I've
-  bumped the major version number just in case.
-
-  The embedded Lua interpreter has been upgraded from version
-  4.1 to version 5.0.1. I have tried to keep this change as
-  transparent as possible.
-  
-  The MonoDevelop generator is now fully supported, and is no
-  longer considered experimental.
-
-  Overhauled the handling of resources and build actions in
-  the GNU C# generator. Resource compilation now works, and 
-  the behavior closely matches VS.NET.
-
-  Scott Graham submitted a patch for a new `unicode` build
-  flag. This flag switches the default character encoding for
-  Visual Studio projects from MBCS to Unicode.
-
-  I unified the handling of warnings between Visual Studio and
-  GNU makefiles, which had each been patched individually (my
-  thanks to Scott Graham and Chris Robinson) with incompatible 
-  approaches. You should now use the `extra-warnings` and
-  `fatal-warnings` build flags. The `package.warninglevel`
-  value has been removed.
-
-  Added a new value `package.targetprefix` to control the
-  formatting of the target name. 
-
-  Overhauled the structure of the GNU makefiles. This new
-  version is simpler (my goal) and seems noticibly faster (a
-  nice bonus).
-  
-  Added a new command-line option `--os` which will target the
-  generated script for that OS. So if you are running on Windows
-  and you want to generate a Makefile for MacOS X you could use
-  `premake --os macosx --target gnu`. This is really only useful
-  for makefiles currently.
-  
+* Added unit test suite
+* Upgraded Lua interpreter to version 5.0.1
+* Completed MonoDevelop support
+* Improved .NET resource handling for GNU generator
+* Merged Scott Graham unicode build flag patch
+* Removed package.warninglevel in favor of extra-warnings flag
+* Added package.targetprefix 
+* Overhauled structure of generated GNU makefiles
+* Added --os command line option
 
 2.4
 * Added chdir() to Lua script environment

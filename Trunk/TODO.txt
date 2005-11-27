@@ -7,10 +7,7 @@ think linking will work.
 Test that paths in GNU LDDEPS variable are set properly when the package is in a
 subdirectory under the project.
 
-Add tinsert() as alias to table.insert()
+Add package.linkflags back and wrap under prj_has_flag(), but don't document?
 
-Add global functions back as aliases to os.xxx() functions
-
-Add package.linkflags back and wrap under prj_has_flag(), but don't document
 
 

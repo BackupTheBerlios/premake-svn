@@ -11,7 +11,7 @@ BUILDING PREMAKE
 
   GNU make: type 'make'
 
-  MS Visual C++ v6: open Premake.dsw and build.
+  MS Visual C++ 6: open Premake.dsw and build.
 
   MS Visual C++ 2002-2005: open Premake.sln and build.
 
