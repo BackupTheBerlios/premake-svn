@@ -272,7 +272,7 @@ namespace Premake.Tests.Gnu
 				matches = Regex("  TARGET = (.+)");
 				config.Target = matches[0];
 
-				isMac = Match("  MACAPP = " + Path.GetFileName(config.Target), true);
+				isMac = Match("  MACAPP = " + config.Target + ".app/Contents", true);
 
 				Match("endif");
 				Match("");
@@ -292,17 +292,21 @@ namespace Premake.Tests.Gnu
 
 			if (isMac)
 			{
-				Match("all: $(BINDIR)/$(MACAPP).app/Contents/PkgInfo $(BINDIR)/$(MACAPP).app/Contents/Info.plist $(BINDIR)/$(TARGET)");
+				Match("all: $(OUTDIR)/$(MACAPP)/PkgInfo $(OUTDIR)/$(MACAPP)/Info.plist $(OUTDIR)/$(MACAPP)/MacOS/$(TARGET)");
 				Match("");
+				Match("$(OUTDIR)/$(MACAPP)/MacOS/$(TARGET): $(OBJECTS) $(LDDEPS)");
 			}
-
-			Match("$(OUTDIR)/$(TARGET): $(OBJECTS) $(LDDEPS)");
+			else
+			{
+				Match("$(OUTDIR)/$(TARGET): $(OBJECTS) $(LDDEPS)");
+			}
 			Match("\t@echo Linking " + package.Name);
 			Match("\t-@if [ ! -d $(BINDIR) ]; then mkdir -p $(BINDIR); fi");
 			Match("\t-@if [ ! -d $(LIBDIR) ]; then mkdir -p $(LIBDIR); fi");
+			Match("\t-@if [ ! -d $(OUTDIR) ]; then mkdir -p $(OUTDIR); fi");
 			if (isMac)
 			{
-				Match("\t-@if [ ! -d $(BINDIR)/$(MACAPP).app/Contents/MacOS ]; then mkdir -p $(BINDIR)/$(MACAPP).app/Contents/MacOS; fi");
+				Match("\t-@if [ ! -d $(OUTDIR)/$(MACAPP)/MacOS ]; then mkdir -p $(OUTDIR)/$(MACAPP)/MacOS; fi");
 			}
 
 			if (package.Kind == "lib")
@@ -318,9 +322,9 @@ namespace Premake.Tests.Gnu
 
 			if (isMac)
 			{
-				Match("$(BINDIR)/$(MACAPP).app/Contents/PkgInfo:");
+				Match("$(OUTDIR)/$(MACAPP)/PkgInfo:");
 				Match("");
-				Match("$(BINDIR)/$(MACAPP).app/Contents/Info.plist:");
+				Match("$(OUTDIR)/$(MACAPP)/Info.plist:");
 				Match("");
 			}
 			
@@ -328,11 +332,11 @@ namespace Premake.Tests.Gnu
 			Match("\t@echo Cleaning " + package.Name);
 			if (isMac)
 			{
-				Match("\t-@rm -rf $(OUTDIR)/$(MACAPP).app $(OBJDIR)/*");
+				Match("\t-@rm -rf $(OUTDIR)/$(TARGET).app $(OBJDIR)");
 			}
 			else
 			{
-				Match("\t-@rm -rf $(OUTDIR)/$(TARGET) $(OBJDIR)/*");
+				Match("\t-@rm -rf $(OUTDIR)/$(TARGET) $(OBJDIR)");
 			}
 			Match("");
 

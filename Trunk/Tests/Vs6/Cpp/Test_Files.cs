@@ -43,8 +43,8 @@ namespace Premake.Tests.Vs6.Cpp
 		public void Test_FilesInSubDirs()
 		{
 			_script.Replace("'somefile.txt'", "'Src/file1.cpp','Src/Base/file2.cpp'");
-			_expects.Package[0].File.Add("Src\\file1.cpp");
-			_expects.Package[0].File.Add("Src\\Base\\file2.cpp");
+			_expects.Package[0].File.Add("Src/file1.cpp");
+			_expects.Package[0].File.Add("Src/Base/file2.cpp");
 			Run();
 		}
 
@@ -52,8 +52,8 @@ namespace Premake.Tests.Vs6.Cpp
 		public void Test_FilesAboveDir()
 		{
 			_script.Replace("'somefile.txt'", "'Src/file1.cpp','../Help/file2.cpp'");
-			_expects.Package[0].File.Add("Src\\file1.cpp");
-			_expects.Package[0].File.Add("..\\Help\\file2.cpp");
+			_expects.Package[0].File.Add("Src/file1.cpp");
+			_expects.Package[0].File.Add("../Help/file2.cpp");
 			Run();
 		}
 	}

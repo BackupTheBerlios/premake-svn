@@ -46,8 +46,8 @@ namespace Premake.Tests.Gnu.Cpp
 			_expects.Package[0].Config[0].Dependencies = new string[]{ "PackageB" };
 			_expects.Package[0].Config[1].Dependencies = new string[]{ "PackageB" };
 
-			_expects.Package[0].Config[0].LinkDeps = new string[]{ "./libPackageB.so" };
-			_expects.Package[0].Config[1].LinkDeps = new string[]{ "./libPackageB.so" };
+			_expects.Package[0].Config[0].LinkDeps = new string[]{ "libPackageB.so" };
+			_expects.Package[0].Config[1].LinkDeps = new string[]{ "libPackageB.so" };
 
 			Run("--os linux");
 		}
@@ -118,8 +118,8 @@ namespace Premake.Tests.Gnu.Cpp
 			_expects.Package[0].Config[0].Dependencies = new string[]{ "PackageB" };
 			_expects.Package[0].Config[1].Dependencies = new string[]{ "PackageB" };
 
-			_expects.Package[0].Config[0].LinkDeps = new string[]{ "./libPackageB.a" };
-			_expects.Package[0].Config[1].LinkDeps = new string[]{ "./libPackageB.a" };
+			_expects.Package[0].Config[0].LinkDeps = new string[]{ "libPackageB.a" };
+			_expects.Package[0].Config[1].LinkDeps = new string[]{ "libPackageB.a" };
 
 			Run("--os linux");
 		}

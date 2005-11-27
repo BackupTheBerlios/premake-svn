@@ -1,32 +1,35 @@
-//-----------------------------------------------------------------------------
-// Premake - vs6.c
-//
-// MS Visual Studio 6 tool target.
-//
-// Copyright (C) 2002-2005 by Jason Perkins
-// Source code licensed under the GPL, see LICENSE.txt for details.
-//
-// $Id: vs6.c,v 1.32 2005/09/12 21:17:46 jason379 Exp $
-//-----------------------------------------------------------------------------
+/**********************************************************************
+ * Premake - vs6.c
+ * The Visual C++ 6 target
+ *
+ * Copyright (c) 2002-2005 Jason Perkins and the Premake project
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License in the file LICENSE.txt for details.
+ **********************************************************************/
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include "project.h"
-#include "project_api.h"
-#include "util.h"
+#include "premake.h"
+#include "vs6.h"
 
-static char buffer[4096];
+static char buffer[8192];
 
-static int   writeWorkspace();
-static int   writeVcProject();
-static int   writeProjectHeader(FILE* file);
+static int writeWorkspace();
 
-//-----------------------------------------------------------------------------
+static const char* listPackageDeps(const char* name);
 
-int makeVs6Scripts()
+
+int vs6_generate()
 {
-	int i, csharp = 0;
+	int i;
 
 	puts("Generating Visual Studio 6 workspace and project files:");
 
@@ -36,13 +39,13 @@ int makeVs6Scripts()
 
 		printf("...%s\n", prj_get_pkgname());
 
-		if (matches(prj_get_language(), "c++") || matches(prj_get_language(), "c"))
+		if (prj_is_lang("c++") || prj_is_lang("c"))
 		{
-			writeVcProject();
+			vs6_cpp();
 		}
-		else if (matches(prj_get_language(), "c#"))
+		else if (prj_is_lang("c#"))
 		{
-			printf("** Error: C# projects are not supported by Visual Studio 6\n");
+			puts("** Error: C# projects are not supported by Visual Studio 6");
 			return 0;
 		}
 		else
@@ -55,392 +58,80 @@ int makeVs6Scripts()
 	return writeWorkspace();
 }
 
-//-----------------------------------------------------------------------------
-
-static const char* writePkgDeps(const char* file, void* data)
-{
-	Package* pkg = getPackage(file);
-	if (pkg != NULL)
-	{
-		strcpy(buffer, "    Begin Project Dependency\n");
-		strcat(buffer, "    Project_Dep_Name ");
-		strcat(buffer, pkg->name);
-		strcat(buffer, "\n");
-		strcat(buffer, "    End Project Dependency\n");
-		return buffer;
-	}
-
-	return NULL;
-}
 
 static int writeWorkspace()
 {
 	int i;
 
-	FILE* file = openFile(project->path, project->name, ".dsw");
-	if (file == NULL)
+	if (!io_openfile(path_join(prj_get_path(), prj_get_name(), "dsw")))
 		return 0;
 
-	fprintf(file, "Microsoft Developer Studio Workspace File, Format Version 6.00\n");
-	fprintf(file, "# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!\n");
-	fprintf(file, "\n");
-	fprintf(file, "###############################################################################\n");
-	fprintf(file, "\n");
+	io_print("Microsoft Developer Studio Workspace File, Format Version 6.00\n");
+	io_print("# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!\n");
+	io_print("\n");
+	io_print("###############################################################################\n");
+	io_print("\n");
 
 	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
 		prj_select_package(i);
 
-		fprintf(file, "Project: \"%s\"=%s.dsp - Package Owner=<4>\n", prj_get_pkgname(), prj_get_pkgpathfromprj(WINDOWS,1));
-		fprintf(file, "\n");
-		fprintf(file, "Package=<5>\n");
-		fprintf(file, "{{{\n");
-		fprintf(file, "}}}\n");
-		fprintf(file, "\n");
-		fprintf(file, "Package=<4>\n");
-		fprintf(file, "{{{\n");
+		io_print("Project: \"%s\"=%s - Package Owner=<4>\n", prj_get_pkgname(), prj_get_pkgfilename("dsp"));
+		io_print("\n");
+		io_print("Package=<5>\n");
+		io_print("{{{\n");
+		io_print("}}}\n");
+		io_print("\n");
+		io_print("Package=<4>\n");
+		io_print("{{{\n");
 
 		/* Write package dependencies */
 		prj_select_config(0);
-		writeList(file, prj_get_links(), "", "", "", writePkgDeps, NULL);
+		print_list(prj_get_links(), "", "", "", listPackageDeps);
 
-		fprintf(file, "}}}\n");
-		fprintf(file, "\n");
-		fprintf(file, "###############################################################################\n");
-		fprintf(file, "\n");
+		io_print("}}}\n");
+		io_print("\n");
+		io_print("###############################################################################\n");
+		io_print("\n");
 	}
 
-	fprintf(file, "Global:\n");
-	fprintf(file, "\n");
-	fprintf(file, "Package=<5>\n");
-	fprintf(file, "{{{\n");
-	fprintf(file, "}}}\n");
-	fprintf(file, "\n");
-	fprintf(file, "Package=<3>\n");
-	fprintf(file, "{{{\n");
-	fprintf(file, "}}}\n");
-	fprintf(file, "\n");
-	fprintf(file, "###############################################################################\n");
-	fprintf(file, "\n");
+	io_print("Global:\n");
+	io_print("\n");
+	io_print("Package=<5>\n");
+	io_print("{{{\n");
+	io_print("}}}\n");
+	io_print("\n");
+	io_print("Package=<3>\n");
+	io_print("{{{\n");
+	io_print("}}}\n");
+	io_print("\n");
+	io_print("###############################################################################\n");
+	io_print("\n");
 
-	fclose(file);
+	io_closefile();
 	return 1;
 }
 
-//-----------------------------------------------------------------------------
 
-static void vcFiles(FILE* file, const char* path, int stage)
+/************************************************************************
+ * Checks if a package link matches the name of a sibling package. If
+ * so, generate a dependency on that sibling
+ ***********************************************************************/
+
+static const char* listPackageDeps(const char* name)
 {
-	const char* ptr = strrchr(path, '/');
-	ptr = (ptr == NULL) ? path : ptr + 1;
-
-	switch (stage)
+	int i = prj_find_package(name);
+	if (i >= 0)
 	{
-	case WST_OPENGROUP:
-		if (strlen(path) > 0 && strcmp(ptr, "..") != 0) {
-			fprintf(file, "# Begin Group \"%s\"\n\n", ptr);
-			fprintf(file, "# PROP Default_Filter \"\"\n");
-		}
-		break;
-	case WST_CLOSEGROUP:
-		if (strlen(path) > 0 && strcmp(ptr, "..") != 0) 
-			fprintf(file, "# End Group\n");
-		break;
-	case WST_SOURCEFILE:
-		fprintf(file, "# Begin Source File\n\n");
-		fprintf(file, "SOURCE=%s\n", translatePath(path,WINDOWS));
-		fprintf(file, "# End Source File\n");
-		break;
-	}
-}
-
-static const char* checkLink(const char* path, void* data)
-{
-	Package* package = getPackage(path);
-	if (package == NULL) return path;
-
-	/* If this is a sibling package, don't return anything. VC6 links to
-	 * dependent projects implicitly */
-	return NULL;
-}
-
-static const char* convertPath(const char* path, void* data)
-{
-	return translatePath(path, WINDOWS);
-}
-
-static void writeCppFlags(FILE* file)
-{
-	int optimizeSize, optimizeSpeed, useDebugLibs;
-
-	optimizeSize  =  prj_has_buildflag("optimize-size");
-	optimizeSpeed =  prj_has_buildflag("optimize-speed") || prj_has_buildflag("optimize");
-	useDebugLibs  =  (!optimizeSize && !optimizeSpeed);
-
-	if (useDebugLibs)
-		fprintf(file, prj_has_buildflag("static-runtime") ? " /MTd" : " /MDd");
-	else
-		fprintf(file, prj_has_buildflag("static-runtime") ? " /MT" : " /MD");
-	
-	fprintf(file, " /W%d", prj_has_buildflag("extra-warnings") ? 4 : 3);
-	
-	if (prj_has_buildflag("fatal-warnings"))
-		fprintf(file, " /WX");
-	
-	if (useDebugLibs)
-		fprintf(file, " /Gm");  /* minimal rebuild */
-	
-	if (!prj_has_buildflag("no-rtti"))
-		fprintf(file, " /GR");
-	
-	if (!prj_has_buildflag("no-exceptions"))
-		fprintf(file, " /GX");
-	
-	if (!prj_has_buildflag("no-symbols"))
-		fprintf(file, " /ZI");  /* debug symbols for edit-and-continue */
-	
-	if (optimizeSize)
-		fprintf(file, " /O1");
-	else if (optimizeSpeed)
-		fprintf(file, " /O2");
-	else
-		fprintf(file, " /Od");
-	
-	if (prj_has_buildflag("no-frame-pointer"))
-		fprintf(file, " /Oy");
-	
-	writeList(file, prj_get_includepaths(), " /I \"", "\"", "", convertPath, NULL);
-
-	writeList(file, prj_get_defines(), " /D \"", "\"", "", NULL, NULL);
-	
-	fprintf(file, " /YX /FD");
-	
-	if (!optimizeSize && !optimizeSpeed)
-		fprintf(file, " /GZ");
-	
-	fprintf(file, " /c");
-	
-	writeList(file, prj_get_buildoptions(), " ", "", "", NULL, NULL);
-
-	fprintf(file, "\n");
-}
-
-
-static void writeLinkFlags(FILE* file)
-{
-	writeList(file, prj_get_links(), " ", ".lib", "", checkLink, NULL);
-	fprintf(file, " /nologo");
-
-	if ((prj_is_kind("winexe") || prj_is_kind("exe")) && !prj_has_buildflag("no-main"))
-		fprintf(file, " /entry:\"mainCRTStartup\"");
-
-	if (prj_is_kind("winexe"))
-		fprintf(file, " /subsystem:windows");
-	else if (prj_is_kind("exe"))
-		fprintf(file, " /subsystem:console");
-	else
-		fprintf(file, " /dll");
-
-	if (!prj_has_buildflag("no-symbols"))
-		fprintf(file, " /debug");
-
-	fprintf(file, " /machine:I386");
-
-	if (prj_is_kind("dll"))
-	{
-		fprintf(file, " /implib:\"");
-		if (prj_has_buildflag("no-import-lib"))
-			fprintf(file, prj_get_objdir(WINDOWS,0));
-		else
-			fprintf(file, prj_get_libdir(WINDOWS,0));
-		fprintf(file, "\\%s.lib\"", prj_get_targetname());
-	}
-
-	fprintf(file, " /out:\"%s", prj_get_outdir(UNIX,1));
-	fprintf(file, "%s\"", prj_get_target());
-
-	if (!prj_has_buildflag("no-symbols"))
-		fprintf(file, " /pdbtype:sept");
-
-	fprintf(file, " /libpath:\"%s\"", prj_get_libdir(WINDOWS,0));
-	writeList(file, prj_get_libpaths(), " /libpath:\"", "\"", "", convertPath, NULL);
-
-	writeList(file, prj_get_linkoptions(), " ", "", "", NULL, NULL);
-
-	fprintf(file, "\n");
-}
-
-
-static int writeVcProject()
-{
-	FILE* file;
-	int i;
-
-	/* Start the file */
-	file = openFile(prj_get_pkgpath(NATIVE,0), prj_get_pkgname(), ".dsp");
-	if (file == NULL)
-		return 0;
-	writeProjectHeader(file);
-
-	fprintf(file, "CPP=cl.exe\n");
-	if (!prj_is_kind("lib"))
-		fprintf(file, "MTL=midl.exe\n");
-	fprintf(file, "RSC=rc.exe\n");
-	fprintf(file, "\n");
-
-	for (i = prj_get_numconfigs() - 1; i >= 0; --i)
-	{
-		int optimizeSize, optimizeSpeed, useDebugLibs;
-		const char* debugSymbol;
-
-		prj_select_config(i);
-
-		optimizeSize  =  prj_has_buildflag("optimize-size");
-		optimizeSpeed =  prj_has_buildflag("optimize-speed") || prj_has_buildflag("optimize");
-		useDebugLibs  =  (!optimizeSize && !optimizeSpeed);
-
-		fprintf(file, "!%s  \"$(CFG)\" == \"%s - Win32 %s\"\n", 
-			(i == (prj_get_numconfigs() - 1) ? "IF" : "ELSEIF"), prj_get_pkgname(), prj_get_cfgname());
-		fprintf(file, "\n");
-		fprintf(file, "# PROP BASE Use_MFC 0\n");
-		fprintf(file, "# PROP BASE Use_Debug_Libraries %d\n", useDebugLibs ? 1 : 0);
-		fprintf(file, "# PROP BASE Output_Dir \"%s\"\n", prj_get_outdir(UNIX,0));
-		fprintf(file, "# PROP BASE Intermediate_Dir \"%s\"\n", prj_get_objdir(UNIX,0));
-		fprintf(file, "# PROP BASE Target_Dir \"\"\n");
-		fprintf(file, "# PROP Use_MFC 0\n");
-		fprintf(file, "# PROP Use_Debug_Libraries %d\n", useDebugLibs ? 1 : 0);
-		fprintf(file, "# PROP Output_Dir \"%s\"\n", prj_get_outdir(UNIX,0));
-		fprintf(file, "# PROP Intermediate_Dir \"%s\"\n", prj_get_objdir(UNIX,0));
-		if (prj_is_kind("dll") && prj_has_buildflag("no-import-lib"))
-			fprintf(file, "# PROP Ignore_Export_Lib 1\n");
-		fprintf(file, "# PROP Target_Dir \"\"\n");
-
-		fprintf(file, "# ADD BASE CPP /nologo");
-		writeCppFlags(file);
-		fprintf(file, "# ADD CPP /nologo");
-		writeCppFlags(file);
-
-		debugSymbol = prj_has_buildflag("no-symbols") ? "NDEBUG" : "_DEBUG";
-		if (prj_is_kind("winexe") || prj_is_kind("dll"))
-		{
-			fprintf(file, "# ADD BASE MTL /nologo /D \"%s\" /mktyplib203 /win32\n", debugSymbol);
-			fprintf(file, "# ADD MTL /nologo /D \"%s\" /mktyplib203 /win32\n", debugSymbol);
-		}
-
-		fprintf(file, "# ADD BASE RSC /l 0x409 /d \"%s\"\n", debugSymbol);
-		fprintf(file, "# ADD RSC /l 0x409 /d \"%s\"\n", debugSymbol);
-		fprintf(file, "BSC32=bscmake.exe\n");
-		fprintf(file, "# ADD BASE BSC32 /nologo\n");
-		fprintf(file, "# ADD BSC32 /nologo\n");
-		
-		if (prj_is_kind("lib"))
-		{
-			fprintf(file, "LINK32=link.exe -lib\n");
-			fprintf(file, "# ADD BASE LIB32 /nologo\n");
-			fprintf(file, "# ADD LIB32 /nologo\n");
-		}
-		else
-		{
-			fprintf(file, "LINK32=link.exe\n");
-			fprintf(file, "# ADD BASE LINK32");
-			writeLinkFlags(file);
-			fprintf(file, "# ADD LINK32");
-			writeLinkFlags(file);
-		}
-
-		fprintf(file, "\n");
-	}
-
-	fprintf(file, "!ENDIF\n");
-	fprintf(file, "\n");
-	fprintf(file, "# Begin Target\n");
-	fprintf(file, "\n");
-
-	for (i = prj_get_numconfigs() - 1; i >= 0; --i)
-	{
-		prj_select_config(i);
-		fprintf(file, "# Name \"%s - Win32 %s\"\n", prj_get_pkgname(), prj_get_cfgname());
-	}
-
-	walkSourceList(file, prj_get_package(), "", vcFiles);
-
-	fprintf(file, "# End Target\n");
-	fprintf(file, "# End Project\n");
-
-	fclose(file);
-	return 1;
-}
-
-//-----------------------------------------------------------------------------
-
-static int writeProjectHeader(FILE* file)
-{
-	int i;
-	const char* tag;
-	const char* num;
-
-	if (strcmp(prj_get_kind(), "winexe") == 0)
-	{
-		tag = "Win32 (x86) Application";
-		num = "0x0101";
-	}
-	else if (strcmp(prj_get_kind(), "exe") == 0)
-	{
-		tag = "Win32 (x86) Console Application";
-		num = "0x0103";
-	}
-	else if (strcmp(prj_get_kind(), "dll") == 0)
-	{
-		tag = "Win32 (x86) Dynamic-Link Library";
-		num = "0x0102";
-	}
-	else if (strcmp(prj_get_kind(), "lib") == 0)
-	{
-		tag = "Win32 (x86) Static Library";
-		num = "0x0104";
+		strcpy(buffer, "    Begin Project Dependency\n");
+		strcat(buffer, "    Project_Dep_Name ");
+		strcat(buffer, prj_get_pkgname_for(i));
+		strcat(buffer, "\n");
+		strcat(buffer, "    End Project Dependency\n");
+		return buffer;
 	}
 	else
 	{
-		puts("** Error: unrecognized package type");
-		return 0;
+		return NULL;
 	}
-
-	fprintf(file, "# Microsoft Developer Studio Project File - Name=\"%s\" - Package Owner=<4>\n", prj_get_pkgname());
-	fprintf(file, "# Microsoft Developer Studio Generated Build File, Format Version 6.00\n");
-	fprintf(file, "# ** DO NOT EDIT **\n");
-	fprintf(file, "\n");
-	fprintf(file, "# TARGTYPE \"%s\" %s\n", tag, num);
-	fprintf(file, "\n");
-
-	prj_select_config(0);
-	fprintf(file, "CFG=%s - Win32 %s\n", prj_get_pkgname(), prj_get_cfgname());
-
-	fprintf(file, "!MESSAGE This is not a valid makefile. To build this project using NMAKE,\n");
-	fprintf(file, "!MESSAGE use the Export Makefile command and run\n");
-	fprintf(file, "!MESSAGE \n");
-	fprintf(file, "!MESSAGE NMAKE /f \"%s.mak\".\n", prj_get_pkgname());
-	fprintf(file, "!MESSAGE \n");
-	fprintf(file, "!MESSAGE You can specify a configuration when running NMAKE\n");
-	fprintf(file, "!MESSAGE by defining the macro CFG on the command line. For example:\n");
-	fprintf(file, "!MESSAGE \n");
-	fprintf(file, "!MESSAGE NMAKE /f \"%s.mak\" CFG=\"%s - Win32 %s\"\n", prj_get_pkgname(), prj_get_pkgname(), prj_get_cfgname());
-	fprintf(file, "!MESSAGE \n");
-	fprintf(file, "!MESSAGE Possible choices for configuration are:\n");
-	fprintf(file, "!MESSAGE \n");
-
-
-	for (i = prj_get_numconfigs() - 1; i >= 0; --i)
-	{
-		prj_select_config(i);
-		fprintf(file, "!MESSAGE \"%s - Win32 %s\" (based on \"%s\")\n", prj_get_pkgname(), prj_get_cfgname(), tag);
-	}
-
-	fprintf(file, "!MESSAGE \n");
-	fprintf(file, "\n");
-	fprintf(file, "# Begin Project\n");
-	fprintf(file, "# PROP AllowPerConfigDependencies 0\n");
-	fprintf(file, "# PROP Scc_ProjName \"\"\n");
-	fprintf(file, "# PROP Scc_LocalPath \"\"\n");
-
-	return 1;
 }

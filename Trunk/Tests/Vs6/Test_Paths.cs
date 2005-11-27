@@ -40,7 +40,7 @@ namespace Premake.Tests.Vs6
 		public void Test_PackageInSubDir()
 		{
 			_script.Append("package.path = 'MySubDir'");
-			_expects.Package[0].Path = ".\\MySubDir";
+			_expects.Package[0].Path = "MySubDir";
 			Run();
 		}
 
@@ -69,7 +69,7 @@ namespace Premake.Tests.Vs6
 			_script.Append("project.path = 'Build'");
 			_script.Append("package.path = 'Build'");
 			_expects.Path = "Build";
-			_expects.Package[0].Path = "..\\Build";
+			_expects.Package[0].Path = ".";
 			Run();
 		}
 

@@ -24,9 +24,9 @@ namespace Premake.Tests.Gnu.Cs
 			_parser = new GnuParser();
 		}
 
-		public void Run()
+		public void Run(params string[] args)
 		{
-			TestEnvironment.Run(_script, _parser, _expects, null);
+			TestEnvironment.Run(_script, _parser, _expects, args);
 		}
 		#endregion
 
@@ -36,7 +36,7 @@ namespace Premake.Tests.Gnu.Cs
 			_script.Replace("'somefile.txt'", "'file1.cs','file2.cs'");
 			_expects.Package[0].File.Add("file1.cs");
 			_expects.Package[0].File.Add("file2.cs");
-			Run();
+			Run("--os linux");
 		}
 
 		[Test]
@@ -45,7 +45,17 @@ namespace Premake.Tests.Gnu.Cs
 			_script.Replace("'somefile.txt'", "'Src/file1.cs','Src/Base/file2.cs'");
 			_expects.Package[0].File.Add("Src/file1.cs");
 			_expects.Package[0].File.Add("Src/Base/file2.cs");
-			Run();
+			Run("--os linux");
+		}
+
+		[Test]
+		public void Test_FilesInSubDirs_Windows()
+		{
+			/* Backslashes must be escaped in makefiles */
+			_script.Replace("'somefile.txt'", "'Src/file1.cs','Src/Base/file2.cs'");
+			_expects.Package[0].File.Add("Src\\\\file1.cs");
+			_expects.Package[0].File.Add("Src\\\\Base\\\\file2.cs");
+			Run("--os windows");
 		}
 
 		[Test]
@@ -54,7 +64,7 @@ namespace Premake.Tests.Gnu.Cs
 			_script.Replace("'somefile.txt'", "'Src/file1.cs','../Help/file2.cs'");
 			_expects.Package[0].File.Add("Src/file1.cs");
 			_expects.Package[0].File.Add("../Help/file2.cs");
-			Run();
+			Run("--os linux");
 		}
 	}
 }

@@ -1,16 +1,16 @@
-* `make clean` needs to remove objects for all configs, not just
-  the default one ($OBJDIR is set to obj/Debug, instead of obj)
+When a package links to a sibling package, the sibling's target is added to the list
+of libraries to link. However, only the target name is added, not the path. This 
+usually works because the targets are all put in the same place. If I link to a lib
+that is kept in the package area (package.target = package.path.."/bin") I don't
+think linking will work.
 
-* Document config.targetextension (chage to customtarget or something)
+Test that paths in GNU LDDEPS variable are set properly when the package is in a
+subdirectory under the project.
 
-* Docs: no-symbols (not with-symbols)
+Add tinsert() as alias to table.insert()
 
-* Docs: pkg.buildflags inserts, pkg.cfg.buildflags replaces, potential confusion
+Add global functions back as aliases to os.xxx() functions
 
-* Omit frame ptrs from release build
+Add package.linkflags back and wrap under prj_has_flag(), but don't document
 
-* Phase out linkflags (documentation only, can leave in scripts)
 
-* unicode, no-64bit-checks currently only supported in VS200x generators
-
-* Add support for Code::Blocks (http://www.codeblocks.org/)

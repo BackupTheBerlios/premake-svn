@@ -8,21 +8,24 @@ namespace Premake.Tests.Framework
 {
 	public class TestEnvironment
 	{
-		private ArrayList _files;
-		private Hashtable _scripts;
+		private static ArrayList _files;
+		private static Hashtable _scripts;
 
-		public TestEnvironment()
+		public static string    Errors;
+		public static string    Output;
+
+		static TestEnvironment()
 		{
 			_files = new ArrayList();
 			_scripts = new Hashtable();
 		}
 
-		public void AddFile(string filename)
+		public static void AddFile(string filename)
 		{
 			_files.Add(filename);
 		}
 
-		public void AddScript(Script script)
+		public static void AddScript(Script script)
 		{
 			_scripts["premake.lua"] = script;
 		}
@@ -30,12 +33,21 @@ namespace Premake.Tests.Framework
 		public static void Run(Script script, Parser parser, Project expected, string[] options)
 		{
 			/* Remember where Premake is located */
-			string executable = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "premake"; // "premake.exe";
+			string executable = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "premake";
 
 			/* Create a temporary directory for this run */
 			string temp = Path.GetTempPath() + Guid.NewGuid().ToString() + Path.DirectorySeparatorChar;
 			Directory.CreateDirectory(temp);
 			Directory.SetCurrentDirectory(temp);
+
+			/* Create any required files */
+			foreach (string filename in _files)
+			{
+				string dirname = Path.GetDirectoryName(filename);
+				if (dirname != String.Empty && !Directory.Exists(dirname))
+					Directory.CreateDirectory(dirname);
+				File.Create(filename).Close();
+			}
 
 			try
 			{
@@ -48,10 +60,21 @@ namespace Premake.Tests.Framework
 				Process process = new Process();
 				process.StartInfo.FileName = executable;
 				process.StartInfo.Arguments = args + " --target " + parser.TargetName;
-				process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+				process.StartInfo.CreateNoWindow = true;
 				process.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
+				process.StartInfo.RedirectStandardOutput = true;
+				process.StartInfo.RedirectStandardError = true;
+				process.StartInfo.UseShellExecute = false;
 				process.Start();
 				process.WaitForExit();
+				Errors = process.StandardError.ReadToEnd();
+				Output = process.StandardOutput.ReadToEnd();
+				if (process.ExitCode != 0)
+				{
+					string message = (Errors != String.Empty) ? Errors : Output;
+					throw new InvalidOperationException("Premake aborted with code " + process.ExitCode + ": \n" + message);
+				}
+
 
 				/* Start building the results right here */
 				Project actual = new Project();

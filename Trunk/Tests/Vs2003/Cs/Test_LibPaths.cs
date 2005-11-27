@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using NUnit.Framework;
 using Premake.Tests.Framework;
 
@@ -42,8 +43,8 @@ namespace Premake.Tests.Vs2003.Cs
 		public void Test_PathsOnPackage()
 		{
 			_script.Append("package.libpaths = { '../src', '../include' }");
-			_expects.Package[0].Config[0].LibPaths = new string[] { "..\\src", "..\\include" };
-			_expects.Package[0].Config[1].LibPaths = new string[] { "..\\src", "..\\include" };
+			_expects.Package[0].Config[0].LibPaths = new string[] { Path.GetTempPath() + "src", Path.GetTempPath() + "include" };
+			_expects.Package[0].Config[1].LibPaths = new string[] { Path.GetTempPath() + "src", Path.GetTempPath() + "include" };
 			Run();
 		}
 
@@ -53,8 +54,8 @@ namespace Premake.Tests.Vs2003.Cs
 			/* C# doesn't allow per-config lib paths */
 			_script.Append("package.config['Debug'].libpaths = { '../debug' }");
 			_script.Append("package.config['Release'].libpaths = { '../release' }");
-			_expects.Package[0].Config[0].LibPaths = new string[] { "..\\debug" };
-			_expects.Package[0].Config[1].LibPaths = new string[] { "..\\debug" };
+			_expects.Package[0].Config[0].LibPaths = new string[] { Path.GetTempPath() + "debug" };
+			_expects.Package[0].Config[1].LibPaths = new string[] { Path.GetTempPath() + "debug" };
 			Run();
 		}
 			
@@ -64,8 +65,8 @@ namespace Premake.Tests.Vs2003.Cs
 			_script.Append("package.libpaths = { '../package' }");
 			_script.Append("package.config['Debug'].libpaths = { '../debug' }");
 			_script.Append("package.config['Release'].libpaths = { '../release' }");
-			_expects.Package[0].Config[0].LibPaths = new string[] { "..\\package", "..\\debug" };
-			_expects.Package[0].Config[1].LibPaths = new string[] { "..\\package", "..\\debug" };
+			_expects.Package[0].Config[0].LibPaths = new string[] { Path.GetTempPath() + "package", Path.GetTempPath() + "debug" };
+			_expects.Package[0].Config[1].LibPaths = new string[] { Path.GetTempPath() + "package", Path.GetTempPath() + "debug" };
 			Run();
 		}
 	}

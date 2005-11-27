@@ -69,7 +69,7 @@ namespace Premake.Tests.MonoDev
 			_script.Append("project.path = 'Build'");
 			_script.Append("package.path = 'Build'");
 			_expects.Path = "Build";
-			_expects.Package[0].Path = "../Build";
+			_expects.Package[0].Path = ".";
 			Run();
 		}
 

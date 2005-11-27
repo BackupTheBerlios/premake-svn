@@ -1,80 +1,131 @@
-//-----------------------------------------------------------------------------
-// Premake - clean.c
-//
-// Remove all project and intermediate files.
-//
-// Copyright (C) 2002-2003 by Jason Perkins
-// Source code licensed under the GPL, see LICENSE.txt for details.
-//
-// $Id: clean.c,v 1.9 2005/03/01 16:02:00 jason379 Exp $
-//-----------------------------------------------------------------------------
+/**********************************************************************
+ * Premake - clean.c
+ * The cleanup target.
+ *
+ * Copyright (c) 2002-2005 Jason Perkins and the Premake project
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License in the file LICENSE.txt for details.
+ **********************************************************************/
 
 #include <stdio.h>
 #include <string.h>
-#include "project.h"
-#include "util.h"
+#include "premake.h"
 
-//-----------------------------------------------------------------------------
+static char buffer[8192];
 
-int makeClean()
+
+int clean()
 {
 	int i, j;
 
 	puts("Removing all project and intermediate files...");
 
-	deleteFile(project->path, project->name, ".sln");    // VS200x
-	deleteFile(project->path, project->name, ".suo");    // VS200x
-	deleteFile(project->path, project->name, ".ncb");    // VS6/200x
-	deleteFile(project->path, project->name, ".dsw");    // VS6
-	deleteFile(project->path, project->name, ".opt");    // VS6
-	deleteFile(project->path, "Makefile", "");           // GNU
-	deleteFile(project->path, project->name, ".cmbx");   // SharpDevelop/MonoDevelop
-	deleteFile(project->path, project->name, ".mdsx");   // MonoDevelop
-	deleteFile(project->path, "make.sh", "");            // MonoDevelop
-	
-	for (i = 0; i < project->numPackages; ++i)
+	/* VS.NET 200x */
+	io_remove(path_join(prj_get_path(), prj_get_name(), "sln"));
+	io_remove(path_join(prj_get_path(), prj_get_name(), "suo"));
+
+	/* VS6 */
+	io_remove(path_join(prj_get_path(), prj_get_name(), "ncb"));
+	io_remove(path_join(prj_get_path(), prj_get_name(), "dsw"));
+	io_remove(path_join(prj_get_path(), prj_get_name(), "opt"));
+
+	/* GNU */
+	io_remove(path_join(prj_get_path(), "Makefile", ""));
+
+	/* SharpDevelop */
+	io_remove(path_join(prj_get_path(), prj_get_name(), "cmbx"));
+
+	/* MonoDevelop */
+	io_remove(path_join(prj_get_path(), prj_get_name(), "mdsx"));
+	io_remove(path_join(prj_get_path(), "make", "sh"));
+
+	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
-		Package* package = project->package[i];
-		const char* name = package->name;
-		const char* path = package->path;
+		char cwd[8192];
 
-		for (j = 0; j < package->numConfigs; ++j)
+		prj_select_package(i);
+
+		strcpy(cwd, io_getcwd());
+		io_chdir(prj_get_pkgpath());
+
+		for (j = 0; j < prj_get_numconfigs(); ++j)
 		{
-			char buffer[256];
-			ProjectConfig* prjCfg = project->config[j];
-			Config* config = package->config[j];
-			const char* target = config->target;
-			
-			strcpy(buffer, "lib");                       // posix shared lib
-			strcat(buffer, target);
-			deleteFile(prjCfg->bindir, buffer, ".so");
+			prj_select_config(j);
 
-			deleteFile(prjCfg->bindir, target, "");      // posix executable
-			deleteFile(prjCfg->bindir, target, ".exe");  // windows executable
-			deleteFile(prjCfg->bindir, target, ".exe.manifest");  // .NET assembly manifest
-			deleteFile(prjCfg->bindir, target, ".dll");  // windows or .NET shared lib
-			deleteFile(prjCfg->bindir, target, ".pdb");  // VS symbol file
-			deleteFile(prjCfg->bindir, target, ".ilk");  // VS incremental link
-			deleteFile(prjCfg->libdir, target, ".pdb");  // VS symbol file
-			deleteFile(prjCfg->libdir, target, ".exp");  // VS export lib
-			deleteFile(prjCfg->libdir, target, ".lib");  // windows static lib
+			/* POSIX shared lib */
+			strcpy(buffer, prj_get_prefix() != NULL ? prj_get_prefix() : "lib");
+			strcat(buffer, path_getbasename(prj_get_target()));
+			strcat(buffer, ".");
+			strcat(buffer, prj_get_extension() != NULL ? prj_get_extension() : "so");
+			io_remove(path_join(prj_get_outdir(), buffer, ""));
+
+			/* POSIX executable */
+			strcpy(buffer, prj_get_prefix() != NULL ? prj_get_prefix() : "");
+			strcat(buffer, path_getbasename(prj_get_target()));
+			io_remove(path_join(prj_get_outdir(), buffer, ""));
+
+			/* Windows executable */
+			io_remove(path_join(prj_get_outdir(), buffer, "exe"));
+
+			/* .NET assembly manifest */
+			io_remove(path_join(prj_get_outdir(), buffer, "exe.manifest"));
+
+			/* DLL or assembly */
+			io_remove(path_join(prj_get_outdir(), buffer, "dll"));
+
+			/* Windows static library */
+			io_remove(path_join(prj_get_outdir(), buffer, "lib"));
+
+			/* Visual Studio symbol file */
+			io_remove(path_join(prj_get_outdir(), buffer, "pdb"));
+
+			/* Visual Studio incremental link file */
+			io_remove(path_join(prj_get_outdir(), buffer, "ilk"));
+
+			/* Windows DLL exports library */
+			io_remove(path_join(prj_get_libdir(), buffer, "lib"));
+			io_remove(path_join(prj_get_libdir(), buffer, "exp"));
+
+			/* All */
+			io_rmdir(".", prj_get_objdir());
 		}
-		
-		deleteFile(path, name, ".csproj");          // VS200x
-		deleteFile(path, name, ".csproj.user");     // VS200x
-		deleteFile(path, name, ".csproj.webinfo");  // VS200x
-		deleteFile(path, name, ".vcproj");          // VS200x
-		deleteFile(path, name, ".dsp");             // VS6
-		deleteFile(path, name, ".plg");             // VS6
-		deleteFile(path, name, ".make");            // GNU
-		deleteFile(path, "Makefile", "");           // GNU
-		deleteFile(path, name, ".prjx");            // SharpDevelop/MonoDevelop
-		deleteFile(path, name, ".cmbx");            // MonoDevelop
-		deleteFile(path, "Makefile.", name);        // MonoDevelop
-		deleteFile(path, name, ".pidb");            // MonoDevelop
-		
-		deleteDirectory("", makeAbsolute(package->path, package->objdir));
+
+		/* VS.NET 200x */
+		io_remove(path_join(".", prj_get_pkgname(), "csproj"));
+		io_remove(path_join(".", prj_get_pkgname(), "csproj.user"));
+		io_remove(path_join(".", prj_get_pkgname(), "csproj.webinfo"));
+		io_remove(path_join(".", prj_get_pkgname(), "vcproj"));
+
+		/* VS6 */
+		io_remove(path_join(".", prj_get_pkgname(), "dsp"));
+		io_remove(path_join(".", prj_get_pkgname(), "plg"));
+
+		/* GNU */
+		io_remove(path_join(".", "Makefile", ""));
+		io_remove(path_join(".", prj_get_pkgname(), "mak"));
+
+		/* SharpDevelop */
+		io_remove(path_join(".", prj_get_pkgname(), "prjx"));
+
+		/* MonoDevelop */
+		io_remove(path_join(".", prj_get_pkgname(), "cmbx"));
+		io_remove(path_join(".", "Makefile", prj_get_pkgname()));
+		io_remove(path_join(".", prj_get_pkgname(), "pidb"));
+
+		/* All */
+		if (prj_get_pkgobjdir() != NULL)
+			io_rmdir(".", prj_get_pkgobjdir());
+
+		io_chdir(cwd);
 	}
-	
+
 	return 1;
 }

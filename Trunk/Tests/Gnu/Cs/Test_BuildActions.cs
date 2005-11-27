@@ -66,7 +66,7 @@ namespace Premake.Tests.Gnu.Cs
 		public void Test_ResxAction()
 		{
 			_script.Replace("'somefile.txt'", "'file0.resx'");
-			_expects.Package[0].File.Add("obj/MyPackage.file0.resources", null, "EmbeddedResource");
+			_expects.Package[0].File.Add("obj/Debug/MyPackage.file0.resources", null, "EmbeddedResource");
 			Run();
 		}
 
@@ -75,7 +75,7 @@ namespace Premake.Tests.Gnu.Cs
 		public void Test_ResxWithDependencyAction()
 		{
 			_script.Replace("'somefile.txt'", "'file0.resx','file0.cs'");
-			_expects.Package[0].File.Add("obj/MyPackage.file0.resources", "EmbeddedResource");
+			_expects.Package[0].File.Add("obj/Debug/MyPackage.file0.resources", "EmbeddedResource");
 			_expects.Package[0].File.Add("file0.cs");
 			Run();
 		}

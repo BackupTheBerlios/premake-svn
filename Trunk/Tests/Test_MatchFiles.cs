@@ -8,7 +8,6 @@ namespace Premake.Tests
 	public class Test_MatchFiles
 	{
 		#region Setup and Teardown
-		TestEnvironment _test;
 		Script  _script;
 		Project _expects;
 		Parser  _parser;
@@ -16,21 +15,18 @@ namespace Premake.Tests
 		[SetUp]
 		public void Test_Setup()
 		{
-			_test = new TestEnvironment();
-
 			_script = Script.MakeBasic("exe", "c++");
-			_test.AddScript(_script);
 
 			_expects = new Project();
 			_expects.Package.Add(1);
 			_expects.Package[0].Config.Add(2);
 
-			_parser = new GnuParser();
+			_parser = new Premake.Tests.Gnu.GnuParser();
 		}
 
 		public void Run()
 		{
-			_test.Run(_parser, _expects);
+			TestEnvironment.Run(_script, _parser, _expects, null);
 		}
 		#endregion
 
@@ -38,8 +34,8 @@ namespace Premake.Tests
 		public void Test_SimplePattern()
 		{
 			_script.Replace("'somefile.txt'", "matchfiles('*.cpp')");
-			_test.AddFile("file0.cpp");
-			_test.AddFile("file1.cpp");
+			TestEnvironment.AddFile("file0.cpp");
+			TestEnvironment.AddFile("file1.cpp");
 			_expects.Package[0].File.Add("file0.cpp");
 			_expects.Package[0].File.Add("file1.cpp");
 			Run();
@@ -49,10 +45,27 @@ namespace Premake.Tests
 		public void Test_SubdirPattern()
 		{
 			_script.Replace("'somefile.txt'", "matchfiles('Code/*.cpp')");
-			_test.AddFile("Code/file0.cpp");
-			_test.AddFile("Code/file1.cpp");
+			TestEnvironment.AddFile("Code/file0.cpp");
+			TestEnvironment.AddFile("Code/file1.cpp");
 			_expects.Package[0].File.Add("Code/file0.cpp");
 			_expects.Package[0].File.Add("Code/file1.cpp");
+			Run();
+		}
+
+		[Test]
+		public void Test_WithBuildActions()
+		{
+			_script.Replace("'c++'", "'c#'");
+			_script.Replace("'somefile.txt'", "matchfiles('*.cs', '*.bmp')");
+			_script.Append("package.config[matchfiles('*.bmp')].buildaction = 'EmbeddedResource'");
+			TestEnvironment.AddFile("file0.cs");
+			TestEnvironment.AddFile("file1.cs");
+			TestEnvironment.AddFile("image0.bmp");
+			TestEnvironment.AddFile("image1.bmp");
+			_expects.Package[0].File.Add("file0.cs");
+			_expects.Package[0].File.Add("file1.cs");
+			_expects.Package[0].File.Add("image0.bmp");
+			_expects.Package[0].File.Add("image1.bmp");
 			Run();
 		}
 	}

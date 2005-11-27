@@ -30,6 +30,8 @@ namespace Premake.Tests.Vs2003.Cs
 		}
 		#endregion
 
+		/* Note: VS.NET *requires* backslash in source file names */
+
 		[Test]
 		public void Test_FilesInRoot()
 		{

@@ -1,54 +1,31 @@
-//-----------------------------------------------------------------------------
-// Premake - platform.h
-//
-// A simple platform abstraction API.
-//
-// Written by Jason Perkins (jason@379.com)
-// Copyright (C) 2002 by 379, Inc.
-// Source code licensed under the GPL, see LICENSE.txt for details.
-//
-// $Id: platform.h,v 1.3 2005/09/22 21:03:13 jason379 Exp $
-//-----------------------------------------------------------------------------
+/**********************************************************************
+ * Premake - platform.h
+ * Platform-specific functions.
+ *
+ * Copyright (c) 2002-2005 Jason Perkins and the Premake project
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License in the file LICENSE.txt for details.
+ **********************************************************************/
 
-/* Identify the platform. I'm not sure how to definitively detect the Windows
- * platform, but since that is the most common I use it as a default */
-
-#if defined(__linux__)
-	#define PLATFORM_POSIX
-	#define OS_IDENT   "linux"
-#elif defined(__FreeBSD__)
-	#define PLATFORM_POSIX
-	#define OS_IDENT   "freebsd"
-#elif defined(__NetBSD__)
-	#define PLATFORM_POSIX
-	#define OS_IDENT   "netbsd"
-#elif defined(__OpenBSD__)
-	#define PLATFORM_POSIX
-	#define OS_IDENT   "openbsd"
-#elif defined(__APPLE__) && defined(__MACH__)
-	#define PLATFORM_POSIX
-	#define OS_IDENT   "macosx"
-#else
-	#define PLATFORM_WINDOWS
-	#define OS_IDENT   "windows"
-#endif
-
-extern char nativePathSep;
-
-extern int         plat_chdir(const char* path);
-extern int         plat_copyFile(const char* src, const char* dest);
-extern void        plat_deleteDir(const char* path);
-extern void        plat_deleteFile(const char* path);
-extern int         plat_findLib(const char* lib, char* buffer, int size);
-extern void        plat_generateUUID(char* uuid);
-extern void        plat_getcwd(char* buffer, int size);
-extern int         plat_isAbsPath(const char* path);
-extern int         plat_mkdir(const char* path);
-
-extern int         plat_dirOpen(const char* mask);
-extern void        plat_dirClose();
-extern int         plat_dirGetNext();
-extern const char* plat_dirGetName();
-extern int         plat_dirIsFile();
-
-
+int         platform_chdir(const char* path);
+int         platform_copyfile(const char* src, const char* dest);
+int         platform_findlib(const char* name, char* buffer, int len);
+int         platform_getcwd(char* buffer, int len);
+void        platform_getuuid(char* uuid);
+int         platform_isAbsolutePath(const char* path);
+int         platform_mask_close();
+const char* platform_mask_getname();
+int         platform_mask_getnext();
+int         platform_mask_isfile();
+int         platform_mask_open(const char* mask);
+int         platform_mkdir(const char* path);
+int         platform_remove(const char* path);
+int         platform_rmdir(const char* path);

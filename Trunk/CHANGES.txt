@@ -11,6 +11,10 @@ Premake Changelog
   could cause some backward compatibility issues so I've
   bumped the major version number just in case.
 
+  The embedded Lua interpreter has been upgraded from version
+  4.1 to version 5.0.1. I have tried to keep this change as
+  transparent as possible.
+  
   The MonoDevelop generator is now fully supported, and is no
   longer considered experimental.
 
@@ -29,14 +33,14 @@ Premake Changelog
   `fatal-warnings` build flags. The `package.warninglevel`
   value has been removed.
 
-  I added a new value `package.targetprefix` to control the
+  Added a new value `package.targetprefix` to control the
   formatting of the target name. 
 
-  I overhauled the structure of the GNU makefiles. This new
+  Overhauled the structure of the GNU makefiles. This new
   version is simpler (my goal) and seems noticibly faster (a
   nice bonus).
   
-  I added a new command-line option `--os` which will target the
+  Added a new command-line option `--os` which will target the
   generated script for that OS. So if you are running on Windows
   and you want to generate a Makefile for MacOS X you could use
   `premake --os macosx --target gnu`. This is really only useful

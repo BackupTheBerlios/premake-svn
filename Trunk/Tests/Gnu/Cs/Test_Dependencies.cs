@@ -44,8 +44,8 @@ namespace Premake.Tests.Gnu.Cs
 			_expects.Package[0].Config[0].Dependencies = new string[]{ "PackageB" };
 			_expects.Package[0].Config[1].Dependencies = new string[]{ "PackageB" };
 
-			_expects.Package[0].Config[0].LinkDeps = new string[]{ "./PackageB.dll" };
-			_expects.Package[0].Config[1].LinkDeps = new string[]{ "./PackageB.dll" };
+			_expects.Package[0].Config[0].LinkDeps = new string[]{ "PackageB.dll" };
+			_expects.Package[0].Config[1].LinkDeps = new string[]{ "PackageB.dll" };
 
 			Run("--os linux");
 		}

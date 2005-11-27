@@ -63,9 +63,9 @@ namespace Premake.Tests.Vs2002.Cs
 		public void Test_TargetIncludesPath()
 		{
 			_script.Append("package.target = 'MyApp/MyPackage'");
-			_expects.Package[0].Config[0].OutDir = ".\\MyApp";
+			_expects.Package[0].Config[0].OutDir = "./MyApp";
 			_expects.Package[0].Config[0].Target = "MyPackage";
-			_expects.Package[0].Config[1].OutDir = ".\\MyApp";
+			_expects.Package[0].Config[1].OutDir = "./MyApp";
 			_expects.Package[0].Config[1].Target = "MyPackage";
 			Run();
 		}

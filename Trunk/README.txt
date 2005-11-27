@@ -1,4 +1,4 @@
-PREMAKE v3.0 beta1
+PREMAKE v3.0 beta2
 
 Copyright (C) 2002-2005 by Jason Perkins
 Distributed under the GNU General Public License, see LICENSE.txt

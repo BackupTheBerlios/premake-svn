@@ -106,7 +106,7 @@ namespace Premake.Tests.SharpDev
 				{
 					if (matches[2] != "Compile")
 						throw new FormatException("Buildaction of folders must be Compile");
-					folders.Add(matches[0], true);
+					folders.Add(matches[0].Replace("/", "\\"), true);
 				}
 				else if (matches[1] == "Code")
 				{
