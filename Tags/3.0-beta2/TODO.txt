@@ -1,0 +1,13 @@
+When a package links to a sibling package, the sibling's target is added to the list
+of libraries to link. However, only the target name is added, not the path. This 
+usually works because the targets are all put in the same place. If I link to a lib
+that is kept in the package area (package.target = package.path.."/bin") I don't
+think linking will work.
+
+Test that paths in GNU LDDEPS variable are set properly when the package is in a
+subdirectory under the project.
+
+Add package.linkflags back and wrap under prj_has_flag(), but don't document?
+
+
+
