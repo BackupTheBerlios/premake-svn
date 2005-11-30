@@ -87,7 +87,7 @@ echo "Upload packages to SourceForge?"
 read line
 if [ $line = "y" ]; then
 	echo "Uploading to SourceForge..."
-	ftp -s:pkg_linux_ftp.txt upload.sourceforge.net
+	ftp -n upload.sourceforge.net < pkg_linux_ftp.txt
 fi
 
 

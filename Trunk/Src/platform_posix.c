@@ -118,7 +118,7 @@ char platform_getseparator()
 
 int platform_isAbsolutePath(const char* path)
 {
-	return (buffer[0] == '/');
+	return (path[0] == '/');
 }
 
 
