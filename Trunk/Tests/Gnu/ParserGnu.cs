@@ -316,7 +316,10 @@ namespace Premake.Tests.Gnu
 			}
 			else
 			{
-				Match("\t@$(CXX) -o $@ $(OBJECTS) $(LDFLAGS)");
+				if (package.Language == "c++")
+					Match("\t@$(CXX) -o $@ $(OBJECTS) $(LDFLAGS)");
+				else
+					Match("\t@$(CC) -o $@ $(OBJECTS) $(LDFLAGS)");
 			}
 			Match("");
 
@@ -523,6 +526,15 @@ namespace Premake.Tests.Gnu
 			} while (matches != null);
 			Match("");
 
+			Match("COPYLOCALFILES = \\");
+			do
+			{
+				matches = Regex("\t(.+?)[ ]\\\\", true);
+				if (matches != null)
+					package.CopyLocal.Add(matches[0].Substring(10));
+			} while (matches != null);
+			Match("");
+
 			Match("COMPILECOMMAND = $(SOURCES) $(EMBEDDEDCOMMAND) $(LINKEDCOMMAND)");
 			Match("");
 			Match(".PHONY: clean");
@@ -536,7 +548,7 @@ namespace Premake.Tests.Gnu
 			}
 			Match("");
 
-			Match("$(OUTDIR)/$(TARGET): $(SOURCES) $(EMBEDDEDFILES) $(LINKEDFILES) $(DEPS)");
+			Match("$(OUTDIR)/$(TARGET): $(SOURCES) $(EMBEDDEDFILES) $(LINKEDFILES) $(COPYLOCALFILES) $(DEPS)");
 			Match("\t-@if [ ! -d $(OUTDIR) ]; then mkdir -p $(OUTDIR); fi");
 
 			matches = Regex("\t@\\$\\(CSC\\) /nologo /out:\\$@ /t:([a-z]+) /lib:\\$\\(BINDIR\\) \\$\\(FLAGS\\) \\$\\(COMPILECOMMAND\\)");

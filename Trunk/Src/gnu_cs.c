@@ -33,6 +33,8 @@ static const char* listLinkedFiles(const char* name);
 static const char* listContentFiles(const char* name);
 static const char* listContentTargets(const char* name);
 static const char* listContentRules(const char* name);
+static const char* listCopyLocalFiles(const char* name);
+static const char* listCopyLocalRules(const char* name);
 
 static const char* listReferences(const char* name);
 static const char* listReferenceDeps(const char* name);
@@ -212,6 +214,10 @@ int gnu_cs()
 	print_list(prj_get_files(), "\t", " \\\n", "", listContentFiles);
 	io_print("\n");
 
+	io_print("COPYLOCALFILES = \\\n");
+	print_list(prj_get_links(), "\t", " \\\n", "", listCopyLocalFiles);
+	io_print("\n");
+
 	io_print("COMPILECOMMAND = $(SOURCES) $(EMBEDDEDCOMMAND) $(LINKEDCOMMAND)\n\n");
 
 	/* Build targets: add all content files as dependencies so the copy
@@ -223,12 +229,15 @@ int gnu_cs()
 	io_print("\n");
 
 	/* The main build target */
-	io_print("$(OUTDIR)/$(TARGET): $(SOURCES) $(EMBEDDEDFILES) $(LINKEDFILES) $(DEPS)\n");
+	io_print("$(OUTDIR)/$(TARGET): $(SOURCES) $(EMBEDDEDFILES) $(LINKEDFILES) $(COPYLOCALFILES) $(DEPS)\n");
 	io_print("\t-@if [ ! -d $(OUTDIR) ]; then mkdir -p $(OUTDIR); fi\n");
 	io_print("\t@$(CSC) /nologo /out:$@ /t:%s /lib:$(BINDIR) $(FLAGS) $(COMPILECOMMAND)\n\n", kind);
 
 	/* Write rules to copy content files */
 	print_list(prj_get_files(), "", "", "", listContentRules);
+
+	/* Write rules to copy local assemblies */
+	print_list(prj_get_links(), "", "", "", listCopyLocalRules);
 
 	/* The clean target */
 	io_print("clean:\n");
@@ -325,6 +334,38 @@ static const char* assignContentFiles(const char* name)
 
 
 /************************************************************************
+ * Checks to see if a given assembly exists on one of the listed link
+ * paths. If so, returns the relative path to the assembly.
+ ***********************************************************************/
+
+static const char* findLocalAssembly(const char* name)
+{
+	const char** paths;
+	const char*  result = NULL;
+
+	/* Lib paths are relative to package directory. Have to make package
+	 * directory current for io_fileexists() to work */
+	strcpy(buffer, io_getcwd());
+	io_chdir(prj_get_pkgpath());
+
+	paths = prj_get_libpaths();
+	while (*paths != NULL)
+	{
+		const char* path = path_join(*paths, name, "dll");
+		if (io_fileexists(path))
+		{
+			result = path;
+			break;
+		}
+		++paths;
+	}
+
+	io_chdir(buffer);
+	return result;
+}
+
+
+/************************************************************************
  * Returns lists of files for each build action
  ***********************************************************************/
 
@@ -383,6 +424,17 @@ static const char* listContentFiles(const char* name)
 		return name;
 	else
 		return NULL;
+}
+
+static const char* listCopyLocalFiles(const char* name)
+{
+	const char* path = findLocalAssembly(name);
+	if (path != NULL)
+	{
+		sprintf(buffer, "$(BINDIR)/%s.dll", name);
+		return buffer;
+	}
+	return NULL;
 }
 
 
@@ -452,7 +504,7 @@ static const char* listContentTargets(const char* name)
 
 
 /************************************************************************
- * Write out rules to move content files to output directory
+ * Write out rules to move files to output directory
  ***********************************************************************/
 
 static const char* listContentRules(const char* name)
@@ -465,6 +517,18 @@ static const char* listContentRules(const char* name)
 	}
 	return NULL;
 }
+
+static const char* listCopyLocalRules(const char* name)
+{
+	const char* path = findLocalAssembly(name);
+	if (path != NULL)
+	{
+		sprintf(buffer, "$(BINDIR)/%s.dll: %s\n\t@echo Copying %s.dll\n\t-@cp $^ $@\n\n", name, path, name);
+		return buffer;
+	}
+	return NULL;
+}
+
 
 
 /************************************************************************

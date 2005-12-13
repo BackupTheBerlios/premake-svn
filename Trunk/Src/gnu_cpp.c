@@ -172,7 +172,7 @@ int gnu_cpp()
 	}
 	else
 	{
-		io_print("\t%s$(CXX) -o $@ $(OBJECTS) $(LDFLAGS)\n", prefix);
+		io_print("\t%s$(%s) -o $@ $(OBJECTS) $(LDFLAGS)\n", prefix, prj_is_lang("c") ? "CC" : "CXX");
 	}
 	io_print("\n");
 

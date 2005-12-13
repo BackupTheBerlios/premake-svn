@@ -14,6 +14,7 @@ namespace Premake.Tests.Framework
 		public string Compiler;
 		public ConfigCollection Config;
 		public FileCollection File;
+		public ArrayList CopyLocal;
 
 		public Package()
 		{

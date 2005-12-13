@@ -11,6 +11,8 @@ Premake Changelog
 * Added package.targetprefix 
 * Overhauled structure of generated GNU makefiles
 * Added --os command line option
+* Fixed bug 1268588: Use gcc to link C packages
+* Fixed bug 1363306: GNU C# should copy referenced DLLs
 
 2.4
 * Added chdir() to Lua script environment
