@@ -15,6 +15,18 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
+/* Determine the current OS. I'm not sure how to reliably detect Windows
+ * but since it is the most command I use is as the default */
+#if defined(__linux__)
+#define PLATFORM_POSIX 1
+#elif defined(__FreeBSD) || defined(__NetBSD__) || defined(__OpenBSD__)
+#define PLATFORM_POSIX 1
+#elif defined(__APPLE__) && defined(__MACH__)
+#define PLATFORM_POSIX 1
+#else
+#define PLATFORM_WINDOWS 1
+#endif
+
 void        os_detect();
 const char* os_get();
 int         os_is(const char* name);

@@ -19,13 +19,6 @@ package.target   = "premake"
 	}
 
 
--- Defined Symbols
-
-	if (OS == "windows") then
-		package.defines = { "_WIN32" }
-	end
-	
-		
 -- Files
 
 	package.files =

@@ -15,7 +15,8 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-#if defined(_WIN32)
+#include "os.h"
+#if defined(PLATFORM_WINDOWS)
 
 #include <stdlib.h>
 #include "platform.h"

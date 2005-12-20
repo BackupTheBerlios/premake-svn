@@ -33,10 +33,8 @@ void os_detect()
 	os = "bsd";
 #elif defined(__APPLE__) && defined(__MACH__)
 	os = "macosx";
-#elif defined(_WIN32)
-	os = "windows";
 #else
-#error "Unknown platform: update os_detect() in os.c!"
+	os = "windows";
 #endif
 }
 
