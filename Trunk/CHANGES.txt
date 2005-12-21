@@ -3,6 +3,7 @@ Premake Changelog
 
 3.0 (in progress)
 * Upgraded Lua interpreter to version 5.0.1
+* The options table now stores simple values, rather than tables
 * Completed MonoDevelop support
 * Improved .NET resource handling for GNU generator
 * Added unit test suite

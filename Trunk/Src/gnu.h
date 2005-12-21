@@ -15,7 +15,7 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-#define DOT_MAKE   "mak"
+#define DOT_MAKE   "make"
 
 int gnu_generate();
 
