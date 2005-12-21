@@ -18,6 +18,10 @@ package.target   = "premake"
 		"no-frame-pointers"
 	}
 
+	if (OS == "linux") then
+		package.links = { "m" }
+	end
+
 
 -- Files
 

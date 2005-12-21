@@ -8,14 +8,11 @@ if [ $# -ne 1 ]; then
   exit 1
 fi
 
-echo "WINDOWS BUILD $1"
+echo "POSIX BUILD $1"
 echo ""
 
 # Make sure all prerequisites are met
 echo "Have you updated the version number in premake.c?"
-read line
-echo ""
-echo "Did you create a tag for version $1?"
 read line
 echo ""
 echo "Ready to build Linux executable for version $1."
@@ -26,15 +23,14 @@ read line
 #####################################################################
 # Stage 1: Preparation
 #
-# Pull the source code from Subversion and update the embedded
-# version numbers.
+# Pull the source code from Subversion.
 #####################################################################
 
 echo ""
 echo "RETRIEVING SOURCE CODE FROM REPOSITORY..."
 echo ""
 cd ../..
-svn co https://svn.berlios.de/svnroot/repos/premake/Tags/$1 Premake-$1
+svn co https://svn.berlios.de/svnroot/repos/premake/Trunk Premake-$1
 
 
 #####################################################################
@@ -103,4 +99,5 @@ rm -rf Premake-$1
 
 cd $script_dir
 echo ""
-echo "Done."
+echo "Done - NOW CREATE A TAG"
+
