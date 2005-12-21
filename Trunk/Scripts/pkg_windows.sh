@@ -21,9 +21,6 @@ echo ""
 echo "Did you update CHANGES.txt?"
 read line
 echo ""
-echo "Did you create a tag for version $1?"
-read line
-echo ""
 echo "Ready to build Source Code and Windows packages for version $1."
 echo "Press [Enter] to begin."
 read line
@@ -40,7 +37,7 @@ echo ""
 echo "RETRIEVING SOURCE CODE FROM REPOSITORY..."
 echo ""
 cd ../..
-svn co https://svn.berlios.de/svnroot/repos/premake/Tags/$1 Premake-$1
+svn co https://svn.berlios.de/svnroot/repos/premake/Trunk Premake-$1
 
 
 #####################################################################
@@ -60,7 +57,7 @@ echo ""
 echo "PACKAGING SOURCE CODE..."
 echo ""
 
-premake --target gnu
+premake --os linux --target gnu
 premake --target vs6
 premake --target vs2002
 
