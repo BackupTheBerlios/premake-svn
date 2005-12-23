@@ -1,3 +1,11 @@
+If I set package.path to "../../ode", matchfiles() looks in the directory where
+premake.lua lives, but files listed in the script are relative to ../../ode. 
+Since includepaths, etc. are relative to the final package path, matchfiles()
+should probably do the same.
+
+
+Can identify other windows compilers with __CYGWIN32__ and __MINGW32__
+
 Reimplement packaging scripts for all projects using Premake. Add a new 'build' 
 action that will launch the toolset to complete the build. So I can do something
 like:
