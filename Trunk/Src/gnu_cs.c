@@ -167,6 +167,7 @@ int gnu_cs()
 		}
 
 		print_list(prj_get_defines(), " /d:", "", "", NULL);
+
 		/* VS.NET doesn't allow per-config libraries or link paths */
 		prj_select_config(0);
 		print_list(prj_get_libpaths(), " /lib:\"", "\"", "", NULL);
@@ -174,11 +175,13 @@ int gnu_cs()
 		io_print("\n");
 
 		/* List any sibling packages as dependencies */
+		prj_select_config(i);
 		io_print("  DEPS =");
 		print_list(prj_get_links(), " ", " ", "", listReferenceDeps);
 		io_print("\n");
 
 		/* VS.NET doesn't allow per-config target names */
+		prj_select_config(0);
 		io_print("  TARGET = %s\n", path_getname(prj_get_target()));
 		io_print("endif\n\n");
 	}

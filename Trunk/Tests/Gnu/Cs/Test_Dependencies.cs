@@ -75,6 +75,7 @@ namespace Premake.Tests.Gnu.Cs
 			Run("--os linux");
 		}
 
+
 		[Test]
 		public void Test_ExeAndDllWithTargetPath()
 		{
@@ -100,5 +101,30 @@ namespace Premake.Tests.Gnu.Cs
 			Run("--os linux");
 		}
 
+
+		[Test]
+		public void Test_ExeAndDllWithBinDir()
+		{
+			_script.Append("project.config['Debug'].bindir   = 'Bin/Debug'");
+			_script.Append("project.config['Release'].bindir = 'Bin/Release'");
+
+			_script.Append("package.path = 'MyPackage'");
+			_script.Append("package.links = { 'PackageB' }");
+
+			_script.Append("package = newpackage()");
+			_script.Append("package.name = 'PackageB'");
+			_script.Append("package.kind = 'dll'");
+			_script.Append("package.language = 'c#'");
+			_script.Append("package.files = matchfiles('*.cpp')");
+			_script.Append("package.path = 'PackageB'");
+
+			_expects.Package[0].Config[0].Dependencies = new string[]{ "PackageB" };
+			_expects.Package[0].Config[1].Dependencies = new string[]{ "PackageB" };
+
+			_expects.Package[0].Config[0].LinkDeps = new string[]{ "../Bin/Debug/PackageB.dll" };
+			_expects.Package[0].Config[1].LinkDeps = new string[]{ "../Bin/Release/PackageB.dll" };
+
+			Run("--os linux");
+		}
 	}
 }
