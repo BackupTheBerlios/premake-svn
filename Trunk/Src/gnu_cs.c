@@ -36,7 +36,8 @@ static const char* listContentRules(const char* name);
 static const char* listCopyLocalFiles(const char* name);
 static const char* listCopyLocalRules(const char* name);
 
-static const char* listReferences(const char* name);
+static const char* listNonSiblingRefs(const char* name);
+static const char* listSiblingRefs(const char* name);
 static const char* listReferenceDeps(const char* name);
 static const char* listResourceBuildSteps(const char* name);
 
@@ -168,13 +169,15 @@ int gnu_cs()
 
 		print_list(prj_get_defines(), " /d:", "", "", NULL);
 
-		/* VS.NET doesn't allow per-config libraries or link paths */
+		/* VS.NET doesn't allow per-config link paths */
 		prj_select_config(0);
 		print_list(prj_get_libpaths(), " /lib:\"", "\"", "", NULL);
-		print_list(prj_get_links(), " /r:", "", "", listReferences);
+		print_list(prj_get_links(), " /r:", "", "", listNonSiblingRefs);
+		prj_select_config(i);
+		print_list(prj_get_links(), " /r:", "", "", listSiblingRefs);
 		io_print("\n");
 
-		/* List any sibling packages as dependencies */
+		/* List any sibling packages as dependencies for make */
 		prj_select_config(i);
 		io_print("  DEPS =");
 		print_list(prj_get_links(), " ", " ", "", listReferenceDeps);
@@ -446,7 +449,18 @@ static const char* listCopyLocalFiles(const char* name)
  * returns the binary target name of the package.
  ***********************************************************************/
 
-static const char* listReferences(const char* name)
+static const char* listNonSiblingRefs(const char* name)
+{
+	int i = prj_find_package(name);
+	if (i < 0)
+	{
+		return path_join("", name, "dll");
+	}
+	return NULL;
+}
+
+
+static const char* listSiblingRefs(const char* name)
 {
 	int i = prj_find_package(name);
 	if (i >= 0)
@@ -455,15 +469,8 @@ static const char* listReferences(const char* name)
 		{
 			return prj_get_target_for(i);
 		}
-		else
-		{
-			return NULL;
-		}
 	}
-	else
-	{
-		return path_join("", name, "dll");
-	}
+	return NULL;
 }
 
 
