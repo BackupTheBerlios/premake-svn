@@ -78,7 +78,7 @@ int gnu_cs()
 		else
 		{
 			csc = "mcs";
-			resgen = "monoresgen";
+			resgen = "resgen";
 		}
 	}
 	else if (matches(g_dotnet, "ms"))

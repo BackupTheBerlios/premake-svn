@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <dlfcn.h>
 #include <glob.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
 

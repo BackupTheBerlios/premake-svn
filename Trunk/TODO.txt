@@ -8,6 +8,8 @@ error message, which appears above the generator output.
 
 Can identify other windows compilers with __CYGWIN32__ and __MINGW32__
 
+Test again with more recent MonoDevelop. They've changed monoresgen to resgen
+
 Reimplement packaging scripts for all projects using Premake. Add a new 'build' 
 action that will launch the toolset to complete the build. So I can do something
 like:

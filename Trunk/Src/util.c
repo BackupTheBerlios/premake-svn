@@ -43,7 +43,7 @@ int endsWith(const char* haystack, const char* needle)
  * Create a pseudo-UUID, good enough for Premake's purposes
  ***********************************************************************/
 
-static void stringify(unsigned char* src, char* dst, int count)
+static void stringify(char* src, char* dst, int count)
 {
 	char buffer[4];
 	int  i;
