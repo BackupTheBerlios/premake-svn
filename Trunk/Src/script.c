@@ -38,6 +38,7 @@ static const char* tbl_getstring(int from, const char* name);
 static const char* tbl_getstringi(int from, int i);
 
 static int         addoption(lua_State* L);
+static int         alert(lua_State* L);
 static int         chdir_lua(lua_State* L);
 static int         copyfile(lua_State* L);
 static int         docommand(lua_State* L);
@@ -75,6 +76,7 @@ int script_init()
 
 	/* Register my extensions to the Lua environment */
 	lua_register(L, "addoption",  addoption);
+	lua_register(L, "_ALERT",     alert);
 	lua_register(L, "copyfile",   copyfile);
 	lua_register(L, "docommand",  docommand);
 	lua_register(L, "dopackage",  dopackage);
@@ -765,6 +767,19 @@ static int addoption(lua_State* L)
 
 
 
+static int alert(lua_State* L)
+{
+	/* Get the error message */
+	const char* msg = lua_tostring(L, -1);
+
+	/* Swap out the file name so I can see the whole path */
+	msg = strchr(msg, ':');
+
+	printf("%s%s\n", currentScript, msg);
+	exit(1);
+}
+
+
 static int docommand(lua_State* L)
 {
 	const char* cmd = luaL_checkstring(L, 1);
@@ -883,6 +898,14 @@ static int getglobal(lua_State* L)
 static int matchfiles(lua_State* L)
 {
 	int numArgs, i;
+	const char* pkgPath;
+
+	/* Get the current package path */
+	lua_getglobal(L, "package");
+	lua_pushstring(L, "path");
+	lua_gettable(L, -2);
+	pkgPath = lua_tostring(L, -1);
+	lua_pop(L, 2);
 
 	/* Create a table to hold the results */
 	lua_newtable(L);
@@ -892,13 +915,16 @@ static int matchfiles(lua_State* L)
 	for (i = 1; i <= numArgs; ++i)
 	{
 		const char* mask = luaL_checkstring(L, i);
-
-		io_mask_open(mask);
+		const char* maskWithPath = path_combine(pkgPath, mask);
+		io_mask_open(maskWithPath);
 		while(io_mask_getnext())
 		{
 			if (io_mask_isfile())
 			{
-				lua_pushstring(L, io_mask_getname());
+				const char* name = io_mask_getname();
+				if (strlen(pkgPath) > 0)
+					name += strlen(pkgPath) + 1;
+				lua_pushstring(L, name);
 				lua_rawseti(L, -2, luaL_getn(L, -2) + 1);
 			}
 		}
@@ -1010,6 +1036,10 @@ static int newpackage(lua_State* L)
 	lua_pushcfunction(L, newfileconfig);
 	lua_settable(L, -3);
 	lua_setmetatable(L, -2);
+
+	/* Set the 'package' global to point to it */
+	lua_pushvalue(L, -1);
+	lua_setglobal(L, "package");
 
 	lua_settable(L, -3);
 

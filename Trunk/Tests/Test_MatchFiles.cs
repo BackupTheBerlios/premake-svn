@@ -68,5 +68,17 @@ namespace Premake.Tests
 			_expects.Package[0].File.Add("image1.bmp");
 			Run();
 		}
+
+		[Test]
+		public void Test_WithPackagePath()
+		{
+			_script.Replace("package.files", "package.path='Subdir'\npackage.files");
+			_script.Replace("'somefile.txt'", "matchfiles('*.cpp')");
+			TestEnvironment.AddFile("Subdir/aaaa.cpp");
+			TestEnvironment.AddFile("Subdir/bbbb.cpp");
+			_expects.Package[0].File.Add("aaaa.cpp");
+			_expects.Package[0].File.Add("bbbb.cpp");
+			Run();
+		}
 	}
 }
