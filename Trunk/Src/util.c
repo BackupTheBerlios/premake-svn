@@ -50,9 +50,10 @@ static void stringify(char* src, char* dst, int count)
 
 	for (i = 0; i < count; ++i)
 	{
-		sprintf(buffer, "%X", (int)src[i]);
+		unsigned value = (unsigned char)src[i];
+		sprintf(buffer, "%X", value);
 
-		if (src[i] >= 0x10)
+		if (value >= 0x10)
 		{
 			*(dst++) = buffer[0];
 			*(dst++) = buffer[1];

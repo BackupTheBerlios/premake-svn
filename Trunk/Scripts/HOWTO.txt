@@ -1,17 +1,21 @@
-1. Update premake.c
+1. Create SVN branch for release
 
-2. Update support files
+2. Update premake.c
 
-3. Build Windows packaging script (has unit tests)
+3. Update support files
 
-4. Run Linux packaging script
+4. Commit changes to branch
 
-5. Create tag
+5. Build Windows packaging script (has unit tests)
 
-6. Create new file release on SourceForge
+6. Run Linux packaging script
 
-7. Update site documentation
+7. Create new file release on SourceForge
 
-8. Add new group to SourceForge tracker
+8. Move branch to tag
 
-9. Announce on website and mailing list
+9. Update online documentation
+
+10. Add new group to SourceForge tracker
+
+11. Announce on website and mailing list
