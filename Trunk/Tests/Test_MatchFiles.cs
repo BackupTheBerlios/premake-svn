@@ -72,10 +72,22 @@ namespace Premake.Tests
 		[Test]
 		public void Test_WithPackagePath()
 		{
-			_script.Replace("package.files", "package.path='Subdir'\npackage.files");
+			_script.Replace("package.files", "package.path='Subdir'\n package.files");
 			_script.Replace("'somefile.txt'", "matchfiles('*.cpp')");
 			TestEnvironment.AddFile("Subdir/aaaa.cpp");
 			TestEnvironment.AddFile("Subdir/bbbb.cpp");
+			_expects.Package[0].File.Add("aaaa.cpp");
+			_expects.Package[0].File.Add("bbbb.cpp");
+			Run();
+		}
+
+		[Test]
+		public void Test_WithPackageDotPath()
+		{
+			_script.Replace("package.files", "package.path='.'\n package.files");
+			_script.Replace("'somefile.txt'", "matchfiles('*.cpp')");
+			TestEnvironment.AddFile("aaaa.cpp");
+			TestEnvironment.AddFile("bbbb.cpp");
 			_expects.Package[0].File.Add("aaaa.cpp");
 			_expects.Package[0].File.Add("bbbb.cpp");
 			Run();

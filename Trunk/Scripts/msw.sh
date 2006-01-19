@@ -12,6 +12,9 @@ echo "WINDOWS BUILD $1"
 echo ""
 
 # Make sure all prerequisites are met
+echo "Did you test against EVERY project?"
+read line
+echo ""
 echo "Did you create a release branch?"
 read line
 echo ""

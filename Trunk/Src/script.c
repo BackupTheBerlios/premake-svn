@@ -227,6 +227,43 @@ static const char* export_value(int parent, int object, const char* name)
 	return value;
 }
 
+static const char** export_files(int tbl, int obj)
+{
+	const char** files;
+	const char** excludes;
+	const char** result;
+	int numFiles, numExcludes;
+	int i, j, k;
+
+	export_list(tbl, obj, "files", &files);
+	export_list(tbl, obj, "excludes", &excludes);
+
+	numFiles = prj_getlistsize((void**)files);
+	numExcludes = prj_getlistsize((void**)excludes);
+
+	result = (const char**)prj_newlist(numFiles);
+
+	k = 0;
+	for (i = 0; i < numFiles; ++i)
+	{
+		int exclude = 0;
+		for (j = 0; j < numExcludes; ++j)
+		{
+			if (matches(files[i], excludes[j]))
+				exclude = 1;
+		}
+
+		if (!exclude)
+			result[k++] = files[i];
+	}
+
+	free((void*)files);
+	free((void*)excludes);
+
+	result[k] = NULL;
+	return result;
+}
+
 static int export_fileconfig(PkgConfig* config, int arr)
 {
 	int obj, count, i;
@@ -273,17 +310,21 @@ static int export_pkgconfig(Package* package, int tbl)
 		config->prefix    = export_value(tbl, obj, "targetprefix");
 		config->target    = export_value(tbl, obj, "target");
 
+		/* Assign a default target, if none specified */
+		if (config->target == NULL)
+			config->target = package->name;
+
+		/* Pull out the value lists */
 		export_list(tbl, obj, "buildflags",   &config->flags);
 		export_list(tbl, obj, "buildoptions", &config->buildopts);
 		export_list(tbl, obj, "defines",      &config->defines);
-		export_list(tbl, obj, "files",        &config->files);
 		export_list(tbl, obj, "includepaths", &config->incpaths);
 		export_list(tbl, obj, "libpaths",     &config->libpaths);
 		export_list(tbl, obj, "linkoptions",  &config->linkopts);
 		export_list(tbl, obj, "links",        &config->links);
 
-		if (config->target == NULL)
-			config->target = package->name;
+		/* Build the file list */
+		config->files = export_files(tbl, obj);
 
 		/* Build a list of file configurations */
 		export_fileconfig(config, arr);
@@ -519,6 +560,10 @@ static void buildNewConfig(const char* name)
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "files");
+	lua_newtable(L);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "excludes");
 	lua_newtable(L);
 	lua_settable(L, -3);
 
@@ -906,6 +951,10 @@ static int matchfiles(lua_State* L)
 	lua_gettable(L, -2);
 	pkgPath = lua_tostring(L, -1);
 	lua_pop(L, 2);
+
+	/* If path is same as current, I can ignore it */
+	if (matches(path_getdir(currentScript), pkgPath))
+		pkgPath = "";
 
 	/* Create a table to hold the results */
 	lua_newtable(L);
