@@ -1,0 +1,23 @@
+1. Update support files (README and CHANGES)
+
+2. Create SVN branch for release and switch to it
+
+3. Update premake.c
+
+4. Commit changes to branch
+
+5. Build Windows packaging script (has unit tests)
+
+6. Run Linux packaging script
+
+7. Create new file release on SourceForge
+
+8. Move branch to tag
+
+9. Update online documentation
+
+10. Add new group to SourceForge tracker
+
+11. Announce on website and mailing list
+
+12. Switch back to trunk and update premake.c version to "+svn"
