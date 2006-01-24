@@ -1,7 +1,7 @@
 Premake Changelog
 -----------------
 
-3.0 (in progress)
+3.0
 * Upgraded Lua interpreter to version 5.0.1
 * The options table now stores simple values, rather than tables
 * Completed MonoDevelop support

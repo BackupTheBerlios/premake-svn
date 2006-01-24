@@ -1,8 +1,8 @@
-1. Create SVN branch for release
+1. Update support files (README and CHANGES)
 
-2. Update premake.c
+2. Create SVN branch for release and switch to it
 
-3. Update support files
+3. Update premake.c
 
 4. Commit changes to branch
 
@@ -19,3 +19,5 @@
 10. Add new group to SourceForge tracker
 
 11. Announce on website and mailing list
+
+12. Switch back to trunk and update premake.c version to "+svn"
