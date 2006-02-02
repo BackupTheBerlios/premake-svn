@@ -164,6 +164,21 @@ const char* path_combine(const char* path0, const char* path1)
 
 
 /************************************************************************
+ * Compare two paths for equality, regardless of path structure.
+ ***********************************************************************/
+
+int path_compare(const char* path0, const char* path1)
+{
+	char abs0[8192];
+	char abs1[8192];
+
+	strcpy(abs0, path_absolute(path0));
+	strcpy(abs1, path_absolute(path1));
+	return matches(abs0, abs1);
+}
+
+
+/************************************************************************
  * Retrieve the portions of a path
  ***********************************************************************/
 

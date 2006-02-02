@@ -54,7 +54,10 @@ namespace Premake.Tests.Framework
 				return;
 
 			if (this.Count != actual.Count)
-				throw new FormatException("Expected " + this.Count + " files but got " + actual.Count);
+			{
+				string files = BuildFileList(actual);
+				throw new FormatException("Expected " + this.Count + " files but got " + actual.Count + ":\n" + files);
+			}
 
 			Hashtable index = new Hashtable();
 			foreach (SourceFile file in actual)
@@ -65,15 +68,20 @@ namespace Premake.Tests.Framework
 				SourceFile afile = (SourceFile)index[efile.Name];
 				if (afile == null)
 				{
-					StringBuilder msg = new StringBuilder();
-					msg.Append("Expected file '" + efile.Name + "' not found in file list. Actual list follows:\n");
-					foreach (SourceFile file in actual)
-						msg.Append(file.Name + "\n");
-					throw new FormatException(msg.ToString());
+					string files = BuildFileList(actual);
+					throw new FormatException("Expected file '" + efile.Name + "' not found in file list:\n" + files);
 				}
 
 				efile.CompareTo(afile);
 			}
+		}
+
+		private string BuildFileList(FileCollection files)
+		{
+			StringBuilder result = new StringBuilder();
+			foreach (SourceFile file in files)
+				result.Append(file.Name + "\n");
+			return result.ToString();
 		}
 	}
 }

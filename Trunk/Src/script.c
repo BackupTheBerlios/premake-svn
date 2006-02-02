@@ -953,7 +953,7 @@ static int matchfiles(lua_State* L)
 	lua_pop(L, 2);
 
 	/* If path is same as current, I can ignore it */
-	if (matches(path_getdir(currentScript), pkgPath))
+	if (path_compare(path_getdir(currentScript), pkgPath))
 		pkgPath = "";
 
 	/* Create a table to hold the results */

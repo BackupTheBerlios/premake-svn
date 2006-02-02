@@ -106,6 +106,8 @@ namespace Premake.Tests.Framework
 			{
 				Directory.SetCurrentDirectory(Path.GetDirectoryName(executable));
 				Directory.Delete(temp, true);
+				_files.Clear();
+				_scripts.Clear();
 			}
 		}
 	}
