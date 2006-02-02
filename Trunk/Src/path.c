@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "premake.h"
-#include "platform.h"
 #include "os.h"
 
 

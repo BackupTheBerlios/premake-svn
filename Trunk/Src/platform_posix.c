@@ -19,17 +19,25 @@
 #if defined(PLATFORM_POSIX)
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <dlfcn.h>
-#include <glob.h>
+#include <dirent.h>
+#include <fnmatch.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include "io.h"
+#include "path.h"
+#include "util.h"
 
 static char buffer[8192];
-static const char* maskPath;
 
-static glob_t globbuf;
-static int iGlob;
+struct PlatformMaskData
+{
+	DIR* handle;
+	struct dirent* entry;
+	const char* mask;
+};
 
 
 int platform_chdir(const char* path)
@@ -124,39 +132,64 @@ int platform_isAbsolutePath(const char* path)
 }
 
 
-int platform_mask_close()
+int platform_mask_close(MaskHandle data)
 {
-	globfree(&globbuf);
+	if (data->handle != NULL)
+		closedir(data->handle);
+	free(data);
 	return 1;
 }
 
 
-const char* platform_mask_getname()
+const char* platform_mask_getname(MaskHandle data)
 {
-	return globbuf.gl_pathv[iGlob];
+	strcpy(buffer, path_getdir(data->mask));
+	if (strlen(buffer) > 0)
+		strcat(buffer, "/");
+	strcat(buffer, data->entry->d_name);
+	return buffer;
 }
 
 
-int platform_mask_getnext()
+int platform_mask_getnext(MaskHandle data)
 {
-	return (++iGlob < globbuf.gl_pathc);
+	const char* mask = path_getname(data->mask);
+
+	if (data->handle == NULL)
+		return 0;
+		
+	data->entry = readdir(data->handle);
+	while (data->entry != NULL)
+	{
+		if (fnmatch(mask, data->entry->d_name, 0) == 0)
+			return 1;
+		data->entry = readdir(data->handle);
+	}
+	return 0;
 }
 
 
-int platform_mask_isfile()
+int platform_mask_isfile(MaskHandle data)
 {
-	return 1;
+	struct stat info;
+	if (stat(platform_mask_getname(data), &info) == 0)
+	{
+		return S_ISREG(info.st_mode);
+	}
+	return 0;
 }
 
 
-int platform_mask_open(const char* mask)
+MaskHandle platform_mask_open(const char* mask)
 {
-	globbuf.gl_offs = 0;
-	globbuf.gl_pathc = 0;
-	globbuf.gl_pathv = NULL;
-	glob(mask, GLOB_DOOFFS | GLOB_APPEND, NULL, &globbuf);
-	iGlob = -1;
-	return 1;
+	const char* path = path_getdir(mask);
+	if (strlen(path) == 0)
+		path = ".";
+		
+	MaskHandle data = ALLOCT(struct PlatformMaskData);
+	data->handle = opendir(path);
+	data->mask = mask;
+	return data;
 }
 
 
