@@ -91,31 +91,31 @@ const char* io_getcwd()
 }
 
 
-int io_mask_close()
+int io_mask_close(MaskHandle data)
 {
-	return platform_mask_close();
+	return platform_mask_close(data);
 }
 
 
-const char* io_mask_getname()
+const char* io_mask_getname(MaskHandle data)
 {
-	return platform_mask_getname();
+	return platform_mask_getname(data);
 }
 
 
-int io_mask_getnext()
+int io_mask_getnext(MaskHandle data)
 {
-	return platform_mask_getnext();
+	return platform_mask_getnext(data);
 }
 
 
-int io_mask_isfile()
+int io_mask_isfile(MaskHandle data)
 {
-	return platform_mask_isfile();
+	return platform_mask_isfile(data);
 }
 
 
-int io_mask_open(const char* mask)
+MaskHandle io_mask_open(const char* mask)
 {
 	return platform_mask_open(mask);
 }

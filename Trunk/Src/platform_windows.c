@@ -21,16 +21,20 @@
 #include <stdlib.h>
 #include "platform.h"
 #include "path.h"
+#include "util.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 static char buffer[8192];
 
-static const char* maskPath;
-static HANDLE hDir;
-static WIN32_FIND_DATA entry;
-static int isFirst;
+struct PlatformMaskData
+{
+	const char* maskPath;
+	HANDLE handle;
+	WIN32_FIND_DATA entry;
+	int isFirst;
+};
 
 static int (__stdcall *CoCreateGuid)(char*) = NULL;
 
@@ -77,7 +81,6 @@ void platform_getuuid(char* uuid)
 		HMODULE hOleDll = LoadLibrary("OLE32.DLL");
 		*((void**)&CoCreateGuid) = GetProcAddress(hOleDll, "CoCreateGuid");
 	}
-
 	CoCreateGuid((char*)uuid);
 }
 
@@ -88,56 +91,55 @@ int platform_isAbsolutePath(const char* path)
 }
 
 
-int platform_mask_close()
+int platform_mask_close(MaskHandle data)
 {
-	if (hDir != INVALID_HANDLE_VALUE)
-		FindClose(hDir);
+	if (data->handle != INVALID_HANDLE_VALUE)
+		FindClose(data->handle);
+	free(data);
 	return 1;
 }
 
 
-const char* platform_mask_getname()
+const char* platform_mask_getname(MaskHandle data)
 {
-	strcpy(buffer, maskPath);
+	strcpy(buffer, data->maskPath);
 	if (strlen(buffer) > 0)
 		strcat(buffer, "/");
-	strcat(buffer, entry.cFileName);
+	strcat(buffer, data->entry.cFileName);
 	return buffer;
 }
 
 
-int platform_mask_getnext()
+int platform_mask_getnext(MaskHandle data)
 {
-	if (hDir == INVALID_HANDLE_VALUE) 
+	if (data->handle == INVALID_HANDLE_VALUE)
 		return 0;
 
-	if (isFirst)
+	if (data->isFirst)
 	{
-		isFirst = !isFirst;
+		data->isFirst = 0;
 		return 1;
 	}
 	else
 	{
-		return FindNextFile(hDir, &entry);
+		return FindNextFile(data->handle, &data->entry);
 	}
 }
 
 
-int platform_mask_isfile()
+int platform_mask_isfile(MaskHandle data)
 {
-	return (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+	return (data->entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
 }
 
 
-int platform_mask_open(const char* mask)
+MaskHandle platform_mask_open(const char* mask)
 {
-	platform_getcwd(buffer, 1024);
-
-	maskPath = path_getdir(mask);
-
-	hDir = FindFirstFile(mask, &entry);
-	isFirst = 1;
-	return (hDir != INVALID_HANDLE_VALUE);
+	MaskHandle data = ALLOCT(struct PlatformMaskData);
+	data->handle = FindFirstFile(mask, &data->entry);
+	data->maskPath = path_getdir(mask);
+	data->isFirst  = 1;
+	return data;
 }
 
 

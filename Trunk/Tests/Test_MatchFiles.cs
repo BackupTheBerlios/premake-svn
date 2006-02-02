@@ -92,5 +92,20 @@ namespace Premake.Tests
 			_expects.Package[0].File.Add("bbbb.cpp");
 			Run();
 		}
+
+		[Test]
+		public void Test_RecursiveMatch()
+		{
+			_script.Replace("'somefile.txt'", "matchrecursive('*.cpp')");
+			TestEnvironment.AddFile("aaaa.cpp");
+			TestEnvironment.AddFile("Sub0/bbbb.cpp");
+			TestEnvironment.AddFile("Sub0/Sub1/cccc.cpp");
+			TestEnvironment.AddFile("Sub2/dddd.cpp");
+			_expects.Package[0].File.Add("aaaa.cpp");
+			_expects.Package[0].File.Add("Sub0/bbbb.cpp");
+			_expects.Package[0].File.Add("Sub0/Sub1/cccc.cpp");
+			_expects.Package[0].File.Add("Sub2/dddd.cpp");
+			Run();
+		}
 	}
 }

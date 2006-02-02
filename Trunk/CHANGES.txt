@@ -1,6 +1,10 @@
 Premake Changelog
 -----------------
 
+3.1 (in progress)
+* Feature 1096677: exclude files from matchfiles (package.excludes)
+* Bug 1422068: package.path="." causes bad makefiles
+
 3.0
 * Upgraded Lua interpreter to version 5.0.1
 * The options table now stores simple values, rather than tables

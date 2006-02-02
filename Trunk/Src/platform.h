@@ -15,17 +15,19 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
+#include "io.h"
+
 int         platform_chdir(const char* path);
 int         platform_copyfile(const char* src, const char* dest);
 int         platform_findlib(const char* name, char* buffer, int len);
 int         platform_getcwd(char* buffer, int len);
 void        platform_getuuid(char* uuid);
 int         platform_isAbsolutePath(const char* path);
-int         platform_mask_close();
-const char* platform_mask_getname();
-int         platform_mask_getnext();
-int         platform_mask_isfile();
-int         platform_mask_open(const char* mask);
+int         platform_mask_close(MaskHandle data);
+const char* platform_mask_getname(MaskHandle data);
+int         platform_mask_getnext(MaskHandle data);
+int         platform_mask_isfile(MaskHandle data);
+MaskHandle  platform_mask_open(const char* mask);
 int         platform_mkdir(const char* path);
 int         platform_remove(const char* path);
 int         platform_rmdir(const char* path);
