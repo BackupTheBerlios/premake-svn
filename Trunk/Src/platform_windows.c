@@ -19,9 +19,10 @@
 #if defined(PLATFORM_WINDOWS)
 
 #include <stdlib.h>
-#include "platform.h"
+#include "io.h"
 #include "path.h"
 #include "util.h"
+#include "platform.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
