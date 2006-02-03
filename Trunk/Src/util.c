@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "premake.h"
+#include "platform.h"
 
 static char* CPP_EXT[] = { ".cc", ".cpp", ".cxx", ".c", ".s", NULL };
 static char buffer[8192];

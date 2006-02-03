@@ -15,7 +15,8 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-#include "io.h"
+struct PlatformMaskData;
+typedef struct PlatformMaskData* MaskHandle;
 
 int         platform_chdir(const char* path);
 int         platform_copyfile(const char* src, const char* dest);

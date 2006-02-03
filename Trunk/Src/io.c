@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include "io.h"
 #include "path.h"
+#include "platform.h"
 
 static char buffer[8192];
 static FILE* file;

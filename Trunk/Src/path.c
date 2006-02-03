@@ -19,7 +19,7 @@
 #include <string.h>
 #include "premake.h"
 #include "os.h"
-
+#include "platform.h"
 
 static char working[8192];
 static char forpart[8192];
