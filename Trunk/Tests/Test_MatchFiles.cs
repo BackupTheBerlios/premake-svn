@@ -107,5 +107,18 @@ namespace Premake.Tests
 			_expects.Package[0].File.Add("Sub2/dddd.cpp");
 			Run();
 		}
+
+		[Test]
+		public void Test_RecursiveMatchWithSubdirMask()
+		{
+			_script.Replace("'somefile.txt'", "matchrecursive('Sub0/*.cpp')");
+			TestEnvironment.AddFile("aaaa.cpp");
+			TestEnvironment.AddFile("Sub0/bbbb.cpp");
+			TestEnvironment.AddFile("Sub0/Sub1/cccc.cpp");
+			TestEnvironment.AddFile("Sub2/dddd.cpp");
+			_expects.Package[0].File.Add("Sub0/bbbb.cpp");
+			_expects.Package[0].File.Add("Sub0/Sub1/cccc.cpp");
+			Run();
+		}
 	}
 }

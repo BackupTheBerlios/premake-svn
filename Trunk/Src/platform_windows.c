@@ -31,7 +31,7 @@ static char buffer[8192];
 
 struct PlatformMaskData
 {
-	const char* maskPath;
+	char* maskPath;
 	HANDLE handle;
 	WIN32_FIND_DATA entry;
 	int isFirst;
@@ -96,6 +96,7 @@ int platform_mask_close(MaskHandle data)
 {
 	if (data->handle != INVALID_HANDLE_VALUE)
 		FindClose(data->handle);
+	free(data->maskPath);
 	free(data);
 	return 1;
 }
@@ -136,9 +137,12 @@ int platform_mask_isfile(MaskHandle data)
 
 MaskHandle platform_mask_open(const char* mask)
 {
+	const char* path = path_getdir(mask);
+
 	MaskHandle data = ALLOCT(struct PlatformMaskData);
 	data->handle = FindFirstFile(mask, &data->entry);
-	data->maskPath = path_getdir(mask);
+	data->maskPath = (char*)malloc(strlen(path) + 1);
+	strcpy(data->maskPath, path);
 	data->isFirst  = 1;
 	return data;
 }
