@@ -36,7 +36,7 @@ struct PlatformMaskData
 {
 	DIR* handle;
 	struct dirent* entry;
-	const char* mask;
+	char* mask;
 };
 
 
@@ -136,6 +136,7 @@ int platform_mask_close(MaskHandle data)
 {
 	if (data->handle != NULL)
 		closedir(data->handle);
+	free(data->mask);
 	free(data);
 	return 1;
 }
@@ -188,7 +189,8 @@ MaskHandle platform_mask_open(const char* mask)
 		
 	MaskHandle data = ALLOCT(struct PlatformMaskData);
 	data->handle = opendir(path);
-	data->mask = mask;
+	data->mask = (char*)malloc(strlen(mask) + 1);
+	strcpy(data->mask, mask);
 	return data;
 }
 
