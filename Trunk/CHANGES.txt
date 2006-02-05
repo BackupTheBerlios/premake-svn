@@ -2,6 +2,7 @@ Premake Changelog
 -----------------
 
 3.1 (in progress)
+* Added path handling functions to Lua environment
 * Added matchrecursive() to do recursive file searches
 * Added fileexists() function to Lua environment
 * Feature 1096677: exclude files from matchfiles (package.excludes)

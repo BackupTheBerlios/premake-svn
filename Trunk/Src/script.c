@@ -37,23 +37,27 @@ static int         tbl_getlen_deep(int tbl);
 static const char* tbl_getstring(int from, const char* name);
 static const char* tbl_getstringi(int from, int i);
 
-static int         addoption(lua_State* L);
-static int         alert(lua_State* L);
-static int         chdir_lua(lua_State* L);
-static int         copyfile(lua_State* L);
-static int         docommand(lua_State* L);
-static int         dopackage(lua_State* L);
-static int         fileexists(lua_State* L);
-static int         findlib(lua_State* L);
-static int         getcwd_lua(lua_State* L);
-static int         getglobal(lua_State* L);
-static int         matchfiles(lua_State* L);
-static int         matchrecursive(lua_State* L);
-static int         newfileconfig(lua_State* L);
-static int         newpackage(lua_State* L);
-static int         panic(lua_State* L);
-static int         rmdir_lua(lua_State* L);
-static int         setconfigs(lua_State* L);
+static int         lf_addoption(lua_State* L);
+static int         lf_alert(lua_State* L);
+static int         lf_chdir(lua_State* L);
+static int         lf_copyfile(lua_State* L);
+static int         lf_docommand(lua_State* L);
+static int         lf_dopackage(lua_State* L);
+static int         lf_fileexists(lua_State* L);
+static int         lf_findlib(lua_State* L);
+static int         lf_getbasename(lua_State* L);
+static int         lf_getcwd(lua_State* L);
+static int         lf_getdir(lua_State* L);
+static int         lf_getextension(lua_State* L);
+static int         lf_getglobal(lua_State* L);
+static int         lf_getname(lua_State* L);
+static int         lf_matchfiles(lua_State* L);
+static int         lf_matchrecursive(lua_State* L);
+static int         lf_newfileconfig(lua_State* L);
+static int         lf_newpackage(lua_State* L);
+static int         lf_panic(lua_State* L);
+static int         lf_rmdir(lua_State* L);
+static int         lf_setconfigs(lua_State* L);
 
 static void        buildOptionsTable();
 static void        buildNewProject();
@@ -74,51 +78,72 @@ int script_init()
 	luaopen_math(L);
 	luaopen_loadlib(L);
 
-	lua_atpanic(L, panic);
+	lua_atpanic(L, lf_panic);
 
 	/* Register my extensions to the Lua environment */
-	lua_register(L, "addoption",  addoption);
-	lua_register(L, "_ALERT",     alert);
-	lua_register(L, "copyfile",   copyfile);
-	lua_register(L, "docommand",  docommand);
-	lua_register(L, "dopackage",  dopackage);
-	lua_register(L, "fileexists", fileexists);
-	lua_register(L, "findlib",    findlib);
-	lua_register(L, "matchfiles", matchfiles);
-	lua_register(L, "matchrecursive", matchrecursive);
-	lua_register(L, "newpackage", newpackage);
+	lua_register(L, "addoption",  lf_addoption);
+	lua_register(L, "_ALERT",     lf_alert);
+	lua_register(L, "copyfile",   lf_copyfile);
+	lua_register(L, "docommand",  lf_docommand);
+	lua_register(L, "dopackage",  lf_dopackage);
+	lua_register(L, "fileexists", lf_fileexists);
+	lua_register(L, "findlib",    lf_findlib);
+	lua_register(L, "matchfiles", lf_matchfiles);
+	lua_register(L, "matchrecursive", lf_matchrecursive);
+	lua_register(L, "newpackage", lf_newpackage);
 
 	/* Add some extensions to the built-in "os" table */
 	lua_getglobal(L, "os");
 
 	lua_pushstring(L, "chdir");
-	lua_pushcfunction(L, chdir_lua);
+	lua_pushcfunction(L, lf_chdir);
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "copyfile");
-	lua_pushcfunction(L, copyfile);
+	lua_pushcfunction(L, lf_copyfile);
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "fileexists");
-	lua_pushcfunction(L, fileexists);
+	lua_pushcfunction(L, lf_fileexists);
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "findlib");
-	lua_pushcfunction(L, findlib);
+	lua_pushcfunction(L, lf_findlib);
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "getcwd");
-	lua_pushcfunction(L, getcwd_lua);
+	lua_pushcfunction(L, lf_getcwd);
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "rmdir");
-	lua_pushcfunction(L, rmdir_lua);
+	lua_pushcfunction(L, lf_rmdir);
 	lua_settable(L, -3);
 
 	lua_pop(L, 1);
 
+	/* Add path handling functions */
+	lua_newtable(L);
+
+	lua_pushstring(L, "getbasename");
+	lua_pushcfunction(L, lf_getbasename);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "getdir");
+	lua_pushcfunction(L, lf_getdir);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "getextension");
+	lua_pushcfunction(L, lf_getextension);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "getname");
+	lua_pushcfunction(L, lf_getname);
+	lua_settable(L, -3);
+
+	lua_setglobal(L, "path");
+
 	/* Register some commonly used Lua4 functions */
-	lua_register(L, "rmdir", rmdir_lua);
+	lua_register(L, "rmdir", lf_rmdir);
 
 	lua_getglobal(L, "table");
 	lua_pushstring(L, "insert");
@@ -163,7 +188,7 @@ int script_init()
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
 	lua_newtable(L);
 	lua_pushstring(L, "__index");
-	lua_pushcfunction(L, getglobal);
+	lua_pushcfunction(L, lf_getglobal);
 	lua_settable(L, -3);
 	lua_setmetatable(L, -2);
 	lua_pop(L, 1);
@@ -509,7 +534,7 @@ static void buildNewProject()
 	/* Hook "index" metamethod so I can tell when the config list changes */
 	lua_newtable(L);
 	lua_pushstring(L, "__newindex");
-	lua_pushcfunction(L, setconfigs);
+	lua_pushcfunction(L, lf_setconfigs);
 	lua_settable(L, -3);
 	lua_setmetatable(L, -2);
 
@@ -794,7 +819,7 @@ static const char* tbl_getstringi(int from, int i)
  * These are new functions for the Lua environment
  **********************************************************************/
 
-static int addoption(lua_State* L)
+static int lf_addoption(lua_State* L)
 {
 	const char* name = luaL_checkstring(L, 1);
 	const char* desc = luaL_checkstring(L, 2);
@@ -820,7 +845,7 @@ static int addoption(lua_State* L)
 
 
 
-static int alert(lua_State* L)
+static int lf_alert(lua_State* L)
 {
 	/* Get the error message */
 	const char* msg = lua_tostring(L, -1);
@@ -833,7 +858,7 @@ static int alert(lua_State* L)
 }
 
 
-static int docommand(lua_State* L)
+static int lf_docommand(lua_State* L)
 {
 	const char* cmd = luaL_checkstring(L, 1);
 	const char* arg = (!lua_isnil(L,2)) ? luaL_checkstring(L, 2) : NULL;
@@ -843,7 +868,7 @@ static int docommand(lua_State* L)
 }
 
 
-static int chdir_lua(lua_State* L)
+static int lf_chdir(lua_State* L)
 {
 	const char* path = luaL_checkstring(L, 2);
 	if (io_chdir(path))
@@ -854,7 +879,7 @@ static int chdir_lua(lua_State* L)
 }
 
 
-static int copyfile(lua_State* L)
+static int lf_copyfile(lua_State* L)
 {
 	const char* src  = luaL_checkstring(L, 1);
 	const char* dest = luaL_checkstring(L, 2);
@@ -866,7 +891,7 @@ static int copyfile(lua_State* L)
 }
 
 
-static int dopackage(lua_State* L)
+static int lf_dopackage(lua_State* L)
 {
 	const char* oldScript;
 	char oldcwd[8192];
@@ -914,7 +939,7 @@ static int dopackage(lua_State* L)
 }
 
 
-static int fileexists(lua_State* L)
+static int lf_fileexists(lua_State* L)
 {
 	const char* path = luaL_check_string(L, 1);
 	int result = io_fileexists(path);
@@ -923,7 +948,7 @@ static int fileexists(lua_State* L)
 }
 
 
-static int findlib(lua_State* L)
+static int lf_findlib(lua_State* L)
 {
 	const char* libname = luaL_check_string(L, 1);
 	const char* result = io_findlib(libname);
@@ -935,7 +960,16 @@ static int findlib(lua_State* L)
 }
 
 
-static int getcwd_lua(lua_State* L)
+static int lf_getbasename(lua_State* L)
+{
+	const char* path = luaL_checkstring(L, 1);
+	const char* result = path_getbasename(path);
+	lua_pushstring(L, result);
+	return 1;
+}
+
+
+static int lf_getcwd(lua_State* L)
 {
 	const char* cwd = io_getcwd();
 	lua_pushstring(L, cwd);
@@ -943,17 +977,44 @@ static int getcwd_lua(lua_State* L)
 }
 
 
-static int getglobal(lua_State* L)
+static int lf_getdir(lua_State* L)
+{
+	const char* path = luaL_checkstring(L, 1);
+	const char* result = path_getdir(path);
+	lua_pushstring(L, result);
+	return 1;
+}
+
+
+static int lf_getextension(lua_State* L)
+{
+	const char* path = luaL_checkstring(L, 1);
+	const char* result = path_getextension(path);
+	lua_pushstring(L, result);
+	return 1;
+}
+
+
+static int lf_getglobal(lua_State* L)
 {
 	const char* name = luaL_checkstring(L, 2);
 	if (matches(name, "package"))
 	{
-		newpackage(L);
+		lf_newpackage(L);
 		lua_pushvalue(L, -1);
 		lua_setglobal(L, "package");
 		return 1;
 	}
 	return 0;
+}
+
+
+static int lf_getname(lua_State* L)
+{
+	const char* path = luaL_checkstring(L, 1);
+	const char* result = path_getname(path);
+	lua_pushstring(L, result);
+	return 1;
 }
 
 
@@ -1054,19 +1115,19 @@ static int doFileMatching(lua_State* L, int recursive)
 }
 
 
-static int matchfiles(lua_State* L)
+static int lf_matchfiles(lua_State* L)
 {
 	return doFileMatching(L, 0);
 }
 
 
-static int matchrecursive(lua_State* L)
+static int lf_matchrecursive(lua_State* L)
 {
 	return doFileMatching(L, 1);
 }
 
 
-static int newfileconfig(lua_State* L)
+static int lf_newfileconfig(lua_State* L)
 {
 	lua_newtable(L);
 	lua_pushvalue(L, 1);
@@ -1078,7 +1139,7 @@ static int newfileconfig(lua_State* L)
 }
 
 
-static int newpackage(lua_State* L)
+static int lf_newpackage(lua_State* L)
 {
 	int count, i;
 
@@ -1164,7 +1225,7 @@ static int newpackage(lua_State* L)
 	/* Hook the index metamethod so I can dynamically add file configs */
 	lua_newtable(L);
 	lua_pushstring(L, "__index");
-	lua_pushcfunction(L, newfileconfig);
+	lua_pushcfunction(L, lf_newfileconfig);
 	lua_settable(L, -3);
 	lua_setmetatable(L, -2);
 
@@ -1178,7 +1239,7 @@ static int newpackage(lua_State* L)
 }
 
 
-static int panic(lua_State* L)
+static int lf_panic(lua_State* L)
 {
 	lua_Debug ar;
 	int stack;
@@ -1200,7 +1261,7 @@ static int panic(lua_State* L)
 	return 0;
 }
 
-static int rmdir_lua(lua_State* L)
+static int lf_rmdir(lua_State* L)
 {
 	const char* dir = luaL_check_string(L, 1);
 	io_rmdir(".", dir);
@@ -1208,7 +1269,7 @@ static int rmdir_lua(lua_State* L)
 }
 
 
-static int setconfigs(lua_State* L)
+static int lf_setconfigs(lua_State* L)
 {
 	int i;
 
