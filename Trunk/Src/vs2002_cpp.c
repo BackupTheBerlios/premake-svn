@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "premake.h"
+#include "vs.h"
 #include "vs2002.h"
 
 static char buffer[8192];
@@ -65,7 +66,7 @@ int vs2002_cpp()
 	io_print("<?xml version=\"1.0\" encoding=\"Windows-1252\"?>\n");
 	io_print("<VisualStudioProject\n");
 	io_print("\tProjectType=\"Visual C++\"\n");
-	io_print("\tVersion=\"7.%d0\"\n", (vs_target == 2003) ? 1 : 0);
+	io_print("\tVersion=\"7.%d0\"\n", (vs_getversion() == 2003) ? 1 : 0);
 	io_print("\tName=\"%s\"\n", prj_get_pkgname());
 	io_print("\tProjectGUID=\"{%s}\"\n", data->projGuid);
 	io_print("\tKeyword=\"%s\">\n", prj_has_flag("managed") ? "ManagedCProj" : "Win32Proj");  
@@ -263,7 +264,7 @@ int vs2002_cpp()
 		io_print("\t\t\t<Tool\n");
 		io_print("\t\t\t\tName=\"VCWebServiceProxyGeneratorTool\"/>\n");
 
-		if (vs_target == 2003)
+		if (vs_getversion() == 2003)
 		{
 			io_print("\t\t\t<Tool\n");
 			io_print("\t\t\t\tName=\"VCXMLDataGeneratorTool\"/>\n");
@@ -272,7 +273,7 @@ int vs2002_cpp()
 		io_print("\t\t\t<Tool\n");
 		io_print("\t\t\t\tName=\"VCWebDeploymentTool\"/>\n");
 
-		if (vs_target == 2003)
+		if (vs_getversion() == 2003)
 		{
 			io_print("\t\t\t<Tool\n");
 			io_print("\t\t\t\tName=\"VCManagedWrapperGeneratorTool\"/>\n");
@@ -285,7 +286,7 @@ int vs2002_cpp()
 
 	io_print("\t</Configurations>\n");
 
-	if (vs_target == 2003)
+	if (vs_getversion() == 2003)
 	{
 		io_print("\t<References>\n");
 		io_print("\t</References>\n");

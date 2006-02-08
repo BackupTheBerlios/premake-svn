@@ -3,20 +3,113 @@ using System.Collections;
 using System.IO;
 using Premake.Tests.Framework;
 
-namespace Premake.Tests.Vs2003
+namespace Premake.Tests.Vs2005
 {
-	public class Vs2003Parser : Parser
+	public class Vs2005Parser : Parser
 	{
 		#region Parser Methods
 		public override string TargetName
 		{
-			get { return "vs2003"; }
+			get { return "vs2005"; }
 		}
 		#endregion
 
 		#region Solution Parsing
 		public override void Parse(Project project, string filename)
 		{
+			/* File header */
+			Begin(filename + ".sln");
+			Match("Microsoft Visual Studio Solution File, Format Version 9.00");
+			Match("# Visual Studio 2005");
+
+			/* Package entries - VS "projects" */
+			string[] matches;
+			Hashtable packageDependencies = new Hashtable();
+			do
+			{
+				matches = Regex("Project\\(\"{([0-9A-F-]+)}\"\\) = \"(.+)\", \"(.+)\", \"{([0-9A-F-]+)}\"", true);
+				if (matches != null)
+				{
+					Package package = new Package();
+					project.Package.Add(package);
+
+					package.Name = matches[1];
+					package.ID   = matches[3];
+					package.Path = Path.GetDirectoryName(matches[2]);
+					package.ScriptName = Path.GetFileName(matches[2]);
+
+					switch (matches[0])
+					{
+					case "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942":
+						package.Language = "c++";
+						break;
+
+					case "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC":
+						package.Language = "c#";
+						break;
+					}
+
+					/* Collect package dependencies, I'll sort them out after
+					 * I finish parsing the scripts below */
+					Match("\tProjectSection(ProjectDependencies) = postProject");
+					ArrayList deps = new ArrayList();
+					while (!Match("\tEndProjectSection", true))
+					{
+						matches = Regex("\t\t{([0-9A-F-]+)} = {([0-9A-F-]+)}");
+						if (matches[0] != matches[1])
+							throw new FormatException("GUID mismatch in ProjectDependencies block, should be the same");
+						deps.Add(matches[0]);
+					}
+					packageDependencies[package.ID] = deps;
+
+					Match("EndProject");
+				}
+			} while (matches != null);
+			
+			Match("Global");
+
+			/* Read the list of configurations */
+			Match("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution");
+			do
+			{
+				matches = Regex("\t\t(.+)[ ]=[ ](.+)", true);
+				if (matches != null)
+				{
+					if (matches[0] != matches[1])
+						throw new FormatException("Configuration name mismatch: " + matches[0] + " != " + matches[1]);
+
+					matches = matches[0].Split('|');
+					project.Configuration.Add(matches[0]);
+				}
+			} while (matches != null);
+
+			foreach (Package package in project.Package)
+				package.Config.Add(project);
+
+			Match("\tEndGlobalSection");
+
+			/* Read the list of package configurations */
+			Match("\tGlobalSection(ProjectConfiguration) = postSolution");
+			foreach (Package package in project.Package)
+			{
+				string arch = (package.Language == "c++") ? "Win32" : ".NET";
+
+				foreach (string config in project.Configuration)
+				{
+					string pattern = "\t\t{" + package.ID + "}." + config + "|" + arch + ".ActiveCfg = " + config + "|" + arch;
+					Match(pattern);
+					pattern = "\t\t{" + package.ID + "}." + config + "|" + arch + ".Build.0 = " + config + "|" + arch;
+					Match(pattern);
+				}
+			}
+			Match("\tEndGlobalSection");
+
+			Match("\tGlobalSection(SolutionProperties) = preSolution");
+			Match("\t\tHideSolutionNode = FALSE");
+			Match("\tEndGlobalSection");
+			Match("EndGlobal");
+
+#if OBSOLETE
 			/* File header */
 			Begin(filename + ".sln");
 			Match("Microsoft Visual Studio Solution File, Format Version 8.00");
@@ -66,9 +159,9 @@ namespace Premake.Tests.Vs2003
 			} while (matches != null);
 
 			Match("Global");
+			Match("\tGlobalSection(SolutionConfiguration) = preSolution");
 
 			/* Read the list of configurations */
-			Match("\tGlobalSection(SolutionConfiguration) = preSolution");
 			do
 			{
 				matches = Regex("\t\t(.+)[ ]=[ ](.+)", true);
@@ -84,9 +177,9 @@ namespace Premake.Tests.Vs2003
 				package.Config.Add(project);
 
 			Match("\tEndGlobalSection");
+			Match("\tGlobalSection(ProjectConfiguration) = postSolution");
 
 			/* Read the list of package configurations */
-			Match("\tGlobalSection(ProjectConfiguration) = postSolution");
 			foreach (Package package in project.Package)
 			{
 				string arch = (package.Language == "c++") ? "Win32" : ".NET";
@@ -99,8 +192,8 @@ namespace Premake.Tests.Vs2003
 					Match(pattern);
 				}
 			}
-			Match("\tEndGlobalSection");
 
+			Match("\tEndGlobalSection");
 			Match("\tGlobalSection(ExtensibilityGlobals) = postSolution");
 			Match("\tEndGlobalSection");
 			Match("\tGlobalSection(ExtensibilityAddIns) = postSolution");
@@ -141,12 +234,14 @@ namespace Premake.Tests.Vs2003
 				foreach (Configuration config in package.Config)
 					config.Dependencies = deplist;
 			}
+#endif
 		}
 		#endregion
 
 		#region C++ Parsing
 		private void ParseCpp(Project project, Package package, string filename)
 		{
+#if OBSOLETE
 			Begin(filename);
 
 			Match("<?xml version=\"1.0\" encoding=\"Windows-1252\"?>");
@@ -429,12 +524,14 @@ namespace Premake.Tests.Vs2003
 			Match("\t<Globals>");
 			Match("\t</Globals>");
 			Match("</VisualStudioProject>");
+#endif
 		}
 		#endregion
 
 		#region C# Parsing
 		private void ParseCs(Project project, Package package, string filename)
 		{
+#if OBSOLETE
 			Begin(filename);
 
 			Match("<VisualStudioProject>");
@@ -675,6 +772,7 @@ namespace Premake.Tests.Vs2003
 			Match("\t\t/>");
 			Match("\t</CSHARP>");
 			Match("</VisualStudioProject>");
+#endif
 		}
 		#endregion
 	}

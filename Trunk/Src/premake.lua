@@ -27,6 +27,5 @@ package.target   = "premake"
 
 	package.files =
 	{
-		matchfiles("*.h", "*.c"),
-		matchfiles("Lua/*.h", "Lua/*.c")
+		matchrecursive("*.h", "*.c")
 	}

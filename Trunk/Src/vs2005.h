@@ -1,8 +1,8 @@
 /**********************************************************************
- * Premake - vs2002.h
- * The Visual Studio 2002 and 2003 target
+ * Premake - vs2005.h
+ * The Visual Studio 2005 target
  *
- * Copyright (c) 2002-2005 Jason Perkins and the Premake project
+ * Copyright (c) 2002-2006 Jason Perkins and the Premake project
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,7 +15,8 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-int vs2002_generate();
+int vs2005_generate();
 
-int vs2002_cpp();
-int vs2002_cs();
+int vs2005_cpp();
+int vs2005_cs();
+

@@ -26,10 +26,11 @@
 #include "sharpdev.h"
 #include "vs6.h"
 #include "vs2002.h"
+#include "vs2005.h"
 
 const char* DEFAULT   = "premake.lua";
 const char* VERSION   = "3.0+";
-const char* COPYRIGHT = "Copyright (C) 2002-2005 Jason Perkins and the Premake Project";
+const char* COPYRIGHT = "Copyright (C) 2002-2006 Jason Perkins and the Premake Project";
 const char* HELP_MSG  = "Type 'premake --help' for help";
 
 const char* g_filename;
@@ -210,6 +211,10 @@ int onCommand(const char* cmd, const char* arg)
 		{
 			return vs2002_generate(2003);
 		}
+		else if (matches(arg, "vs2005"))
+		{
+			return vs2005_generate();
+		}
 		else
 		{
 			printf("** Unrecognized target '%s'\n", arg);
@@ -278,6 +283,7 @@ void showUsage()
 	puts("      vs6       Microsoft Visual Studio 6");
 	puts("      vs2002    Microsoft Visual Studio 2002");
 	puts("      vs2003    Microsoft Visual Studio 2003");
+	puts("      vs2005    Microsoft Visual Studio 2005 (experimental)");
 	puts("");
 	puts(" --help            Display this information");
 	puts(" --version         Display version information");

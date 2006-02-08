@@ -1,8 +1,8 @@
 /**********************************************************************
- * Premake - vs2002.h
- * The Visual Studio 2002 and 2003 target
+ * Premake - vs2005.c
+ * The Visual Studio 2005 target
  *
- * Copyright (c) 2002-2005 Jason Perkins and the Premake project
+ * Copyright (c) 2002-2065 Jason Perkins and the Premake project
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,7 +15,23 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
-int vs2002_generate();
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "premake.h"
+#include "vs.h"
+#include "vs2005.h"
 
-int vs2002_cpp();
-int vs2002_cs();
+static int writeSolution();
+
+
+int vs2005_generate(int target)
+{
+	vs_setversion(2005);
+	printf("Generating Visual Studio 2005 solution and project files:\n");
+
+	/* Assign GUIDs to packages */
+	vs_assign_guids();
+
+	return vs_write_solution();
+}
