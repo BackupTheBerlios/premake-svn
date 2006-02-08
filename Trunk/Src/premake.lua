@@ -18,6 +18,17 @@ package.target   = "premake"
 		"no-frame-pointers"
 	}
 
+
+-- Defined Symbols
+
+	package.defines =
+	{
+		"_CRT_SECURE_NO_DEPRECATE"   -- avoid VS2005 warnings
+	}
+	
+
+-- Libraries
+
 	if (OS == "linux") then
 		package.links = { "m" }
 	end
