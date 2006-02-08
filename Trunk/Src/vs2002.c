@@ -27,7 +27,7 @@ int vs2002_generate(int target)
 {
 	int i;
 
-	vs_setversion(target);
+	vs_setversion(target == 2002 ? VS2002 : VS2003);
 
 	printf("Generating Visual Studio %d solution and project files:\n", vs_getversion());
 
@@ -43,7 +43,7 @@ int vs2002_generate(int target)
 
 		if (prj_is_lang("c++") || prj_is_lang("c"))
 		{
-			if (!vs2002_cpp())
+			if (!vs_write_cpp())
 				return 0;
 		}
 		else if (prj_is_lang("c#"))

@@ -109,97 +109,6 @@ namespace Premake.Tests.Vs2005
 			Match("\tEndGlobalSection");
 			Match("EndGlobal");
 
-#if OBSOLETE
-			/* File header */
-			Begin(filename + ".sln");
-			Match("Microsoft Visual Studio Solution File, Format Version 8.00");
-
-			/* Package entries - VS "projects" */
-			string[] matches;
-			Hashtable packageDependencies = new Hashtable();
-			do
-			{
-				matches = Regex("Project\\(\"{([0-9A-F-]+)}\"\\) = \"(.+)\", \"(.+)\", \"{([0-9A-F-]+)}\"", true);
-				if (matches != null)
-				{
-					Package package = new Package();
-					project.Package.Add(package);
-
-					package.Name = matches[1];
-					package.ID   = matches[3];
-					package.Path = Path.GetDirectoryName(matches[2]);
-					package.ScriptName = Path.GetFileName(matches[2]);
-
-					switch (matches[0])
-					{
-					case "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942":
-						package.Language = "c++";
-						break;
-
-					case "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC":
-						package.Language = "c#";
-						break;
-					}
-
-					/* Collect package dependencies, I'll sort them out after
-					 * I finish parsing the scripts below */
-					Match("\tProjectSection(ProjectDependencies) = postProject");
-					ArrayList deps = new ArrayList();
-					while (!Match("\tEndProjectSection", true))
-					{
-						matches = Regex("\t\t{([0-9A-F-]+)} = {([0-9A-F-]+)}");
-						if (matches[0] != matches[1])
-							throw new FormatException("GUID mismatch in ProjectDependencies block, should be the same");
-						deps.Add(matches[0]);
-					}
-					packageDependencies[package.ID] = deps;
-
-					Match("EndProject");
-				}
-			} while (matches != null);
-
-			Match("Global");
-			Match("\tGlobalSection(SolutionConfiguration) = preSolution");
-
-			/* Read the list of configurations */
-			do
-			{
-				matches = Regex("\t\t(.+)[ ]=[ ](.+)", true);
-				if (matches != null)
-				{
-					if (matches[0] != matches[1])
-						throw new FormatException("Configuration name mismatch: " + matches[0] + " != " + matches[1]);
-					project.Configuration.Add(matches[0]);
-				}
-			} while (matches != null);
-
-			foreach (Package package in project.Package)
-				package.Config.Add(project);
-
-			Match("\tEndGlobalSection");
-			Match("\tGlobalSection(ProjectConfiguration) = postSolution");
-
-			/* Read the list of package configurations */
-			foreach (Package package in project.Package)
-			{
-				string arch = (package.Language == "c++") ? "Win32" : ".NET";
-
-				foreach (string config in project.Configuration)
-				{
-					string pattern = "\t\t{" + package.ID + "}." + config + ".ActiveCfg = " + config + "|" + arch;
-					Match(pattern);
-					pattern = "\t\t{" + package.ID + "}." + config + ".Build.0 = " + config + "|" + arch;
-					Match(pattern);
-				}
-			}
-
-			Match("\tEndGlobalSection");
-			Match("\tGlobalSection(ExtensibilityGlobals) = postSolution");
-			Match("\tEndGlobalSection");
-			Match("\tGlobalSection(ExtensibilityAddIns) = postSolution");
-			Match("\tEndGlobalSection");
-			Match("EndGlobal");
-
 			foreach (Package package in project.Package)
 			{
 				filename = Path.Combine(Path.Combine(project.Path, package.Path), package.ScriptName);
@@ -234,32 +143,36 @@ namespace Premake.Tests.Vs2005
 				foreach (Configuration config in package.Config)
 					config.Dependencies = deplist;
 			}
-#endif
 		}
 		#endregion
 
 		#region C++ Parsing
 		private void ParseCpp(Project project, Package package, string filename)
 		{
-#if OBSOLETE
 			Begin(filename);
 
 			Match("<?xml version=\"1.0\" encoding=\"Windows-1252\"?>");
 			Match("<VisualStudioProject");
 			Match("\tProjectType=\"Visual C++\"");
-			Match("\tVersion=\"7.10\"");
+			Match("\tVersion=\"8.00\"");
 			Match("\tName=\"" + package.Name + "\"");
 
 			string[] matches = Regex("\tProjectGUID=\"{([A-F0-9-]+)}\"");
 			if (matches[0] != package.ID)
 				throw new FormatException("Solution (" + package.ID + ") and project (" + matches[0] + ") GUIDs don't match");
 
-			Match("\tKeyword=\"Win32Proj\">");
+			Match("\tRootNamespace=\"" + package.Name + "\"");
+			Match("\tKeyword=\"Win32Proj\"");
+			Match("\t>");
 		
 			Match("\t<Platforms>");
 			Match("\t\t<Platform");
-			Match("\t\t\tName=\"Win32\"/>");
+			Match("\t\t\tName=\"Win32\"");
+			Match("\t\t/>");
 			Match("\t</Platforms>");
+
+			Match("\t<ToolFiles>");
+			Match("\t</ToolFiles>");
 
 			Match("\t<Configurations>");
 			
@@ -291,9 +204,30 @@ namespace Premake.Tests.Vs2005
 				else
 					config.BinDir = config.OutDir;
 
-				matches = Regex("\t\t\tCharacterSet=\"([1-2])\">");
+				matches = Regex("\t\t\tCharacterSet=\"([1-2])\"");
 				if (matches[0] == "1")
 					buildFlags.Add("unicode");
+				Match("\t\t\t>");
+
+				Match("\t\t\t<Tool");
+				Match("\t\t\t\tName=\"VCPreBuildEventTool\"");
+				Match("\t\t\t/>");
+
+				Match("\t\t\t<Tool");
+				Match("\t\t\t\tName=\"VCCustomBuildTool\"");
+				Match("\t\t\t/>");
+
+				Match("\t\t\t<Tool");
+				Match("\t\t\t\tName=\"VCXMLDataGeneratorTool\"");
+				Match("\t\t\t/>");
+
+				Match("\t\t\t<Tool");
+				Match("\t\t\t\tName=\"VCWebServiceProxyGeneratorTool\"");
+				Match("\t\t\t/>");
+
+				Match("\t\t\t<Tool");
+				Match("\t\t\t\tName=\"VCMIDLTool\"");
+				Match("\t\t\t/>");
 
 				Match("\t\t\t<Tool");
 				Match("\t\t\t\tName=\"VCCLCompilerTool\"");
@@ -360,20 +294,41 @@ namespace Premake.Tests.Vs2005
 				if (matches[0] == "FALSE")
 					buildFlags.Add("no-64bit-checks");
 					
-				matches = Regex("\t\t\t\tDebugInformationFormat=\"([0-9])\"/>");
+				matches = Regex("\t\t\t\tDebugInformationFormat=\"([0-9])\"");
 				if (matches[0] == "0")
 					buildFlags.Add("no-symbols");
 				else if (matches[0] != "4")
 					throw new FormatException("Unexpected value: DebugInformationFormat=\"" + matches[0] + "\"");
 
+				Match("\t\t\t/>");
+
 				Match("\t\t\t<Tool");
-				Match("\t\t\t\tName=\"VCCustomBuildTool\"/>");
+				Match("\t\t\t\tName=\"VCManagedResourceCompilerTool\"");
+				Match("\t\t\t/>");
+
+				Match("\t\t\t<Tool");
+				if (config.IncludePaths.Length == 0)
+				{
+					Match("\t\t\t\tName=\"VCResourceCompilerTool\"");
+				}
+				else
+				{
+					Match("\t\t\t\tName=\"VCResourceCompilerTool\"");
+					matches = Regex("\t\t\t\tAdditionalIncludeDirectories=\"(.+)\"");
+					if (config.IncludePaths.Length != matches[0].Split(';').Length)
+						throw new FormatException("Resource compiler getting different include paths");
+				}
+				Match("\t\t\t/>");
+
+				Match("\t\t\t<Tool");
+				Match("\t\t\t\tName=\"VCPreLinkEventTool\"");
+				Match("\t\t\t/>");
 
 				Match("\t\t\t<Tool");
 				if (package.Kind == "lib")
 				{
 					Match("\t\t\t\tName=\"VCLibrarianTool\"");
-					matches = Regex("\t\t\t\tOutputFile=\"\\$\\(OutDir\\)/(.+)\"/>");
+					matches = Regex("\t\t\t\tOutputFile=\"\\$\\(OutDir\\)/(.+)\"");
 					config.Target = matches[0];
 				}
 				else
@@ -417,7 +372,6 @@ namespace Premake.Tests.Vs2005
 						Match("\t\t\t\tOptimizeReferences=\"2\"");
 						Match("\t\t\t\tEnableCOMDATFolding=\"2\"");
 					}
-
 					
 					if (package.Kind == "exe" || package.Kind == "winexe")
 					{
@@ -430,58 +384,52 @@ namespace Premake.Tests.Vs2005
 						config.ImportLib = matches[0];
 					}
 
-					Match("\t\t\t\tTargetMachine=\"1\"/>");
-
+					Match("\t\t\t\tTargetMachine=\"1\"");
 				}
+				Match("\t\t\t/>");
 
 				Match("\t\t\t<Tool");
-				Match("\t\t\t\tName=\"VCMIDLTool\"/>");
-
-				Match("\t\t\t<Tool");
-				Match("\t\t\t\tName=\"VCPostBuildEventTool\"/>");
-
-				Match("\t\t\t<Tool");
-				Match("\t\t\t\tName=\"VCPreBuildEventTool\"/>");
-
-				Match("\t\t\t<Tool");
-				Match("\t\t\t\tName=\"VCPreLinkEventTool\"/>");
+				Match("\t\t\t\tName=\"VCALinkTool\"");
+				Match("\t\t\t/>");
 			
 				Match("\t\t\t<Tool");
-				if (config.IncludePaths.Length == 0)
-				{
-					Match("\t\t\t\tName=\"VCResourceCompilerTool\"/>");
-				}
-				else
-				{
-					Match("\t\t\t\tName=\"VCResourceCompilerTool\"");
-					matches = Regex("\t\t\t\tAdditionalIncludeDirectories=\"(.+)\"/>");
-					if (config.IncludePaths.Length != matches[0].Split(';').Length)
-						throw new FormatException("Resource compiler getting different include paths");
-				}
+				Match("\t\t\t\tName=\"VCManifestTool\"");
+				Match("\t\t\t/>");
 
 				Match("\t\t\t<Tool");
-				Match("\t\t\t\tName=\"VCWebServiceProxyGeneratorTool\"/>");
+				Match("\t\t\t\tName=\"VCXDCMakeTool\"");
+				Match("\t\t\t/>");
 
 				Match("\t\t\t<Tool");
-				Match("\t\t\t\tName=\"VCXMLDataGeneratorTool\"/>");
+				Match("\t\t\t\tName=\"VCBscMakeTool\"");
+				Match("\t\t\t/>");
 
 				Match("\t\t\t<Tool");
-				Match("\t\t\t\tName=\"VCWebDeploymentTool\"/>");
+				Match("\t\t\t\tName=\"VCFxCopTool\"");
+				Match("\t\t\t/>");
 
 				Match("\t\t\t<Tool");
-				Match("\t\t\t\tName=\"VCManagedWrapperGeneratorTool\"/>");
+				Match("\t\t\t\tName=\"VCAppVerifierTool\"");
+				Match("\t\t\t/>");
 
 				Match("\t\t\t<Tool");
-				Match("\t\t\t\tName=\"VCAuxiliaryManagedWrapperGeneratorTool\"/>");
-		
+				Match("\t\t\t\tName=\"VCWebDeploymentTool\"");
+				Match("\t\t\t/>");
+
+				Match("\t\t\t<Tool");
+				Match("\t\t\t\tName=\"VCPostBuildEventTool\"");
+				Match("\t\t\t/>");
+
 				Match("\t\t</Configuration>");
 
 				config.BuildFlags = (string[])buildFlags.ToArray(typeof(string));
 			}
 
 			Match("\t</Configurations>");
+
 			Match("\t<References>");
 			Match("\t</References>");
+			
 			Match("\t<Files>");
 
 			string indent = "\t";
@@ -493,7 +441,8 @@ namespace Premake.Tests.Vs2005
 					indent += "\t";
 					matches = Regex(indent + "\tName=\"(.+)\"");
 					folder = Path.Combine(folder, matches[0]);
-					Match(indent + "\tFilter=\"\">");
+					Match(indent + "\tFilter=\"\"");
+					Match(indent + "\t>");
 				}
 				else if (Match(indent + "</Filter>", true))
 				{
@@ -524,7 +473,6 @@ namespace Premake.Tests.Vs2005
 			Match("\t<Globals>");
 			Match("\t</Globals>");
 			Match("</VisualStudioProject>");
-#endif
 		}
 		#endregion
 

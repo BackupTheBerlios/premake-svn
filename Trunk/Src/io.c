@@ -59,18 +59,6 @@ int io_fileexists(const char* path)
 	{
 		return 0;
 	}
-/* This version returns true for directories under Linux
-	FILE* file = fopen(path, "r");
-	if (file != NULL)
-	{
-		fclose(file);
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-*/	
 }
 
 
@@ -81,7 +69,6 @@ const char* io_findlib(const char* name)
 	else
 		return NULL;
 }
-
 
 
 const char* io_getcwd()

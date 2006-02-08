@@ -58,7 +58,7 @@ int vs2002_cs()
 	io_print("\t<CSHARP\n");
 	io_print("\t\tProjectType = \"%s\"\n", prj_is_kind("aspnet") ? "Web" : "Local");
 
-	if (vs_getversion() == 2003)
+	if (vs_getversion() == VS2003)
 	{
 		io_print("\t\tProductVersion = \"7.10.3077\"\n");
 		io_print("\t\tSchemaVersion = \"2.0\"\n");
@@ -81,18 +81,18 @@ int vs2002_cs()
 	io_print("\t\t\t\tDefaultHTMLPageLayout = \"Grid\"\n");
 	io_print("\t\t\t\tDefaultTargetSchema = \"IE50\"\n");
 	io_print("\t\t\t\tDelaySign = \"false\"\n");
-	if (vs_getversion() == 2002) 
+	if (vs_getversion() == VS2002) 
 	{
 		io_print("\t\t\t\tNoStandardLibraries = \"false\"\n");
 	}
 	io_print("\t\t\t\tOutputType = \"%s\"\n", outputType);
-	if (vs_getversion() == 2003)
+	if (vs_getversion() == VS2003)
 	{
 		io_print("\t\t\t\tPreBuildEvent = \"\"\n");
 		io_print("\t\t\t\tPostBuildEvent = \"\"\n");
 	}
 	io_print("\t\t\t\tRootNamespace = \"%s\"\n", path_getbasename(prj_get_target()));
-	if (vs_getversion() == 2003)
+	if (vs_getversion() == VS2003)
 	{		
 		io_print("\t\t\t\tRunPostBuildEvent = \"OnBuildSuccess\"\n");
 	}
@@ -123,7 +123,7 @@ int vs2002_cs()
 		io_print("\t\t\t\t\tDebugSymbols = \"%s\"\n", prj_has_flag("no-symbols") ? "false" : "true");
 		io_print("\t\t\t\t\tFileAlignment = \"4096\"\n");
 		io_print("\t\t\t\t\tIncrementalBuild = \"false\"\n");
-		if (vs_getversion() == 2003)
+		if (vs_getversion() == VS2003)
 		{
 			io_print("\t\t\t\t\tNoStdLib = \"false\"\n");
 			io_print("\t\t\t\t\tNoWarn = \"\"\n");

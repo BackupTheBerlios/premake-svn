@@ -15,6 +15,13 @@
  * GNU General Public License in the file LICENSE.txt for details.
  **********************************************************************/
 
+enum VsVer
+{
+	VS2002,
+	VS2003,
+	VS2005
+};
+
 typedef struct tagVsPkgData
 {
 	char projGuid[38];
@@ -29,5 +36,6 @@ extern char vs_buffer[];
 void vs_setversion(int version);
 int  vs_getversion();
 
-int  vs_write_solution();
 void vs_assign_guids();
+int  vs_write_solution();
+int  vs_write_cpp();
