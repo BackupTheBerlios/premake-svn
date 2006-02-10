@@ -180,14 +180,31 @@ static void printFile(const char* file)
 	const char* ext;
 	const char* prefix  = "";
 	const char* subtype = "";
-	const char* action  = "";
+	const char* action  = "Nothing";
 	const char* depends = "";
 
 	if (file[0] != '.')
 		prefix = "./";
 
 	ext = path_getextension(file);
-	if (matches(ext, ".cs"))
+	
+	/* If a build action was specified, use it */
+	prj_select_file(file);
+	if (prj_get_buildaction() != NULL)
+	{
+		action = prj_get_buildaction();
+		if (matches(action, "EmbeddedResource"))
+			action = "EmbedAsResource";
+		if (matches(action, "None"))
+			action = "Nothing";
+		if (matches(action, "Content"))
+		{
+			puts("** Warning: SharpDevelop does not support the 'Content' build action");
+			action = "Nothing";
+		}
+		subtype = "Code";
+	}
+	else if (matches(ext, ".cs"))
 	{
 		subtype = "Code";
 		action = "Compile";

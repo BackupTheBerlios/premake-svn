@@ -39,6 +39,26 @@ namespace Premake.Tests.Gnu.Cs
 		}
 
 		[Test]
+		public void Test_DefaultBuildAction()
+		{
+			/* For GNU, files with buildaction==none are left out of makefile,
+			 * so there should only be one file in this example */
+			_script.Replace("'somefile.txt'", "'file0.cs','somefile.txt'");
+			_expects.Package[0].File.Add("file0.cs", "Compile");
+			Run();
+		}
+
+		[Test]
+		public void Test_CodeAsContent()
+		{
+			_script.Replace("'somefile.txt'", "'file0.cs','file1.cs'");
+			_script.Append("package.config['file1.cs'].buildaction = 'Content'");
+			_expects.Package[0].File.Add("file0.cs", "Compile");
+			_expects.Package[0].File.Add("file1.cs", "Content");
+			Run();
+		}
+
+		[Test]
 		public void Test_AspxCodeAction()
 		{
 			_script.Replace("'somefile.txt'", "'file0.aspx.cs'");
@@ -77,14 +97,6 @@ namespace Premake.Tests.Gnu.Cs
 			_script.Replace("'somefile.txt'", "'file0.resx','file0.cs'");
 			_expects.Package[0].File.Add("obj/Debug/MyPackage.file0.resources", "EmbeddedResource");
 			_expects.Package[0].File.Add("file0.cs");
-			Run();
-		}
-
-		[Test]
-		public void Test_DefaultBuildAction()
-		{
-			_script.Replace("'somefile.txt'", "'file0.cs','somefile.txt'");
-			_expects.Package[0].File.Add("file0.cs", "Compile");
 			Run();
 		}
 

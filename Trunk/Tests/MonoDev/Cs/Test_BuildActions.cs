@@ -39,6 +39,26 @@ namespace Premake.Tests.MonoDev.Cs
 		}
 
 		[Test]
+		public void Test_DefaultBuildAction()
+		{
+			_expects.Package[0].File.Add("./somefile.txt", "Nothing");
+			Run();
+		}
+
+		/* #dev doesn't support the "Content" build action */
+#if UNSUPPORTED
+		[Test]
+		public void Test_CodeAsContent()
+		{
+			_script.Replace("'somefile.txt'", "'file0.cs','file1.cs'");
+			_script.Append("package.config['file1.cs'].buildaction = 'Content'");
+			_expects.Package[0].File.Add("./file0.cs", "Compile");
+			_expects.Package[0].File.Add("./file1.cs", "Content");
+			Run();
+		}
+#endif
+
+		[Test]
 		public void Test_ResxAction()
 		{
 			_script.Replace("'somefile.txt'", "'file0.resx'");
@@ -53,14 +73,6 @@ namespace Premake.Tests.MonoDev.Cs
 			_script.Replace("'somefile.txt'", "'file0.resx','file0.cs'");
 			_expects.Package[0].File.Add("./file0.resx", null, "EmbeddedResource", "file0.cs");
 			_expects.Package[0].File.Add("./file0.cs");
-			Run();
-		}
-
-		[Test]
-		public void Test_DefaultBuildAction()
-		{
-			/* #develop does not support the 'Content' build action so I am forced to do this */
-			_expects.Package[0].File.Add("./somefile.txt", "Nothing");
 			Run();
 		}
 

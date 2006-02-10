@@ -57,6 +57,16 @@ namespace Premake.Tests.Vs2005.Cs
 		}
 
 		[Test]
+		public void Test_CodeAsContent()
+		{
+			_script.Replace("'somefile.txt'", "'file0.cs','file1.cs'");
+			_script.Append("package.config['file1.cs'].buildaction = 'Content'");
+			_expects.Package[0].File.Add("file0.cs", "code", "Compile");
+			_expects.Package[0].File.Add("file1.cs", "Content");
+			Run();
+		}
+
+		[Test]
 		public void Test_AspxCodeAction()
 		{
 			_script.Replace("'somefile.txt'", "'file0.aspx.cs'");
@@ -111,7 +121,7 @@ namespace Premake.Tests.Vs2005.Cs
 		[Test]
 		public void Test_DefaultBuildAction()
 		{
-			_expects.Package[0].File.Add("somefile.txt", "Content");
+			_expects.Package[0].File.Add("somefile.txt", "None");
 			Run();
 		}
 

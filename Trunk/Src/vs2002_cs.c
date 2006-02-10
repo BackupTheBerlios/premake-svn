@@ -209,8 +209,6 @@ int vs2002_cs()
 		io_print("\t\t/>\n");
 		io_print("\t</CSHARP>\n");
 		io_print("</VisualStudioProject>\n");
-
-		io_closefile();
 	}
 	else
 	{
@@ -225,10 +223,9 @@ int vs2002_cs()
 			io_print(prj_get_url());
 		io_print("/%s.csproj\" />\n", prj_get_pkgname());
 		io_print("</VisualStudioUNCWeb>\n");
-
-		io_closefile();
 	}
 
+	io_closefile();
 	return 1;
 }
 
@@ -308,61 +305,55 @@ static const char* listReferences(const char* name)
 
 static const char* listFiles(const char* name)
 {
-	strcpy(vs_buffer, path_translate(name, "windows"));
-	strcat(vs_buffer, "\"\n");
+	io_print("\t\t\t\t<File\n\t\t\t\t\tRelPath = \"%s\"\n", path_translate(name, "windows"));
 
-	if (endsWith(name, ".aspx.cs") || endsWith(name, ".asax.cs"))
+	/* If a build action was specified, use it */
+	prj_select_file(name);
+	if (prj_get_buildaction() != NULL)
+	{
+		io_print("\t\t\t\t\tBuildAction = \"%s\"\n", prj_get_buildaction());
+	}
+	else if (endsWith(name, ".aspx.cs") || endsWith(name, ".asax.cs"))
 	{
 		/* The path to the parent .aspx file is relative to the .cs file. 
 		 * I assume that they are in the same directory */
-		strcat(vs_buffer, "\t\t\t\t\tDependentUpon = \"");
-		strcat(vs_buffer, path_getbasename(name));
-		strcat(vs_buffer, "\"\n");
-		strcat(vs_buffer, "\t\t\t\t\tSubType = \"ASPXCodeBehind\"\n");
-		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"Compile\"\n");
+		io_print("\t\t\t\t\tDependentUpon = \"%s\"\n", path_getbasename(name));
+		io_print("\t\t\t\t\tSubType = \"ASPXCodeBehind\"\n");
+		io_print("\t\t\t\t\tBuildAction = \"Compile\"\n");
 	}
 	else if (endsWith(name, ".cs"))
 	{
-		strcat(vs_buffer, "\t\t\t\t\tSubType = \"Code\"\n");
-		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"Compile\"\n");
+		io_print("\t\t\t\t\tSubType = \"Code\"\n");
+		io_print("\t\t\t\t\tBuildAction = \"Compile\"\n");
 	}
 	else if (endsWith(name, ".aspx"))
 	{
-		strcat(vs_buffer, "\t\t\t\t\tSubType = \"Form\"\n");
-		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"Content\"\n");
+		io_print("\t\t\t\t\tSubType = \"Form\"\n");
+		io_print("\t\t\t\t\tBuildAction = \"Content\"\n");
 	}
 	else if (endsWith(name, ".asax"))
 	{
-		strcat(vs_buffer, "\t\t\t\t\tSubType = \"Component\"\n");
-		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"Content\"\n");
+		io_print("\t\t\t\t\tSubType = \"Component\"\n");
+		io_print("\t\t\t\t\tBuildAction = \"Content\"\n");
 	}
 	else if (endsWith(name, ".resx"))
 	{
 		/* If a matching .cs file exists, link it */
-		char csname[8192];
-		strcpy(csname, name);
-		strcpy(csname + strlen(name) - 5, ".cs");
-		if (prj_has_file(csname))
+		strcpy(vs_buffer, path_swapextension(name, ".resx", ".cs"));
+		if (prj_has_file(vs_buffer))
 		{
 			/* Path is relative to .resx file, I assume both are in same dir */
-			strcat(vs_buffer, "\t\t\t\t\tDependentUpon = \"");
-			strcat(vs_buffer, path_getname(csname));
-			strcat(vs_buffer, "\"\n");
+			io_print("\t\t\t\t\tDependentUpon = \"%s\"\n", path_getname(vs_buffer));
 		}
-		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"EmbeddedResource\"\n");
+		io_print("\t\t\t\t\tBuildAction = \"EmbeddedResource\"\n");
 	}
 	else
 	{
-		prj_select_file(name);
-		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"");
-		if (prj_get_buildaction() != NULL)
-			strcat(vs_buffer, prj_get_buildaction());
-		else
-			strcat(vs_buffer, "Content");
-		strcat(vs_buffer, "\"\n");
+		io_print("\t\t\t\t\tBuildAction = \"None\"\n");
 	}
 
-	return vs_buffer;
+	io_print("\t\t\t\t/>\n");
+	return NULL;
 }
 
 

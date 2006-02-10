@@ -23,6 +23,7 @@
 
 static const char* listFiles(const char* name);
 static const char* listReferences(const char* name);
+static const char* listRefPaths(const char* name);
 
 
 int vs2005_cs()
@@ -123,6 +124,35 @@ int vs2005_cs()
 	io_print("</Project>\n");
 
 	io_closefile();
+
+	/* Now write the .csproj.user file for non-web applications or
+	 * .csproj.webinfo for web applications */
+	if (!prj_is_kind("aspnet"))
+	{
+		if (!io_openfile(path_join(prj_get_pkgpath(), prj_get_pkgname(), "csproj.user")))
+			return 0;
+
+		io_print("<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\n");
+		io_print("  <PropertyGroup>\n");
+		io_print("    <ReferencePath>");
+
+		strcpy(vs_buffer, io_getcwd());
+		io_chdir(prj_get_pkgpath());
+		print_list(prj_get_libpaths(), "", ";", "", listRefPaths);
+		io_print(listRefPaths(prj_get_bindir()));
+		io_chdir(vs_buffer);
+
+		io_print("</ReferencePath>\n");
+		io_print("  </PropertyGroup>\n");
+		io_print("</Project>\n");
+	}
+	else
+	{
+		if (!io_openfile(path_join(prj_get_pkgpath(), prj_get_pkgname(), "csproj.webinfo")))
+			return 0;
+	}
+
+	io_closefile();
 	return 1;
 }
 
@@ -152,6 +182,24 @@ static const char* listReferences(const char* name)
 static const char* listFiles(const char* name)
 {
 	const char* related;
+
+	/* If a build action was specified, use it */
+	prj_select_file(name);
+	if (prj_get_buildaction() != NULL)
+	{
+		if (matches(prj_get_buildaction(), "Content"))
+		{
+			io_print("    <Content Include=\"%s\">\n", path_translate(name, "windows"));
+			io_print("      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>\n");
+			io_print("    </Content>\n");
+		}
+		else
+		{
+			io_print("    <%s Include=\"%s\" />\n", prj_get_buildaction(), path_translate(name, "windows"));
+		}
+		return NULL;
+	}
+
 	if (endsWith(name, ".cs"))
 	{
 		int fullstop = 0;
@@ -225,6 +273,22 @@ static const char* listFiles(const char* name)
 		}
 		io_print(fullstop ? "    </EmbeddedResource>\n" : " />\n");
 	}
+	else
+	{
+		io_print("    <None Include=\"%s\" />\n", path_translate(name, "windows"));
+	}
 
 	return NULL;
+}
+
+
+/************************************************************************
+ * VS.NET requires that all reference search paths be absolute
+ ***********************************************************************/
+
+static const char* listRefPaths(const char* name)
+{
+	char* path = (char*)path_absolute(name);
+	path_translateInPlace(path, "windows");
+	return path;
 }

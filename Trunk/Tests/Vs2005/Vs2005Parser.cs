@@ -628,6 +628,12 @@ namespace Premake.Tests.Vs2005
 					}
 				}
 
+				if (action == "Content")
+				{
+					Match("      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>");
+					Match("    </Content>");
+				}
+
 				package.File.Add(name, subtype, action, depends);
 			}
 			
@@ -640,7 +646,52 @@ namespace Premake.Tests.Vs2005
 			Match("  </Target>");
 			Match("  -->");
 			Match("</Project>");
+
+			if (package.Kind != "aspnet")
+				ParseUserFile(project, package, filename);
 		}
+
+		private void ParseUserFile(Project project, Package package, string filename)
+		{
+			Begin(filename + ".user");
+
+			Match("<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">");
+			Match("  <PropertyGroup>");
+
+			string[] matches = Regex("    <ReferencePath>(.+)</ReferencePath>");
+			matches = matches[0].Split(';');
+			string[] libpaths = new string[matches.Length - 1];
+
+			/* VS.NET stores reference directories as absolute paths, so I need
+			 * to do some ugly trickery here */
+			string[] bindir = matches[matches.Length - 1].Split('\\');
+			for (int i = 0; i < matches.Length - 1; ++i)
+			{
+				string[] thisdir = matches[i].Split('\\');
+				int j = 0;
+				while (j < bindir.Length && j < thisdir.Length && bindir[j] == thisdir[j])
+					++j;
+
+				string path = "";
+				for (int k = j + 1; k < bindir.Length; ++k)
+					path += "..\\";
+
+				for (int k = j; k < thisdir.Length; ++k)
+					path += thisdir[k] + '\\';
+
+				libpaths[i] = path.Substring(0, path.Length - 1);
+				libpaths[i] = libpaths[i].Replace("/", "\\");
+			}
+			
+			foreach (Configuration config in package.Config)
+			{
+				config.LibPaths = libpaths;
+			}
+
+			Match("  </PropertyGroup>");
+			Match("</Project>");
+		}
+
 		#endregion
 	}
 }
