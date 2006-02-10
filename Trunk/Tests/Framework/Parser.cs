@@ -28,6 +28,11 @@ namespace Premake.Tests.Framework
 			throw new FormatException("Unexpected value '" + actual + "'");
 		}
 
+		public string GetLine()
+		{
+			return _lines[_currentLine++];
+		}
+
 		public bool Match(string expected)
 		{
 			return this.Match(expected, false);

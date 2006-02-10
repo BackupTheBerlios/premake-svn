@@ -68,41 +68,37 @@ namespace Premake.Tests.Vs2005
 			
 			Match("Global");
 
-			/* Read the list of configurations */
+			/* Read the list of configurations...just cache for now, test later */
+			ArrayList possibleConfigs = new ArrayList();
 			Match("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution");
-			do
+			while (!Match("\tEndGlobalSection", true))
 			{
 				matches = Regex("\t\t(.+)[ ]=[ ](.+)", true);
-				if (matches != null)
-				{
-					if (matches[0] != matches[1])
-						throw new FormatException("Configuration name mismatch: " + matches[0] + " != " + matches[1]);
 
-					matches = matches[0].Split('|');
+				string cfg = matches[0];
+				if (possibleConfigs.Contains(cfg))
+					throw new FormatException("Duplicate configuration '" + cfg + "'");
+				possibleConfigs.Add(cfg);
+
+				/* Build up my list of scripted package configurations */
+				matches = cfg.Split('|');
+				if (!project.Configuration.Contains(matches[0]))
 					project.Configuration.Add(matches[0]);
-				}
-			} while (matches != null);
+			}
 
 			foreach (Package package in project.Package)
 				package.Config.Add(project);
 
-			Match("\tEndGlobalSection");
-
-			/* Read the list of package configurations */
-			Match("\tGlobalSection(ProjectConfiguration) = postSolution");
-			foreach (Package package in project.Package)
+			/* Read the list of package configurations...cache and test later */
+			ArrayList packageConfigs = new ArrayList();
+			Match("\tGlobalSection(ProjectConfigurationPlatforms) = postSolution");
+			while (!Match("\tEndGlobalSection", true))
 			{
-				string arch = (package.Language == "c++") ? "Win32" : ".NET";
-
-				foreach (string config in project.Configuration)
-				{
-					string pattern = "\t\t{" + package.ID + "}." + config + "|" + arch + ".ActiveCfg = " + config + "|" + arch;
-					Match(pattern);
-					pattern = "\t\t{" + package.ID + "}." + config + "|" + arch + ".Build.0 = " + config + "|" + arch;
-					Match(pattern);
-				}
+				string cfg = GetLine();
+				if (packageConfigs.Contains(cfg))
+					throw new FormatException("Duplicate configuration '" + cfg + "'");
+				packageConfigs.Add(cfg);
 			}
-			Match("\tEndGlobalSection");
 
 			Match("\tGlobalSection(SolutionProperties) = preSolution");
 			Match("\t\tHideSolutionNode = FALSE");
@@ -142,6 +138,57 @@ namespace Premake.Tests.Vs2005
 
 				foreach (Configuration config in package.Config)
 					config.Dependencies = deplist;
+			}
+
+			/* Now test configurations */
+			bool hasDotNet = false;
+			bool hasCpp = false;
+			foreach (Package package in project.Package)
+			{
+				if (package.Language == "c" || package.Language == "c++")
+					hasCpp = true;
+				else
+					hasDotNet = true;
+			}
+
+			ArrayList platforms = new ArrayList();
+			if (hasDotNet) platforms.Add("Any CPU");
+			if (hasDotNet && hasCpp) platforms.Add("Mixed Platforms");
+			if (hasCpp) platforms.Add("Win32");
+
+			int c = 0;
+			foreach (Package package in project.Package)
+			{
+				string arch;
+				if (package.Language == "c" || package.Language == "c++")
+					arch = "Win32";
+				else
+					arch = "Any CPU";
+
+				foreach (Configuration config in package.Config)
+				{
+					foreach (string platform in platforms)
+					{
+						string configPlatform = config.Name + "|" + platform;
+						if (!possibleConfigs.Contains(configPlatform))
+							throw new FormatException(configPlatform + " is not listed in possible configuration");
+
+						string root = "\t\t{" + package.ID + "}." + configPlatform + ".";
+
+						string match = root + "ActiveCfg = " + config.Name + "|" + arch;
+						if (((string)packageConfigs[c]) != match)
+							throw new FormatException("Expected:\n  " + match + "\nBut I got:\n  " + packageConfigs[c]);
+						c++;
+
+						if (platform == "MixedPlatforms" || platform == arch)
+						{
+							match = root + "Build.0 = " + config.Name + "|" + arch;
+							if (((string)packageConfigs[c]) != match)
+								throw new FormatException("Expected:\n  " + match + "\nBut I got:\n  " + packageConfigs[c]);
+							c++;
+						}
+					}
+				}
 			}
 		}
 		#endregion

@@ -247,7 +247,10 @@ void vs_assign_guids()
 		{
 			strcpy(data->toolGuid, "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC");
 			strcpy(data->projExt, "csproj");
-			strcpy(data->projType, ".NET");
+			if (version == VS2003)
+				strcpy(data->projType, ".NET");
+			else
+				strcpy(data->projType, "Any CPU");
 		}
 
 		data->numDependencies = 0;
@@ -262,6 +265,7 @@ void vs_assign_guids()
 int vs_write_solution()
 {
 	VsPkgData* data;
+	int hasDotNet, hasCpp;
 	int i, j;
 
 	if (!io_openfile(path_join(prj_get_path(), prj_get_name(), "sln")))
@@ -310,6 +314,17 @@ int vs_write_solution()
 	else
 		io_print("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution\n");
 
+	hasDotNet = 0;
+	hasCpp = 0;
+	for (i = 0; i < prj_get_numpackages(); ++i)
+	{
+		prj_select_package(i);
+		if (prj_is_lang("c") || prj_is_lang("c++"))
+			hasCpp = 1;
+		else
+			hasDotNet = 1;
+	}
+
 	prj_select_package(0);
 	for (i = 0; i < prj_get_numconfigs(); ++i)
 	{
@@ -323,7 +338,12 @@ int vs_write_solution()
 			io_print("\t\t%s = %s\n", prj_get_cfgname(), prj_get_cfgname());
 			break;
 		case VS2005:
-			io_print("\t\t%s|%s = %s|%s\n", prj_get_cfgname(), data->projType, prj_get_cfgname(), data->projType);
+			if (hasDotNet)
+				io_print("\t\t%s|Any CPU = %s|Any CPU\n", prj_get_cfgname(), prj_get_cfgname());
+			if (hasDotNet && hasCpp)
+				io_print("\t\t%s|Mixed Platforms = %s|Mixed Platforms\n", prj_get_cfgname(), prj_get_cfgname());
+			if (hasCpp)
+				io_print("\t\t%s|Win32 = %s|Win32\n", prj_get_cfgname(), prj_get_cfgname());
 			break;
 		}
 	}
@@ -343,12 +363,10 @@ int vs_write_solution()
 	}
 
 	/* Write configuration for each package */
-	io_print("\tGlobalSection(ProjectConfiguration) = postSolution\n");
-
-	if (version == VS2005)
-		sprintf(vs_buffer, "|%s", data->projType);
+	if (version < VS2005)
+		io_print("\tGlobalSection(ProjectConfiguration) = postSolution\n");
 	else
-		strcpy(vs_buffer, "");
+		io_print("\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\n");
 
 	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
@@ -357,8 +375,42 @@ int vs_write_solution()
 		{
 			prj_select_config(j);
 			data = (VsPkgData*)prj_get_data();
-			io_print("\t\t{%s}.%s%s.ActiveCfg = %s|%s\n", data->projGuid, prj_get_cfgname(), vs_buffer, prj_get_cfgname(), data->projType);
-			io_print("\t\t{%s}.%s%s.Build.0 = %s|%s\n", data->projGuid, prj_get_cfgname(), vs_buffer, prj_get_cfgname(), data->projType);
+
+			/* I may actually be writing the wrong thing for VS2002-2003, but has
+			 * seemed to work for this long so I am going to leave it alone */
+			if (version < VS2005)
+			{
+				io_print("\t\t{%s}.%s.ActiveCfg = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), data->projType);
+				io_print("\t\t{%s}.%s.Build.0 = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), data->projType);
+			}
+			else
+			{
+				const char* arch;
+				if (prj_is_lang("c") || prj_is_lang("c++"))
+					arch = "Win32";
+				else
+					arch = "Any CPU";
+
+				if (hasDotNet)	
+				{
+					io_print("\t\t{%s}.%s|Any CPU.ActiveCfg = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
+					if (!prj_is_lang("c") && !prj_is_lang("c++"))
+						io_print("\t\t{%s}.%s|Any CPU.Build.0 = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
+				}
+
+				if (hasDotNet && hasCpp)	
+				{
+					io_print("\t\t{%s}.%s|Mixed Platforms.ActiveCfg = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
+					io_print("\t\t{%s}.%s|Mixed Platforms.Build.0 = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
+				}
+
+				if (hasCpp)	
+				{
+					io_print("\t\t{%s}.%s|Win32.ActiveCfg = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
+					if (prj_is_lang("c") || prj_is_lang("c++"))
+						io_print("\t\t{%s}.%s|Win32.Build.0 = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
+				}
+			}
 		}
 	}
 	io_print("\tEndGlobalSection\n");
