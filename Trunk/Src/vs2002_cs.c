@@ -22,8 +22,6 @@
 #include "vs.h"
 #include "vs2002.h"
 
-static char buffer[8192];
-
 static const char* listReferences(const char* name);
 static const char* listFiles(const char* name);
 static const char* listRefPaths(const char* name);
@@ -169,11 +167,11 @@ int vs2002_cs()
 		io_print("\t\t<Build>\n");
 		io_print("\t\t\t<Settings ReferencePath = \"");
 
-		strcpy(buffer, io_getcwd());
+		strcpy(vs_buffer, io_getcwd());
 		io_chdir(prj_get_pkgpath());
 		print_list(prj_get_libpaths(), "", ";", "", listRefPaths);
 		io_print(listRefPaths(prj_get_bindir()));
-		io_chdir(buffer);
+		io_chdir(vs_buffer);
 
 		io_print("\" >\n");
 
@@ -254,32 +252,32 @@ static const char* listReferences(const char* name)
 	if (comma != NULL)
 		*comma = '\0';
 
-	strcpy(buffer, "\t\t\t\t\tName = \"");
-	strcat(buffer, assembly);
-	strcat(buffer, "\"\n");
+	strcpy(vs_buffer, "\t\t\t\t\tName = \"");
+	strcat(vs_buffer, assembly);
+	strcat(vs_buffer, "\"\n");
 
 	/* Is this a sibling package? */
 	i = prj_find_package(name);
 	if (i >= 0)
 	{
 		VsPkgData* data = (VsPkgData*)prj_get_data_for(i);
-		strcat(buffer, "\t\t\t\t\tProject = \"{");
-		strcat(buffer, data->projGuid);
-		strcat(buffer, "}\"\n");
-		strcat(buffer, "\t\t\t\t\tPackage = \"{");
-		strcat(buffer, data->toolGuid);
-		strcat(buffer, "}\"\n");
-		return buffer;
+		strcat(vs_buffer, "\t\t\t\t\tProject = \"{");
+		strcat(vs_buffer, data->projGuid);
+		strcat(vs_buffer, "}\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tPackage = \"{");
+		strcat(vs_buffer, data->toolGuid);
+		strcat(vs_buffer, "}\"\n");
+		return vs_buffer;
 	}
 
-	strcat(buffer, "\t\t\t\t\tAssemblyName = \"");
-	strcat(buffer, path_getname(assembly));
-	strcat(buffer, "\"\n");
+	strcat(vs_buffer, "\t\t\t\t\tAssemblyName = \"");
+	strcat(vs_buffer, path_getname(assembly));
+	strcat(vs_buffer, "\"\n");
 	if (!matches(assembly, path_getname(assembly)))
 	{
-		strcat(buffer, "\t\t\t\t\tHintPath = \"");
-		strcat(buffer, assembly);
-		strcat(buffer, ".dll\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tHintPath = \"");
+		strcat(vs_buffer, assembly);
+		strcat(vs_buffer, ".dll\"\n");
 	}
 
 	/* Tack on any extra information about the assembly */
@@ -289,18 +287,18 @@ static const char* listReferences(const char* name)
 		for (start = comma + 1; *start == ' '; ++start);
 		comma = strchr(start, '=');
 		*comma = '\0';
-		strcat(buffer, "\t\t\t\t\t");
-		strcat(buffer, start);
-		strcat(buffer, " = \"");
+		strcat(vs_buffer, "\t\t\t\t\t");
+		strcat(vs_buffer, start);
+		strcat(vs_buffer, " = \"");
 
 		start = comma + 1;
 		comma = strchr(start, ',');
 		if (comma != NULL) *comma = '\0';
-		strcat(buffer, start);
-		strcat(buffer, "\"\n");
+		strcat(vs_buffer, start);
+		strcat(vs_buffer, "\"\n");
 	}
 
-	return buffer;
+	return vs_buffer;
 }
 
 
@@ -310,33 +308,33 @@ static const char* listReferences(const char* name)
 
 static const char* listFiles(const char* name)
 {
-	strcpy(buffer, path_translate(name, "windows"));
-	strcat(buffer, "\"\n");
+	strcpy(vs_buffer, path_translate(name, "windows"));
+	strcat(vs_buffer, "\"\n");
 
 	if (endsWith(name, ".aspx.cs") || endsWith(name, ".asax.cs"))
 	{
 		/* The path to the parent .aspx file is relative to the .cs file. 
 		 * I assume that they are in the same directory */
-		strcat(buffer, "\t\t\t\t\tDependentUpon = \"");
-		strcat(buffer, path_getbasename(name));
-		strcat(buffer, "\"\n");
-		strcat(buffer, "\t\t\t\t\tSubType = \"ASPXCodeBehind\"\n");
-		strcat(buffer, "\t\t\t\t\tBuildAction = \"Compile\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tDependentUpon = \"");
+		strcat(vs_buffer, path_getbasename(name));
+		strcat(vs_buffer, "\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tSubType = \"ASPXCodeBehind\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"Compile\"\n");
 	}
 	else if (endsWith(name, ".cs"))
 	{
-		strcat(buffer, "\t\t\t\t\tSubType = \"Code\"\n");
-		strcat(buffer, "\t\t\t\t\tBuildAction = \"Compile\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tSubType = \"Code\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"Compile\"\n");
 	}
 	else if (endsWith(name, ".aspx"))
 	{
-		strcat(buffer, "\t\t\t\t\tSubType = \"Form\"\n");
-		strcat(buffer, "\t\t\t\t\tBuildAction = \"Content\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tSubType = \"Form\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"Content\"\n");
 	}
 	else if (endsWith(name, ".asax"))
 	{
-		strcat(buffer, "\t\t\t\t\tSubType = \"Component\"\n");
-		strcat(buffer, "\t\t\t\t\tBuildAction = \"Content\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tSubType = \"Component\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"Content\"\n");
 	}
 	else if (endsWith(name, ".resx"))
 	{
@@ -347,24 +345,24 @@ static const char* listFiles(const char* name)
 		if (prj_has_file(csname))
 		{
 			/* Path is relative to .resx file, I assume both are in same dir */
-			strcat(buffer, "\t\t\t\t\tDependentUpon = \"");
-			strcat(buffer, path_getname(csname));
-			strcat(buffer, "\"\n");
+			strcat(vs_buffer, "\t\t\t\t\tDependentUpon = \"");
+			strcat(vs_buffer, path_getname(csname));
+			strcat(vs_buffer, "\"\n");
 		}
-		strcat(buffer, "\t\t\t\t\tBuildAction = \"EmbeddedResource\"\n");
+		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"EmbeddedResource\"\n");
 	}
 	else
 	{
 		prj_select_file(name);
-		strcat(buffer, "\t\t\t\t\tBuildAction = \"");
+		strcat(vs_buffer, "\t\t\t\t\tBuildAction = \"");
 		if (prj_get_buildaction() != NULL)
-			strcat(buffer, prj_get_buildaction());
+			strcat(vs_buffer, prj_get_buildaction());
 		else
-			strcat(buffer, "Content");
-		strcat(buffer, "\"\n");
+			strcat(vs_buffer, "Content");
+		strcat(vs_buffer, "\"\n");
 	}
 
-	return buffer;
+	return vs_buffer;
 }
 
 

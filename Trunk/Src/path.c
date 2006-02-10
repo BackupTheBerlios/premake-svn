@@ -272,6 +272,19 @@ const char* path_join(const char* dir, const char* name, const char* ext)
 
 
 /************************************************************************
+ * Swap one file extension for another
+ ***********************************************************************/
+
+const char* path_swapextension(const char* path, const char* from, const char* to)
+{
+	strcpy(working, path);
+	working[strlen(path) - strlen(from)] = '\0';
+	strcat(working, to);
+	return working;
+}
+
+
+/************************************************************************
  * Translate the separators used in a path
  ***********************************************************************/
 

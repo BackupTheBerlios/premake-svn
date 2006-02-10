@@ -2,7 +2,7 @@
  * Premake - vs2005.c
  * The Visual Studio 2005 target
  *
- * Copyright (c) 2002-2065 Jason Perkins and the Premake project
+ * Copyright (c) 2002-2006 Jason Perkins and the Premake project
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -45,6 +45,11 @@ int vs2005_generate(int target)
 		if (prj_is_lang("c++") || prj_is_lang("c"))
 		{
 			if (!vs_write_cpp())
+				return 0;
+		}
+		else if (prj_is_lang("c#"))
+		{
+			if (!vs2005_cs())
 				return 0;
 		}
 		else

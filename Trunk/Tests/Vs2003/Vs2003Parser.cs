@@ -572,6 +572,7 @@ namespace Premake.Tests.Vs2003
 				}
 				Match("\t\t\t\t/>");
 			}
+
 			foreach (Configuration config in package.Config)
 			{
 				config.Links = (string[])links.ToArray(typeof(string));

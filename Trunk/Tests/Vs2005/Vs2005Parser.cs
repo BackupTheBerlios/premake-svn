@@ -479,40 +479,21 @@ namespace Premake.Tests.Vs2005
 		#region C# Parsing
 		private void ParseCs(Project project, Package package, string filename)
 		{
-#if OBSOLETE
 			Begin(filename);
 
-			Match("<VisualStudioProject>");
-			Match("\t<CSHARP");
+			Match("<Project DefaultTargets=\"Build\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">");
+			Match("  <PropertyGroup>");
 			
-			string[] matches = Regex("\t\tProjectType = \"([A-Za-z]+)\"");
-			if (matches[0] == "Web")
-				package.Kind = "aspnet";
+			string[] matches;
+			matches = Regex("    <Configuration Condition=\" '\\$\\(Configuration\\)' == '' \\\">(.+)</Configuration>");
+			string defaultConfigName = matches[0];
 
-			Match("\t\tProductVersion = \"7.10.3077\"");
-			Match("\t\tSchemaVersion = \"2.0\"");
-			
-			matches = Regex("\t\tProjectGuid = \"{([0-9A-F-]+)}\"");
-			if (matches[0] != package.ID)
-				throw new FormatException("Solution and project GUIDs don't match");
+			Match("    <Platform Condition=\" '$(Platform)' == '' \">AnyCPU</Platform>");
+			Match("    <ProductVersion>8.0.50727</ProductVersion>");
+			Match("    <SchemaVersion>2.0</SchemaVersion>");
+			Match("    <ProjectGuid>{" + package.ID + "}</ProjectGuid>");
 
-			Match("\t>");
-
-			Match("\t\t<Build>");
-			Match("\t\t\t<Settings");
-			Match("\t\t\t\tApplicationIcon = \"\"");
-			Match("\t\t\t\tAssemblyKeyContainerName = \"\"");
-			
-			matches = Regex("\t\t\t\tAssemblyName = \"(.+)\"");
-			string target = matches[0];
-
-			Match("\t\t\t\tAssemblyOriginatorKeyFile = \"\"");
-			Match("\t\t\t\tDefaultClientScript = \"JScript\"");
-			Match("\t\t\t\tDefaultHTMLPageLayout = \"Grid\"");
-			Match("\t\t\t\tDefaultTargetSchema = \"IE50\"");
-			Match("\t\t\t\tDelaySign = \"false\"");
-			
-			matches = Regex("\t\t\t\tOutputType = \"([A-Za-z]+)\"");
+			matches = Regex("    <OutputType>(.+)</OutputType>");
 			if (package.Kind == null)
 			{
 				switch (matches[0])
@@ -529,198 +510,136 @@ namespace Premake.Tests.Vs2005
 				throw new FormatException("Output type must be 'library' for ASP.NET applications");
 			}
 
-			Match("\t\t\t\tPreBuildEvent = \"\"");
-			Match("\t\t\t\tPostBuildEvent = \"\"");
-			Match("\t\t\t\tRootNamespace = \"" + target + "\"");
-			Match("\t\t\t\tRunPostBuildEvent = \"OnBuildSuccess\"");
-			Match("\t\t\t\tStartupObject = \"\"");
-			Match("\t\t\t>");
+			Match("    <AppDesignerFolder>Properties</AppDesignerFolder>");
+
+			matches = Regex("<RootNamespace>(.+)</RootNamespace>");
+			string target = matches[0];
+			Match("    <AssemblyName>" + target + "</AssemblyName>");
+			Match("  </PropertyGroup>");
 
 			foreach (Configuration config in package.Config)
 			{
 				ArrayList buildFlags = new ArrayList();
-
 				config.Target = target;
 
-				Match("\t\t\t\t<Config");
-				Match("\t\t\t\t\tName = \"" + config.Name + "\"");
-				
-				matches = Regex("\t\t\t\t\tAllowUnsafeBlocks = \"(true|false)\"");
-				if (matches[0] == "true")
-					buildFlags.Add("unsafe");
+				Match("  <PropertyGroup Condition=\" '$(Configuration)|$(Platform)' == '" + config.Name + "|AnyCPU' \">");
 
-				Match("\t\t\t\t\tBaseAddress = \"285212672\"");
-				Match("\t\t\t\t\tCheckForOverflowUnderflow = \"false\"");
-				Match("\t\t\t\t\tConfigurationOverrideFile = \"\"");
-				
-				matches = Regex("\t\t\t\t\tDefineConstants = \"(.*)\"");
-				config.Defines = matches[0].Split(';');
-				if (config.Defines[0] == String.Empty)
-					config.Defines = new string[]{};
-
-				Match("\t\t\t\t\tDocumentationFile = \"\"");
-				
-				matches = Regex("\t\t\t\t\tDebugSymbols = \"(true|false)\"");
-				if (matches[0] == "false")
-					buildFlags.Add("no-symbols");
-
-				Match("\t\t\t\t\tFileAlignment = \"4096\"");
-				Match("\t\t\t\t\tIncrementalBuild = \"false\"");
-				Match("\t\t\t\t\tNoStdLib = \"false\"");
-				Match("\t\t\t\t\tNoWarn = \"\"");
-				
-				matches = Regex("\t\t\t\t\tOptimize = \"([a-z]+)\"");
-				if (matches[0] == "true")
-					buildFlags.Add("optimize");
-				
-				matches = Regex("\t\t\t\t\tOutputPath = \"(.+)\"");
-				config.BinDir = matches[0];
-				config.OutDir = matches[0];
-
-				Match("\t\t\t\t\tRegisterForComInterop = \"false\"");
-				Match("\t\t\t\t\tRemoveIntegerChecks = \"false\"");
-				
-				matches = Regex("\t\t\t\t\tTreatWarningsAsErrors = \"(true|false)\"");
-				if (matches[0] == "true")
-					buildFlags.Add("fatal-warnings");
-
-				Match("\t\t\t\t\tWarningLevel = \"4\"");
-				Match("\t\t\t\t/>");
-			
-				config.BuildFlags = (string[])buildFlags.ToArray(typeof(string));
-			}
-
-			Match("\t\t\t</Settings>");
-
-			ArrayList links = new ArrayList();
-			ArrayList lddep = new ArrayList();
-			Match("\t\t\t<References>");
-			while (!Match("\t\t\t</References>", true))
-			{
-				Match("\t\t\t\t<Reference");
-
-				matches = Regex("\t\t\t\t\tName = \"(.+)\"");
-				string name = matches[0];
-				links.Add(name);
-
-				matches = Regex("\t\t\t\t\tProject = \"(.+)\"", true);
-				if (matches != null)
+				if (!Match("    <DebugSymbols>true</DebugSymbols>", true))
 				{
-					string dep = matches[0];
-					matches = Regex("\t\t\t\t\tPackage = \"(.+)\"");
-					dep += matches[0];
-					lddep.Add(dep);
+					buildFlags.Add("no-symbols");
+					Match("    <DebugType>pdbonly</DebugType>");
 				}
 				else
 				{
-					Match("\t\t\t\t\tAssemblyName = \"" + name + "\"");
+					Match("    <DebugType>full</DebugType>");
 				}
-				Match("\t\t\t\t/>");
+
+				matches = Regex("    <Optimize>(true|false)</Optimize>");
+				if (matches[0] == "true")
+					buildFlags.Add("optimize");
+
+				matches = Regex("    <OutputPath>(.*)\\\\</OutputPath>");
+				config.BinDir = matches[0];
+				config.OutDir = matches[0];
+
+				matches = Regex("    <DefineConstants>(.*)</DefineConstants>");
+				config.Defines = matches[0].Split(';');
+				if (config.Defines[0] == String.Empty)
+					config.Defines = new string[]{};
+			
+				Match("    <ErrorReport>prompt</ErrorReport>");
+				Match("    <WarningLevel>4</WarningLevel>");
+
+				if (Match("    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>", true))
+					buildFlags.Add("unsafe");
+
+				if (Match("    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>", true))
+					buildFlags.Add("fatal-warnings");
+
+				Match("  </PropertyGroup>");
+
+				config.BuildFlags = (string[])buildFlags.ToArray(typeof(string));
 			}
+
+			ArrayList links = new ArrayList();
+			Match("  <ItemGroup>");
+			while (!Match("  </ItemGroup>", true))
+			{
+				matches = Regex("    <Reference Include=\"(.+)\" />");
+				string name = matches[0];
+				links.Add(name);
+			}
+
 			foreach (Configuration config in package.Config)
 			{
 				config.Links = (string[])links.ToArray(typeof(string));
-				config.LinkDeps = (string[])lddep.ToArray(typeof(string));
 			}
 
-			Match("\t\t</Build>");
-			Match("\t\t<Files>");
-			Match("\t\t\t<Include>");
-
-			while (!Match("\t\t\t</Include>", true))
+			Match("  <ItemGroup>");
+			while (!Match("  </ItemGroup>", true))
 			{
-				Match("\t\t\t\t<File");
+				matches = Regex("    <(.+) Include=\"(.+)\"(>| />)");
+				string action  = matches[0];
+				string name    = matches[1];
+				string endtag  = matches[2];
 
-				matches = Regex("\t\t\t\t\tRelPath = \"(.+)\"");
-				string name = matches[0];
-				
-				matches = Regex("\t\t\t\t\tDependentUpon = \"(.+)\"", true);
-				string depends = (matches != null) ? matches[0] : null;
+				string subtype = "";
+				string depends = "";
 
-				matches = Regex("\t\t\t\t\tSubType = \"(.+)\"", true);
-				string subtype = (matches != null) ? matches[0].ToLower() : null;
+				if (action == "Compile" && endtag == ">")
+				{
+					subtype = "code";
+					while (!Match("    </Compile>", true))
+					{
+						matches = Regex("      <SubType>(.+)</SubType>", true);
+						if (matches != null)
+							subtype = matches[0];
 
-				matches = Regex("\t\t\t\t\tBuildAction = \"(.+)\"");
-				package.File.Add(name, subtype, matches[0], depends);
+						if (Match("      <AutoGen>True</AutoGen>", true))
+							subtype = "autogen";
 
-				Match("\t\t\t\t/>");
-			}
+						matches = Regex("      <DependentUpon>(.+)</DependentUpon>", true);
+						if (matches != null)
+							depends = matches[0];
+					}
+				}
+				else
+				{
+					subtype = "code";
+				}
 
-			Match("\t\t</Files>");
-			Match("\t</CSHARP>");
-			Match("</VisualStudioProject>");
+				if (action == "EmbeddedResource" && endtag == ">")
+				{
+					while (!Match("    </EmbeddedResource>", true))
+					{
+						matches = Regex("      <SubType>(.+)</SubType>", true);
+						if (matches != null)
+							subtype = matches[0];
 
-			if (package.Kind != "aspnet")
-				ParseUserFile(project, package, filename);
-		}
+						matches = Regex("      <DependentUpon>(.+)</DependentUpon>", true);
+						if (matches != null)
+							depends = matches[0];
 
-		private void ParseUserFile(Project project, Package package, string filename)
-		{
-			Begin(filename + ".user");
+						if (Match("      <Generator>ResXFileCodeGenerator</Generator>", true))
+						{
+							subtype = "autogen";
+							Match("      <LastGenOutput>" + Path.GetFileNameWithoutExtension(name) + ".Designer.cs</LastGenOutput>");
+						}
+					}
+				}
 
-			Match("<VisualStudioProject>");
-			Match("\t<CSHARP>");
-			Match("\t\t<Build>");
-			
-			string[] matches = Regex("\t\t\t<Settings ReferencePath = \"(.+)\" >");
-			matches = matches[0].Split(';');
-			string[] libpaths = new string[matches.Length - 1];
-
-			/* VS.NET stores reference directories as absolute paths, so I need
-			 * to do some ugly trickery here */
-			string[] bindir = matches[matches.Length - 1].Split('\\');
-			for (int i = 0; i < matches.Length - 1; ++i)
-			{
-				string[] thisdir = matches[i].Split('\\');
-				int j = 0;
-				while (j < bindir.Length && j < thisdir.Length && bindir[j] == thisdir[j])
-					++j;
-
-				string path = "";
-				for (int k = j + 1; k < bindir.Length; ++k)
-					path += "..\\";
-
-				for (int k = j; k < thisdir.Length; ++k)
-					path += thisdir[k] + '\\';
-
-				libpaths[i] = path.Substring(0, path.Length - 1);
-				libpaths[i] = libpaths[i].Replace("/", "\\");
+				package.File.Add(name, subtype, action, depends);
 			}
 			
-			foreach (Configuration config in package.Config)
-			{
-				config.LibPaths = libpaths;
-
-				Match("\t\t\t\t<Config");
-				Match("\t\t\t\t\tName = \"" + config.Name + "\"");
-				Match("\t\t\t\t\tEnableASPDebugging = \"false\"");
-				Match("\t\t\t\t\tEnableASPXDebugging = \"false\"");
-				Match("\t\t\t\t\tEnableUnmanagedDebugging = \"false\"");
-				Match("\t\t\t\t\tEnableSQLServerDebugging = \"false\"");
-				Match("\t\t\t\t\tRemoteDebugEnabled = \"false\"");
-				Match("\t\t\t\t\tRemoteDebugMachine = \"\"");
-				Match("\t\t\t\t\tStartAction = \"Project\"");
-				Match("\t\t\t\t\tStartArguments = \"\"");
-				Match("\t\t\t\t\tStartPage = \"\"");
-				Match("\t\t\t\t\tStartProgram = \"\"");
-				Match("\t\t\t\t\tStartURL = \"\"");
-				Match("\t\t\t\t\tStartWorkingDirectory = \"\"");
-				Match("\t\t\t\t\tStartWithIE = \"false\"");
-				Match("\t\t\t\t/>");
-			}
-
-			Match("\t\t\t</Settings>");
-			Match("\t\t</Build>");
-			Match("\t\t<OtherProjectSettings");
-			Match("\t\t\tCopyProjectDestinationFolder = \"\"");
-			Match("\t\t\tCopyProjectUncPath = \"\"");
-			Match("\t\t\tCopyProjectOption = \"0\"");
-			Match("\t\t\tProjectView = \"ProjectFiles\"");
-			Match("\t\t\tProjectTrust = \"0\"");
-			Match("\t\t/>");
-			Match("\t</CSHARP>");
-			Match("</VisualStudioProject>");
-#endif
+			Match("  <Import Project=\"$(MSBuildBinPath)\\Microsoft.CSharp.targets\" />");
+			Match("  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. ");
+			Match("       Other similar extension points exist, see Microsoft.Common.targets.");
+			Match("  <Target Name=\"BeforeBuild\">");
+			Match("  </Target>");
+			Match("  <Target Name=\"AfterBuild\">");
+			Match("  </Target>");
+			Match("  -->");
+			Match("</Project>");
 		}
 		#endregion
 	}
