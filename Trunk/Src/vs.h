@@ -36,6 +36,9 @@ extern char vs_buffer[];
 void vs_setversion(int version);
 int  vs_getversion();
 
-void vs_assign_guids();
-int  vs_write_solution();
-int  vs_write_cpp();
+void        vs_assign_guids();
+int         vs_write_cpp();
+const char* vs_list_refpaths(const char* name);
+const char* vs_list_pkgdeps(const char* name);
+void        vs_list_files(const char* path, int stage);
+const char* vs_filter_links(const char* name);

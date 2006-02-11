@@ -24,7 +24,6 @@
 
 static const char* listReferences(const char* name);
 static const char* listFiles(const char* name);
-static const char* listRefPaths(const char* name);
 
 
 int vs2002_cs()
@@ -169,8 +168,8 @@ int vs2002_cs()
 
 		strcpy(vs_buffer, io_getcwd());
 		io_chdir(prj_get_pkgpath());
-		print_list(prj_get_libpaths(), "", ";", "", listRefPaths);
-		io_print(listRefPaths(prj_get_bindir()));
+		print_list(prj_get_libpaths(), "", ";", "", vs_list_refpaths);
+		io_print(vs_list_refpaths(prj_get_bindir()));
 		io_chdir(vs_buffer);
 
 		io_print("\" >\n");
@@ -241,7 +240,6 @@ static const char* listReferences(const char* name)
 	char assembly[8192];
 	char* comma;
 	int i;
-
 
 	/* Pull out the file name, the comma check is for full assembly names */
 	strcpy(assembly, name);
@@ -355,16 +353,3 @@ static const char* listFiles(const char* name)
 	io_print("\t\t\t\t/>\n");
 	return NULL;
 }
-
-
-/************************************************************************
- * VS.NET requires that all reference search paths be absolute
- ***********************************************************************/
-
-static const char* listRefPaths(const char* name)
-{
-	char* path = (char*)path_absolute(name);
-	path_translateInPlace(path, "windows");
-	return path;
-}
-

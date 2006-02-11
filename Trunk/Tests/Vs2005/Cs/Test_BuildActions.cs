@@ -67,30 +67,6 @@ namespace Premake.Tests.Vs2005.Cs
 		}
 
 		[Test]
-		public void Test_AspxCodeAction()
-		{
-			_script.Replace("'somefile.txt'", "'file0.aspx.cs'");
-			_expects.Package[0].File.Add("file0.aspx.cs", "aspxcodebehind", "Compile", "file0.aspx");
-			Run();
-		}
-
-		[Test]
-		public void Test_AspxAction()
-		{
-			_script.Replace("'somefile.txt'", "'file0.aspx'");
-			_expects.Package[0].File.Add("file0.aspx", "form", "Content");
-			Run();
-		}
-
-		[Test]
-		public void Test_AsaxAction()
-		{
-			_script.Replace("'somefile.txt'", "'file0.asax'");
-			_expects.Package[0].File.Add("file0.asax", "component", "Content");
-			Run();
-		}
-
-		[Test]
 		public void Test_ResxAction()
 		{
 			_script.Replace("'somefile.txt'", "'file0.resx'");

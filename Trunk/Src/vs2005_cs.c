@@ -23,7 +23,6 @@
 
 static const char* listFiles(const char* name);
 static const char* listReferences(const char* name);
-static const char* listRefPaths(const char* name);
 
 
 int vs2005_cs()
@@ -138,8 +137,8 @@ int vs2005_cs()
 
 		strcpy(vs_buffer, io_getcwd());
 		io_chdir(prj_get_pkgpath());
-		print_list(prj_get_libpaths(), "", ";", "", listRefPaths);
-		io_print(listRefPaths(prj_get_bindir()));
+		print_list(prj_get_libpaths(), "", ";", "", vs_list_refpaths);
+		io_print(vs_list_refpaths(prj_get_bindir()));
 		io_chdir(vs_buffer);
 
 		io_print("</ReferencePath>\n");
@@ -165,13 +164,20 @@ int vs2005_cs()
 static const char* listReferences(const char* name)
 {
 	char* comma;
+	int i;
 
 	/* Pull out the file name, the comma check is for full assembly names */
 	strcpy(vs_buffer, name);
 	comma = strchr(vs_buffer, ',');
 	if (comma != NULL)
 		*comma = '\0';
-	return vs_buffer;
+
+	/* Is this a sibling package? If yes, deps are written in solution */
+	i = prj_find_package(name);
+	if (i >= 0)
+		return NULL;
+
+	return name;
 }
 
 
@@ -281,14 +287,3 @@ static const char* listFiles(const char* name)
 	return NULL;
 }
 
-
-/************************************************************************
- * VS.NET requires that all reference search paths be absolute
- ***********************************************************************/
-
-static const char* listRefPaths(const char* name)
-{
-	char* path = (char*)path_absolute(name);
-	path_translateInPlace(path, "windows");
-	return path;
-}

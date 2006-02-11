@@ -7,6 +7,8 @@ namespace Premake.Tests.Vs2005
 {
 	public class Vs2005Parser : Parser
 	{
+		private int _numAspNet = 0;
+
 		#region Parser Methods
 		public override string TargetName
 		{
@@ -25,30 +27,79 @@ namespace Premake.Tests.Vs2005
 			/* Package entries - VS "projects" */
 			string[] matches;
 			Hashtable packageDependencies = new Hashtable();
-			do
+			while (!Match("Global", true))
 			{
-				matches = Regex("Project\\(\"{([0-9A-F-]+)}\"\\) = \"(.+)\", \"(.+)\", \"{([0-9A-F-]+)}\"", true);
-				if (matches != null)
+				matches = Regex("Project\\(\"{([0-9A-F-]+)}\"\\) = \"(.+)\", \"(.+)\", \"{([0-9A-F-]+)}\"");
+				Package package = new Package();
+				project.Package.Add(package);
+
+				package.Name = matches[1];
+				package.ID = matches[3];
+				package.Path = Path.GetDirectoryName(matches[2]);
+				package.ScriptName = Path.GetFileName(matches[2]);
+
+				switch (matches[0])
 				{
-					Package package = new Package();
-					project.Package.Add(package);
+				case "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942":
+					package.Language = "c++";
+					break;
 
-					package.Name = matches[1];
-					package.ID   = matches[3];
-					package.Path = Path.GetDirectoryName(matches[2]);
-					package.ScriptName = Path.GetFileName(matches[2]);
+				case "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC":
+					package.Language = "c#";
+					break;
 
-					switch (matches[0])
+				case "E24C65DC-7377-472B-9ABA-BC803B73C61A":
+					package.Kind = "aspnet";
+					break;
+				}
+
+				if (package.Kind == "aspnet")
+				{
+					Match("\tProjectSection(WebsiteProperties) = preProject");
+
+					ArrayList deps = new ArrayList();
+					matches = Regex("\t\tProjectReferences = \"{([0-9A-F-]+)}|(.+).dll;\"", true);
+					while (matches != null)
 					{
-					case "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942":
-						package.Language = "c++";
-						break;
+						deps.Add(matches[0]);
+						matches = Regex("\t\tProjectReferences = \"{([0-9A-F-]+)}|(.+).dll;\"", true);
+					}
+					packageDependencies[package.ID] = deps;
 
-					case "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC":
-						package.Language = "c#";
-						break;
+					matches = Regex("\t\t(.+).AspNetCompiler.VirtualPath = \"/" + package.Name + "\"", true);
+					while (matches != null)
+					{
+						string cfg = matches[0];
+						Match("\t\t" + cfg + ".AspNetCompiler.PhysicalPath = \"" + package.Path + "\\\"");
+						Match("\t\t" + cfg + ".AspNetCompiler.TargetPath = \"PrecompiledWeb\\" + package.Name + "\\\"");
+						Match("\t\t" + cfg + ".AspNetCompiler.Updateable = \"true\"");
+						Match("\t\t" + cfg + ".AspNetCompiler.ForceOverwrite = \"true\"");
+						Match("\t\t" + cfg + ".AspNetCompiler.FixedNames = \"false\"");
+						matches = Regex("\t\t" + cfg + ".AspNetCompiler.Debug = \"(True|False)\"");
+
+						matches = Regex("\t\t(.+).AspNetCompiler.VirtualPath = \"/" + package.Name + "\"", true);
 					}
 
+					int port;
+					if (_numAspNet == 0)
+						port = 1106;
+					else if (_numAspNet == 1)
+						port = 1231;
+					else
+						port = 1251 + 2 * (_numAspNet - 2);
+					Match("\t\tVWDPort = \"" + port + "\"");
+					_numAspNet++;
+
+					matches = Regex("\t\tDefaultWebSiteLanguage = \"(.+)\"");
+					if (matches == null)
+						package.Language = "vbnet";
+					else if (matches[0] == "Visual C#")
+						package.Language = "c#";
+
+					Match("\tEndProjectSection");
+				}
+				else
+				{
 					/* Collect package dependencies, I'll sort them out after
 					 * I finish parsing the scripts below */
 					Match("\tProjectSection(ProjectDependencies) = postProject");
@@ -61,12 +112,10 @@ namespace Premake.Tests.Vs2005
 						deps.Add(matches[0]);
 					}
 					packageDependencies[package.ID] = deps;
-
-					Match("EndProject");
 				}
-			} while (matches != null);
-			
-			Match("Global");
+
+				Match("EndProject");
+			}
 
 			/* Read the list of configurations...just cache for now, test later */
 			ArrayList possibleConfigs = new ArrayList();
@@ -107,17 +156,20 @@ namespace Premake.Tests.Vs2005
 
 			foreach (Package package in project.Package)
 			{
-				filename = Path.Combine(Path.Combine(project.Path, package.Path), package.ScriptName);
-				switch (package.Language)
+				if (package.Kind != "aspnet")
 				{
-				case "c++":
-					ParseCpp(project, package, filename);
-					break;
-				case "c#":
-					ParseCs(project, package, filename);
-					break;
-				default:
-					throw new NotImplementedException("Loading of " + package.Language + " packages not implemented");
+					filename = Path.Combine(Path.Combine(project.Path, package.Path), package.ScriptName);
+					switch (package.Language)
+					{
+					case "c++":
+						ParseCpp(project, package, filename);
+						break;
+					case "c#":
+						ParseCs(project, package, filename);
+						break;
+					default:
+						throw new NotImplementedException("Loading of " + package.Language + " packages not implemented");
+					}
 				}
 			}
 
@@ -211,7 +263,7 @@ namespace Premake.Tests.Vs2005
 			Match("\tRootNamespace=\"" + package.Name + "\"");
 			Match("\tKeyword=\"Win32Proj\"");
 			Match("\t>");
-		
+
 			Match("\t<Platforms>");
 			Match("\t\t<Platform");
 			Match("\t\t\tName=\"Win32\"");
@@ -222,14 +274,14 @@ namespace Premake.Tests.Vs2005
 			Match("\t</ToolFiles>");
 
 			Match("\t<Configurations>");
-			
+
 			foreach (Configuration config in package.Config)
 			{
 				ArrayList buildFlags = new ArrayList();
 
 				Match("\t\t<Configuration");
 				Match("\t\t\tName=\"" + config.Name + "|Win32\"");
-				
+
 				matches = Regex("\t\t\tOutputDirectory=\"(.+)\"");
 				config.OutDir = matches[0];
 
@@ -239,9 +291,9 @@ namespace Premake.Tests.Vs2005
 				matches = Regex("\t\t\tConfigurationType=\"([0-9])\"");
 				switch (int.Parse(matches[0]))
 				{
-				case 1:  package.Kind = "exe";  break;
-				case 2:  package.Kind = "dll";  break;
-				case 4:  package.Kind = "lib";  break;
+				case 1: package.Kind = "exe"; break;
+				case 2: package.Kind = "dll"; break;
+				case 4: package.Kind = "lib"; break;
 				default:
 					throw new FormatException("Unrecognized value: ConfigurationType=\"" + matches[0] + "\"");
 				}
@@ -286,10 +338,10 @@ namespace Premake.Tests.Vs2005
 				int optimization = int.Parse(matches[0]);
 				switch (optimization)
 				{
-				case 0:  break;
-				case 1:  buildFlags.Add("optimize-size");  break;
-				case 2:  buildFlags.Add("optimize-speed"); break;
-				case 3:  buildFlags.Add("optimize"); break;
+				case 0: break;
+				case 1: buildFlags.Add("optimize-size"); break;
+				case 2: buildFlags.Add("optimize-speed"); break;
+				case 3: buildFlags.Add("optimize"); break;
 				default:
 					throw new FormatException("Unrecognized value: Optimization=\"" + matches[0] + "\"");
 				}
@@ -298,14 +350,14 @@ namespace Premake.Tests.Vs2005
 					buildFlags.Add("no-frame-pointer");
 
 				matches = Regex("\t\t\t\tAdditionalIncludeDirectories=\"(.+)\"", true);
-				config.IncludePaths =  (matches != null) ? matches[0].Split(';') : new string[]{};
+				config.IncludePaths = (matches != null) ? matches[0].Split(';') : new string[] { };
 
 				matches = Regex("\t\t\t\tPreprocessorDefinitions=\"(.+)\"", true);
-				config.Defines = (matches != null) ? matches[0].Split(';') : new string[]{};
+				config.Defines = (matches != null) ? matches[0].Split(';') : new string[] { };
 
 				if (optimization == 0)
 					Match("\t\t\t\tMinimalRebuild=\"TRUE\"");
-				
+
 				if (Match("\t\t\t\tExceptionHandling=\"FALSE\"", true))
 					buildFlags.Add("no-exceptions");
 
@@ -322,7 +374,7 @@ namespace Premake.Tests.Vs2005
 
 				if (matches[0] == "0" || matches[0] == "1")
 					config.LinkFlags = new string[] { "static-runtime" };
-				
+
 				Match("\t\t\t\tEnableFunctionLevelLinking=\"TRUE\"");
 
 				if (Match("\t\t\t\tRuntimeTypeInfo=\"FALSE\"", true))
@@ -333,14 +385,14 @@ namespace Premake.Tests.Vs2005
 				matches = Regex("\t\t\t\tWarningLevel=\"([3-4])\"");
 				if (matches[0] == "4")
 					buildFlags.Add("extra-warnings");
-				
+
 				if (Match("\t\t\t\tWarnAsError=\"TRUE\"", true))
 					buildFlags.Add("fatal-warnings");
-				
+
 				matches = Regex("\t\t\t\tDetect64BitPortabilityProblems=\"(TRUE|FALSE)\"");
 				if (matches[0] == "FALSE")
 					buildFlags.Add("no-64bit-checks");
-					
+
 				matches = Regex("\t\t\t\tDebugInformationFormat=\"([0-9])\"");
 				if (matches[0] == "0")
 					buildFlags.Add("no-symbols");
@@ -381,7 +433,7 @@ namespace Premake.Tests.Vs2005
 				else
 				{
 					Match("\t\t\t\tName=\"VCLinkerTool\"");
-            
+
 					matches = Regex("\t\t\t\tAdditionalDependencies=\"(.+)\"", true);
 					if (matches != null)
 						config.Links = matches[0].Split(' ');
@@ -419,7 +471,7 @@ namespace Premake.Tests.Vs2005
 						Match("\t\t\t\tOptimizeReferences=\"2\"");
 						Match("\t\t\t\tEnableCOMDATFolding=\"2\"");
 					}
-					
+
 					if (package.Kind == "exe" || package.Kind == "winexe")
 					{
 						if (!Match("\t\t\t\tEntryPointSymbol=\"mainCRTStartup\"", true))
@@ -438,7 +490,7 @@ namespace Premake.Tests.Vs2005
 				Match("\t\t\t<Tool");
 				Match("\t\t\t\tName=\"VCALinkTool\"");
 				Match("\t\t\t/>");
-			
+
 				Match("\t\t\t<Tool");
 				Match("\t\t\t\tName=\"VCManifestTool\"");
 				Match("\t\t\t/>");
@@ -476,7 +528,7 @@ namespace Premake.Tests.Vs2005
 
 			Match("\t<References>");
 			Match("\t</References>");
-			
+
 			Match("\t<Files>");
 
 			string indent = "\t";
@@ -530,7 +582,7 @@ namespace Premake.Tests.Vs2005
 
 			Match("<Project DefaultTargets=\"Build\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">");
 			Match("  <PropertyGroup>");
-			
+
 			string[] matches;
 			matches = Regex("    <Configuration Condition=\" '\\$\\(Configuration\\)' == '' \\\">(.+)</Configuration>");
 			string defaultConfigName = matches[0];
@@ -545,9 +597,9 @@ namespace Premake.Tests.Vs2005
 			{
 				switch (matches[0])
 				{
-				case "Exe":     package.Kind = "exe";    break;
-				case "WinExe":  package.Kind = "winexe"; break;
-				case "Library": package.Kind = "dll";    break;
+				case "Exe": package.Kind = "exe"; break;
+				case "WinExe": package.Kind = "winexe"; break;
+				case "Library": package.Kind = "dll"; break;
 				default:
 					throw new FormatException("Unexpected value: OutputType = \"" + matches[0] + "\"");
 				}
@@ -592,8 +644,8 @@ namespace Premake.Tests.Vs2005
 				matches = Regex("    <DefineConstants>(.*)</DefineConstants>");
 				config.Defines = matches[0].Split(';');
 				if (config.Defines[0] == String.Empty)
-					config.Defines = new string[]{};
-			
+					config.Defines = new string[] { };
+
 				Match("    <ErrorReport>prompt</ErrorReport>");
 				Match("    <WarningLevel>4</WarningLevel>");
 
@@ -626,9 +678,9 @@ namespace Premake.Tests.Vs2005
 			while (!Match("  </ItemGroup>", true))
 			{
 				matches = Regex("    <(.+) Include=\"(.+)\"(>| />)");
-				string action  = matches[0];
-				string name    = matches[1];
-				string endtag  = matches[2];
+				string action = matches[0];
+				string name = matches[1];
+				string endtag = matches[2];
 
 				string subtype = "";
 				string depends = "";
@@ -683,7 +735,7 @@ namespace Premake.Tests.Vs2005
 
 				package.File.Add(name, subtype, action, depends);
 			}
-			
+
 			Match("  <Import Project=\"$(MSBuildBinPath)\\Microsoft.CSharp.targets\" />");
 			Match("  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. ");
 			Match("       Other similar extension points exist, see Microsoft.Common.targets.");
@@ -729,7 +781,7 @@ namespace Premake.Tests.Vs2005
 				libpaths[i] = path.Substring(0, path.Length - 1);
 				libpaths[i] = libpaths[i].Replace("/", "\\");
 			}
-			
+
 			foreach (Configuration config in package.Config)
 			{
 				config.LibPaths = libpaths;

@@ -26,9 +26,6 @@ char vs_buffer[8192];
 
 static int version;
 
-static const char* filterLinks(const char* name);
-static void        listFiles(const char* path, int stage);
-static const char* listPackageDeps(const char* name);
 
 enum Blocks
 {
@@ -237,7 +234,13 @@ void vs_assign_guids()
 	
 		generateUUID(data->projGuid);
 
-		if (prj_is_lang("c++") || prj_is_lang("c"))
+		if (version == VS2005 && prj_is_kind("aspnet"))
+		{
+			strcpy(data->toolGuid, "E24C65DC-7377-472B-9ABA-BC803B73C61A");
+			strcpy(data->projExt, "");
+			strcpy(data->projType, "");
+		}
+		else if (prj_is_lang("c++") || prj_is_lang("c"))
 		{
 			strcpy(data->toolGuid, "8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942");
 			strcpy(data->projExt, "vcproj");
@@ -247,7 +250,7 @@ void vs_assign_guids()
 		{
 			strcpy(data->toolGuid, "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC");
 			strcpy(data->projExt, "csproj");
-			if (version == VS2003)
+			if (version < VS2005)
 				strcpy(data->projType, ".NET");
 			else
 				strcpy(data->projType, "Any CPU");
@@ -255,185 +258,6 @@ void vs_assign_guids()
 
 		data->numDependencies = 0;
 	}
-}
-
-
-/************************************************************************
- * Write out the solution file
- ***********************************************************************/
-
-int vs_write_solution()
-{
-	VsPkgData* data;
-	int hasDotNet, hasCpp;
-	int i, j;
-
-	if (!io_openfile(path_join(prj_get_path(), prj_get_name(), "sln")))
-		return 0;
-
-	/* Format identification string */
-	io_print("Microsoft Visual Studio Solution File, Format Version ");
-	switch (version)
-	{
-	case VS2002:
-		io_print("7.00\n");
-		break;
-	case VS2003:
-		io_print("8.00\n");
-		break;
-	case VS2005:
-		io_print("9.00\n");
-		io_print("# Visual Studio 2005\n");
-		break;
-	}
-
-	/* List packages */
-	for (i = 0; i < prj_get_numpackages(); ++i)
-	{
-		prj_select_package(i);
-		data = (VsPkgData*)prj_get_data();
-
-		io_print("Project(\"{%s}\") = \"%s\", \"%s\", \"{%s}\"\n", data->toolGuid, prj_get_pkgname(), prj_get_pkgfilename(data->projExt), data->projGuid);
-
-		/* Write package dependencies for post-2002 */
-		if (version > VS2002)
-		{
-			prj_select_config(0);
-			io_print("\tProjectSection(ProjectDependencies) = postProject\n");
-			print_list(prj_get_links(), "\t\t", "\n", "", listPackageDeps);
-			io_print("\tEndProjectSection\n");
-		}
-
-		io_print("EndProject\n");
-	}
-
-	/* List configurations */
-	io_print("Global\n");
-	if (version < VS2005)
-		io_print("\tGlobalSection(SolutionConfiguration) = preSolution\n");
-	else
-		io_print("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution\n");
-
-	hasDotNet = 0;
-	hasCpp = 0;
-	for (i = 0; i < prj_get_numpackages(); ++i)
-	{
-		prj_select_package(i);
-		if (prj_is_lang("c") || prj_is_lang("c++"))
-			hasCpp = 1;
-		else
-			hasDotNet = 1;
-	}
-
-	prj_select_package(0);
-	for (i = 0; i < prj_get_numconfigs(); ++i)
-	{
-		prj_select_config(i);
-		switch (version)
-		{
-		case VS2002:
-			io_print("\t\tConfigName.%d = %s\n", i, prj_get_cfgname());
-			break;
-		case VS2003:
-			io_print("\t\t%s = %s\n", prj_get_cfgname(), prj_get_cfgname());
-			break;
-		case VS2005:
-			if (hasDotNet)
-				io_print("\t\t%s|Any CPU = %s|Any CPU\n", prj_get_cfgname(), prj_get_cfgname());
-			if (hasDotNet && hasCpp)
-				io_print("\t\t%s|Mixed Platforms = %s|Mixed Platforms\n", prj_get_cfgname(), prj_get_cfgname());
-			if (hasCpp)
-				io_print("\t\t%s|Win32 = %s|Win32\n", prj_get_cfgname(), prj_get_cfgname());
-			break;
-		}
-	}
-	io_print("\tEndGlobalSection\n");
-
-	/* Write package dependencies for 2002 */
-	if (version == VS2002)
-	{
-		io_print("\tGlobalSection(ProjectDependencies) = postSolution\n");
-		for (i = 0; i < prj_get_numpackages(); ++i)
-		{
-			prj_select_package(i);
-			prj_select_config(0);
-			print_list(prj_get_links(), "\t\t", "\n", "", listPackageDeps);
-		}
-		io_print("\tEndGlobalSection\n");
-	}
-
-	/* Write configuration for each package */
-	if (version < VS2005)
-		io_print("\tGlobalSection(ProjectConfiguration) = postSolution\n");
-	else
-		io_print("\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\n");
-
-	for (i = 0; i < prj_get_numpackages(); ++i)
-	{
-		prj_select_package(i);
-		for (j = 0; j < prj_get_numconfigs(); ++j)
-		{
-			prj_select_config(j);
-			data = (VsPkgData*)prj_get_data();
-
-			/* I may actually be writing the wrong thing for VS2002-2003, but has
-			 * seemed to work for this long so I am going to leave it alone */
-			if (version < VS2005)
-			{
-				io_print("\t\t{%s}.%s.ActiveCfg = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), data->projType);
-				io_print("\t\t{%s}.%s.Build.0 = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), data->projType);
-			}
-			else
-			{
-				const char* arch;
-				if (prj_is_lang("c") || prj_is_lang("c++"))
-					arch = "Win32";
-				else
-					arch = "Any CPU";
-
-				if (hasDotNet)	
-				{
-					io_print("\t\t{%s}.%s|Any CPU.ActiveCfg = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
-					if (!prj_is_lang("c") && !prj_is_lang("c++"))
-						io_print("\t\t{%s}.%s|Any CPU.Build.0 = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
-				}
-
-				if (hasDotNet && hasCpp)	
-				{
-					io_print("\t\t{%s}.%s|Mixed Platforms.ActiveCfg = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
-					io_print("\t\t{%s}.%s|Mixed Platforms.Build.0 = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
-				}
-
-				if (hasCpp)	
-				{
-					io_print("\t\t{%s}.%s|Win32.ActiveCfg = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
-					if (prj_is_lang("c") || prj_is_lang("c++"))
-						io_print("\t\t{%s}.%s|Win32.Build.0 = %s|%s\n", data->projGuid, prj_get_cfgname(), prj_get_cfgname(), arch);
-				}
-			}
-		}
-	}
-	io_print("\tEndGlobalSection\n");
-
-	/* Finish */
-	if (version < VS2005)
-	{
-		io_print("\tGlobalSection(ExtensibilityGlobals) = postSolution\n");
-		io_print("\tEndGlobalSection\n");
-		io_print("\tGlobalSection(ExtensibilityAddIns) = postSolution\n");
-		io_print("\tEndGlobalSection\n");
-	}
-	else
-	{
-		io_print("\tGlobalSection(SolutionProperties) = preSolution\n");
-		io_print("\t\tHideSolutionNode = FALSE\n");
-		io_print("\tEndGlobalSection\n");
-	}
-
-	io_print("EndGlobal\n");
-
-	io_closefile();
-	return 1;
 }
 
 
@@ -696,7 +520,7 @@ int vs_write_cpp()
 					if (prj_get_numlinks() > 0)
 					{
 						tag_attr_open("AdditionalDependencies");
-						print_list(prj_get_links(), "", ".lib", " ", filterLinks);
+						print_list(prj_get_links(), "", ".lib", " ", vs_filter_links);
 						tag_attr_close();
 					}
 
@@ -757,7 +581,7 @@ int vs_write_cpp()
 	}
 
 	tag_open("Files");
-	print_source_tree("", listFiles);
+	print_source_tree("", vs_list_files);
 	tag_close("Files", 1);
 
 	tag_open("Globals");
@@ -774,7 +598,7 @@ int vs_write_cpp()
  * to a sibling package, returns the path to that package's output
  ***********************************************************************/
 
-static const char* filterLinks(const char* name)
+const char* vs_filter_links(const char* name)
 {
 	int i = prj_find_package(name);
 	if (i >= 0)
@@ -799,25 +623,15 @@ static const char* filterLinks(const char* name)
  * Callback for print_source_tree()
  ***********************************************************************/
 
-static void listFiles(const char* path, int stage)
+void vs_list_files(const char* path, int stage)
 {
-//	char indent[128];
-	const char* ptr;
-
-//	strcpy(indent, "\t");
-//	if (strlen(path) > 0) 
-//		strcat(indent, "\t");
-
-	ptr = path;
+	const char* ptr = path;
 	while (strncmp(ptr, "../", 3) == 0)
 		ptr += 3;
 
 	ptr = strchr(ptr, '/');
 	while (ptr != NULL) 
-	{
-//		strcat(indent, "\t");
 		ptr = strchr(ptr + 1, '/');
-	}
 
 	ptr = strrchr(path, '/');
 	ptr = (ptr == NULL) ? (char*)path : ptr + 1;
@@ -830,16 +644,12 @@ static void listFiles(const char* path, int stage)
 			tag_open("Filter");
 			tag_attr("Name=\"%s\"", ptr);
 			tag_attr("Filter=\"\"");
-//			io_print("%s<Filter\n", indent);
-//			io_print("%s\tName=\"%s\"\n", indent, ptr);
-//			io_print("%s\tFilter=\"\">\n", indent);
 		}
 		break;
 
 	case WST_CLOSEGROUP:
 		if (strlen(path) > 0 && !matches(ptr, "..")) 
 			tag_close("Filter", 1);
-//			io_print("%s</Filter>\n", indent);
 		break;
 
 	case WST_SOURCEFILE:
@@ -850,12 +660,6 @@ static void listFiles(const char* path, int stage)
 		io_print(path_translate(path, "windows"));
 		tag_attr_close();
 		tag_close("File", 1);
-//		io_print("%s<File\n", indent);
-//		io_print("%s\tRelativePath=\"", indent);
-//		if (path[0] != '.')
-//			io_print(".\\");
-//		io_print("%s\">\n", path_translate(path, "windows"));
-//		io_print("%s</File>\n", indent);
 		break;
 	}
 }
@@ -867,7 +671,7 @@ static void listFiles(const char* path, int stage)
  * solution file. 
  ***********************************************************************/
 
-static const char* listPackageDeps(const char* name)
+const char* vs_list_pkgdeps(const char* name)
 {
 	int i;
 	for (i = 0; i < prj_get_numpackages(); ++i)
@@ -892,3 +696,14 @@ static const char* listPackageDeps(const char* name)
 	return NULL;
 }
 
+
+/************************************************************************
+ * VS.NET requires that all reference search paths be absolute
+ ***********************************************************************/
+
+const char* vs_list_refpaths(const char* name)
+{
+	char* path = (char*)path_absolute(name);
+	path_translateInPlace(path, "windows");
+	return path;
+}

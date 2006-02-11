@@ -39,13 +39,27 @@ namespace Premake.Tests.Vs2005.Cs
 			_script.Append("package.name = 'PackageB'");
 			_script.Append("package.kind = 'dll'");
 			_script.Append("package.language = 'c#'");
-			_script.Append("package.files = matchfiles('*.cpp')");
+			_script.Append("package.files = matchfiles('*.cs')");
 
 			_expects.Package[0].Config[0].Dependencies = new string[]{ "PackageB" };
 			_expects.Package[0].Config[1].Dependencies = new string[]{ "PackageB" };
-
 			Run();
 		}
 
+		[Test]
+		public void Test_AspNetAndDll()
+		{
+			_script.Replace("'exe'", "'aspnet'");
+			_script.Append("package.links = { 'PackageB' }");
+			_script.Append("package = newpackage()");
+			_script.Append("package.name = 'PackageB'");
+			_script.Append("package.kind = 'dll'");
+			_script.Append("package.language = 'c#'");
+			_script.Append("package.files = matchfiles('*.cs')");
+
+			_expects.Package[0].Config[0].Dependencies = new string[] { "PackageB" };
+			_expects.Package[0].Config[1].Dependencies = new string[] { "PackageB" };
+			Run();
+		}
 	}
 }
