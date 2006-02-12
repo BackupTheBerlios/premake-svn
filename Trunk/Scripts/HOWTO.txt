@@ -1,6 +1,6 @@
-1. Update support files (README and CHANGES)
+1. Create SVN branch for release and switch to it
 
-2. Create SVN branch for release and switch to it
+2. Update support files (README and CHANGES)
 
 3. Update premake.c
 
