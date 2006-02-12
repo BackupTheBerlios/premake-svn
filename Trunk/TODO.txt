@@ -1,11 +1,3 @@
-If I set package.path to "../../ode", matchfiles() looks in the directory where
-premake.lua lives, but files listed in the script are relative to ../../ode. 
-Since includepaths, etc. are relative to the final package path, matchfiles()
-should probably do the same.
-
-Syntax errors in scripts do not abort target generation. It is easy to miss the
-error message, which appears above the generator output.
-
 Can identify other windows compilers with __CYGWIN32__ and __MINGW32__
 
 Test again with more recent MonoDevelop. They've changed monoresgen to resgen

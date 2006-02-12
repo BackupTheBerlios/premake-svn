@@ -31,7 +31,7 @@ int vs2002_generate(int target)
 
 	vs_setversion(target == 2002 ? VS2002 : VS2003);
 
-	printf("Generating Visual Studio %d solution and project files:\n", vs_getversion());
+	printf("Generating Visual Studio %d solution and project files:\n", target);
 
 	/* Assign GUIDs to packages */
 	vs_assign_guids();
