@@ -1,6 +1,6 @@
-PREMAKE v3.0+
+PREMAKE v3.1rc1
 
-Copyright (C) 2002-2005 by Jason Perkins
+Copyright (C) 2002-2006 by Jason Perkins
 Distributed under the GNU General Public License, see LICENSE.txt
 
 The Lua language and runtime library is (C) TeCGraf, PUC-Rio.
