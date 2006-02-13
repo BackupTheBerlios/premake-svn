@@ -105,7 +105,7 @@ int vs2005_cs()
 	/* Must use same references for all configurations */
 	prj_select_config(0);
 	io_print("  <ItemGroup>\n");
-	print_list(prj_get_links(), "    <Reference Include=\"", "\" />\n", "", listReferences);
+	print_list(prj_get_links(), "", "", "", listReferences);
 	io_print("  </ItemGroup>\n");
 
 	io_print("  <ItemGroup>\n");
@@ -163,21 +163,24 @@ int vs2005_cs()
 
 static const char* listReferences(const char* name)
 {
-	char* comma;
-	int i;
-
-	/* Pull out the file name, the comma check is for full assembly names */
-	strcpy(vs_buffer, name);
-	comma = strchr(vs_buffer, ',');
-	if (comma != NULL)
-		*comma = '\0';
-
-	/* Is this a sibling package? If yes, deps are written in solution */
-	i = prj_find_package(name);
+	/* Is this a sibling package? */
+	int i = prj_find_package(name);
 	if (i >= 0)
-		return NULL;
+	{
+		VsPkgData* data = (VsPkgData*)prj_get_data_for(i);
 
-	return name;
+		strcpy(vs_buffer, path_build(prj_get_pkgpath(), prj_get_pkgpath_for(i)));
+		io_print("    <ProjectReference Include=\"%s\\%s.csproj\">\n", path_translate(vs_buffer, "windows"), name);
+		io_print("      <Project>{%s}</Project>\n", data->projGuid);
+		io_print("      <Name>%s</Name>\n", name);
+		io_print("    </ProjectReference>\n");
+	}
+	else
+	{
+		io_print("    <Reference Include=\"%s\" />\n", name);
+	}
+
+	return NULL;
 }
 
 

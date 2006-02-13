@@ -664,9 +664,23 @@ namespace Premake.Tests.Vs2005
 			Match("  <ItemGroup>");
 			while (!Match("  </ItemGroup>", true))
 			{
-				matches = Regex("    <Reference Include=\"(.+)\" />");
-				string name = matches[0];
-				links.Add(name);
+				matches = Regex("    <Reference Include=\"(.+)\" />", true);
+				if (matches != null)
+				{
+					string name = matches[0];
+					links.Add(name);
+				}
+
+				matches = Regex("    <ProjectReference Include=\"(.+)\">", true);
+				if (matches != null)
+				{
+					matches = Regex("      <Project>{([0-9A-F-]+)}</Project>");
+					matches = Regex("      <Name>(.+)</Name>");
+					Match("    </ProjectReference>");
+
+					string name = matches[0];
+					links.Add(name);
+				}
 			}
 
 			foreach (Configuration config in package.Config)
