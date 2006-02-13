@@ -90,6 +90,9 @@ int clean()
 			/* Visual Studio incremental link file */
 			io_remove(path_join(prj_get_outdir(), buffer, "ilk"));
 
+			/* Visual Studio VSHOST */
+			io_remove(path_join(prj_get_outdir(), buffer, "vshost.exe"));
+
 			/* Windows DLL exports library */
 			io_remove(path_join(prj_get_libdir(), buffer, "lib"));
 			io_remove(path_join(prj_get_libdir(), buffer, "exp"));
