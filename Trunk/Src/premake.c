@@ -159,6 +159,10 @@ static int postprocess()
 		{
 			/* ignore quietly */
 		}
+		else if (matches(flag, "--file"))
+		{
+			arg_getflagarg();
+		}
 		else
 		{
 			if (!g_hasScript && !noScriptWarning)

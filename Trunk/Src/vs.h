@@ -31,8 +31,6 @@ typedef struct tagVsPkgData
 	int  numDependencies;
 } VsPkgData;
 
-extern char vs_buffer[];
-
 void vs_setversion(int version);
 int  vs_getversion();
 

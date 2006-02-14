@@ -22,6 +22,11 @@
 #include "platform.h"
 
 static char* CPP_EXT[] = { ".cc", ".cpp", ".cxx", ".c", ".s", NULL };
+
+/* Buffer for generators */
+char g_buffer[8192];
+
+/* Buffer for internal use */
 static char buffer[8192];
 
 

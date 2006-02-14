@@ -19,6 +19,8 @@
 
 enum { WST_OPENGROUP, WST_CLOSEGROUP, WST_SOURCEFILE };
 
+extern char g_buffer[];
+
 int   endsWith(const char* haystack, const char* needle);
 void  generateUUID(char* uuid);
 int   is_cpp(const char* name);

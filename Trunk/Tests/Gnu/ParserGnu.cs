@@ -55,10 +55,11 @@ namespace Premake.Tests.Gnu
 			Match("all: " + String.Join(" ", matches));
 			Match("");
 
-			/* TO DO: need to figure out way to test this part */
+			/* The premake script dependency...need a way to test this! */
+			string path = Path.Combine(project.Path, "premake.lua");
 			Regex("Makefile: (.+)");
 			Match("\t@echo ==== Regenerating Makefiles ====");
-			Regex("\t@premake (.+)");
+			Regex("\t@premake --file \\$\\^ (.+)");
 			Match("");
 
 			foreach (Package package in project.Package)

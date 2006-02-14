@@ -229,8 +229,8 @@ static const char* list_aspnet_refs(const char* name)
 	if (i >= 0)
 	{
 		VsPkgData* data = (VsPkgData*)prj_get_data_for(i);
-		sprintf(vs_buffer, "{%s}|%s.dll", data->projGuid, prj_get_pkgname_for(i));
-		return vs_buffer;
+		sprintf(g_buffer, "{%s}|%s.dll", data->projGuid, prj_get_pkgname_for(i));
+		return g_buffer;
 	}
 	return NULL;
 }

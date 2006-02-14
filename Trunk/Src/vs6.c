@@ -20,8 +20,6 @@
 #include "premake.h"
 #include "vs6.h"
 
-static char buffer[8192];
-
 static int writeWorkspace();
 
 static const char* listPackageDeps(const char* name);
@@ -123,12 +121,12 @@ static const char* listPackageDeps(const char* name)
 	int i = prj_find_package(name);
 	if (i >= 0)
 	{
-		strcpy(buffer, "    Begin Project Dependency\n");
-		strcat(buffer, "    Project_Dep_Name ");
-		strcat(buffer, prj_get_pkgname_for(i));
-		strcat(buffer, "\n");
-		strcat(buffer, "    End Project Dependency\n");
-		return buffer;
+		strcpy(g_buffer, "    Begin Project Dependency\n");
+		strcat(g_buffer, "    Project_Dep_Name ");
+		strcat(g_buffer, prj_get_pkgname_for(i));
+		strcat(g_buffer, "\n");
+		strcat(g_buffer, "    End Project Dependency\n");
+		return g_buffer;
 	}
 	else
 	{

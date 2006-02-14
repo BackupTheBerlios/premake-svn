@@ -166,11 +166,11 @@ int vs2002_cs()
 		io_print("\t\t<Build>\n");
 		io_print("\t\t\t<Settings ReferencePath = \"");
 
-		strcpy(vs_buffer, io_getcwd());
+		strcpy(g_buffer, io_getcwd());
 		io_chdir(prj_get_pkgpath());
 		print_list(prj_get_libpaths(), "", ";", "", vs_list_refpaths);
 		io_print(vs_list_refpaths(prj_get_bindir()));
-		io_chdir(vs_buffer);
+		io_chdir(g_buffer);
 
 		io_print("\" >\n");
 
@@ -247,32 +247,32 @@ static const char* listReferences(const char* name)
 	if (comma != NULL)
 		*comma = '\0';
 
-	strcpy(vs_buffer, "\t\t\t\t\tName = \"");
-	strcat(vs_buffer, assembly);
-	strcat(vs_buffer, "\"\n");
+	strcpy(g_buffer, "\t\t\t\t\tName = \"");
+	strcat(g_buffer, assembly);
+	strcat(g_buffer, "\"\n");
 
 	/* Is this a sibling package? */
 	i = prj_find_package(name);
 	if (i >= 0)
 	{
 		VsPkgData* data = (VsPkgData*)prj_get_data_for(i);
-		strcat(vs_buffer, "\t\t\t\t\tProject = \"{");
-		strcat(vs_buffer, data->projGuid);
-		strcat(vs_buffer, "}\"\n");
-		strcat(vs_buffer, "\t\t\t\t\tPackage = \"{");
-		strcat(vs_buffer, data->toolGuid);
-		strcat(vs_buffer, "}\"\n");
-		return vs_buffer;
+		strcat(g_buffer, "\t\t\t\t\tProject = \"{");
+		strcat(g_buffer, data->projGuid);
+		strcat(g_buffer, "}\"\n");
+		strcat(g_buffer, "\t\t\t\t\tPackage = \"{");
+		strcat(g_buffer, data->toolGuid);
+		strcat(g_buffer, "}\"\n");
+		return g_buffer;
 	}
 
-	strcat(vs_buffer, "\t\t\t\t\tAssemblyName = \"");
-	strcat(vs_buffer, path_getname(assembly));
-	strcat(vs_buffer, "\"\n");
+	strcat(g_buffer, "\t\t\t\t\tAssemblyName = \"");
+	strcat(g_buffer, path_getname(assembly));
+	strcat(g_buffer, "\"\n");
 	if (!matches(assembly, path_getname(assembly)))
 	{
-		strcat(vs_buffer, "\t\t\t\t\tHintPath = \"");
-		strcat(vs_buffer, assembly);
-		strcat(vs_buffer, ".dll\"\n");
+		strcat(g_buffer, "\t\t\t\t\tHintPath = \"");
+		strcat(g_buffer, assembly);
+		strcat(g_buffer, ".dll\"\n");
 	}
 
 	/* Tack on any extra information about the assembly */
@@ -282,18 +282,18 @@ static const char* listReferences(const char* name)
 		for (start = comma + 1; *start == ' '; ++start);
 		comma = strchr(start, '=');
 		*comma = '\0';
-		strcat(vs_buffer, "\t\t\t\t\t");
-		strcat(vs_buffer, start);
-		strcat(vs_buffer, " = \"");
+		strcat(g_buffer, "\t\t\t\t\t");
+		strcat(g_buffer, start);
+		strcat(g_buffer, " = \"");
 
 		start = comma + 1;
 		comma = strchr(start, ',');
 		if (comma != NULL) *comma = '\0';
-		strcat(vs_buffer, start);
-		strcat(vs_buffer, "\"\n");
+		strcat(g_buffer, start);
+		strcat(g_buffer, "\"\n");
 	}
 
-	return vs_buffer;
+	return g_buffer;
 }
 
 
@@ -337,11 +337,11 @@ static const char* listFiles(const char* name)
 	else if (endsWith(name, ".resx"))
 	{
 		/* If a matching .cs file exists, link it */
-		strcpy(vs_buffer, path_swapextension(name, ".resx", ".cs"));
-		if (prj_has_file(vs_buffer))
+		strcpy(g_buffer, path_swapextension(name, ".resx", ".cs"));
+		if (prj_has_file(g_buffer))
 		{
 			/* Path is relative to .resx file, I assume both are in same dir */
-			io_print("\t\t\t\t\tDependentUpon = \"%s\"\n", path_getname(vs_buffer));
+			io_print("\t\t\t\t\tDependentUpon = \"%s\"\n", path_getname(g_buffer));
 		}
 		io_print("\t\t\t\t\tBuildAction = \"EmbeddedResource\"\n");
 	}

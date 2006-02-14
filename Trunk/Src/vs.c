@@ -22,8 +22,6 @@
 #include "premake.h"
 #include "vs.h"
 
-char vs_buffer[8192];
-
 static int version;
 
 
@@ -155,12 +153,12 @@ static void tag_attr(const char* attr, ...)
 {
 	va_list args;
 	va_start(args, attr);
-	vsprintf(vs_buffer, attr, args);
+	vsprintf(g_buffer, attr, args);
 	va_end(args);
 
 	io_print("\n");
 	tag_indent();
-	io_print(vs_buffer);
+	io_print(g_buffer);
 	attrib++;
 }
 
@@ -606,8 +604,8 @@ const char* vs_filter_links(const char* name)
 		const char* lang = prj_get_language_for(i);
 		if (matches(lang, "c") || matches(lang, "c++"))
 		{
-			strcpy(vs_buffer, prj_get_libdir_for(i));
-			return path_combine(vs_buffer, prj_get_targetname_for(i));
+			strcpy(g_buffer, prj_get_libdir_for(i));
+			return path_combine(g_buffer, prj_get_targetname_for(i));
 		}
 		else
 			return NULL;
@@ -681,15 +679,15 @@ const char* vs_list_pkgdeps(const char* name)
 			VsPkgData* data = (VsPkgData*)prj_get_data_for(i);
 			if (version > VS2002)
 			{
-				sprintf(vs_buffer, "{%s} = {%s}", data->projGuid, data->projGuid);
+				sprintf(g_buffer, "{%s} = {%s}", data->projGuid, data->projGuid);
 			}
 			else
 			{
 				VsPkgData* src = (VsPkgData*)prj_get_data();
-				sprintf(vs_buffer, "{%s}.%d = {%s}", src->projGuid, src->numDependencies, data->projGuid);
+				sprintf(g_buffer, "{%s}.%d = {%s}", src->projGuid, src->numDependencies, data->projGuid);
 				++(src->numDependencies);
 			}
-			return vs_buffer;
+			return g_buffer;
 		}
 	}
 

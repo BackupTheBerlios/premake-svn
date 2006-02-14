@@ -16,11 +16,12 @@
  **********************************************************************/
 
 #include <stdio.h>
+#include <string.h>
 #include "premake.h"
 #include "arg.h"
 #include "gnu.h"
 
-static int         writeRootMakefile();
+static int writeRootMakefile();
 static const char* listInterPackageDeps(const char* name);
 
 
@@ -113,7 +114,8 @@ static int writeRootMakefile()
 	io_print("\n\n");
 
 	/* Target to regenerate the makefiles when the premake scripts change */
-	io_print("Makefile: %s", path_combine(path_build(prj_get_path(), "."), prj_get_script()));
+	strcpy(g_buffer, path_build(prj_get_path(), "."));
+	io_print("Makefile: %s", path_combine(g_buffer, prj_get_script()));
 	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
 		prj_select_package(i);
@@ -122,12 +124,19 @@ static int writeRootMakefile()
 	}
 	io_print("\n");
 	io_print("\t@echo ==== Regenerating Makefiles ====\n");
-	io_print("\t@premake");
+	io_print("\t@premake --file $^");
 	arg_reset();
 	arg = arg_getflag();
 	while (arg != NULL)
 	{
-		io_print(" %s", arg);
+		if (matches(arg, "--file"))
+		{
+			arg_getflagarg();
+		}
+		else
+		{
+			io_print(" %s", arg);
+		}
 		arg = arg_getflag();
 	}
 	io_print("\n\n");

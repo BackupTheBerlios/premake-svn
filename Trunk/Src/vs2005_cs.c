@@ -135,11 +135,11 @@ int vs2005_cs()
 		io_print("  <PropertyGroup>\n");
 		io_print("    <ReferencePath>");
 
-		strcpy(vs_buffer, io_getcwd());
+		strcpy(g_buffer, io_getcwd());
 		io_chdir(prj_get_pkgpath());
 		print_list(prj_get_libpaths(), "", ";", "", vs_list_refpaths);
 		io_print(vs_list_refpaths(prj_get_bindir()));
-		io_chdir(vs_buffer);
+		io_chdir(g_buffer);
 
 		io_print("</ReferencePath>\n");
 		io_print("  </PropertyGroup>\n");
@@ -169,8 +169,8 @@ static const char* listReferences(const char* name)
 	{
 		VsPkgData* data = (VsPkgData*)prj_get_data_for(i);
 
-		strcpy(vs_buffer, path_build(prj_get_pkgpath(), prj_get_pkgpath_for(i)));
-		io_print("    <ProjectReference Include=\"%s\\%s.csproj\">\n", path_translate(vs_buffer, "windows"), name);
+		strcpy(g_buffer, path_build(prj_get_pkgpath(), prj_get_pkgpath_for(i)));
+		io_print("    <ProjectReference Include=\"%s\\%s.csproj\">\n", path_translate(g_buffer, "windows"), name);
 		io_print("      <Project>{%s}</Project>\n", data->projGuid);
 		io_print("      <Name>%s</Name>\n", name);
 		io_print("    </ProjectReference>\n");
@@ -218,20 +218,20 @@ static const char* listFiles(const char* name)
 		if (endsWith(name, ".Designer.cs"))
 		{
 			/* ...look for a .cs dependency */
-			strcpy(vs_buffer, path_swapextension(name, ".Designer.cs", ".cs"));
-			if (prj_has_file(vs_buffer))
+			strcpy(g_buffer, path_swapextension(name, ".Designer.cs", ".cs"));
+			if (prj_has_file(g_buffer))
 			{
-				io_print(">\n      <DependentUpon>%s</DependentUpon>\n", path_getname(vs_buffer));
+				io_print(">\n      <DependentUpon>%s</DependentUpon>\n", path_getname(g_buffer));
 				fullstop = 1;
 			}
 			else
 			{
 				/* ...look for a .resx dependency */
-				strcpy(vs_buffer, path_swapextension(name, ".Designer.cs", ".resx"));
-				if (prj_has_file(vs_buffer))
+				strcpy(g_buffer, path_swapextension(name, ".Designer.cs", ".resx"));
+				if (prj_has_file(g_buffer))
 				{
 					io_print(">\n      <AutoGen>True</AutoGen>\n");
-					io_print("      <DependentUpon>%s</DependentUpon>\n", path_getname(vs_buffer));
+					io_print("      <DependentUpon>%s</DependentUpon>\n", path_getname(g_buffer));
 					fullstop = 1;
 				}
 			}
@@ -254,8 +254,8 @@ static const char* listFiles(const char* name)
 		io_print("    <EmbeddedResource Include=\"%s\"", path_translate(name, "windows"));
 		
 		/* If a matching .cs file exists, link it */
-		strcpy(vs_buffer, path_swapextension(name, ".resx", ".cs"));
-		if (prj_has_file(vs_buffer))
+		strcpy(g_buffer, path_swapextension(name, ".resx", ".cs"));
+		if (prj_has_file(g_buffer))
 		{
 			fullstop = 1;
 			io_print(">\n");
@@ -264,20 +264,20 @@ static const char* listFiles(const char* name)
 			related = path_swapextension(name, ".resx", ".Designer.cs");
 			if (prj_has_file(related))
 				io_print("      <SubType>Designer</SubType>\n");
-			io_print("      <DependentUpon>%s</DependentUpon>\n", path_getname(vs_buffer));
+			io_print("      <DependentUpon>%s</DependentUpon>\n", path_getname(g_buffer));
 		}
 		else 
 		{
 			/* If no .cs but .Designer.cs then auto-generated */
-			strcpy(vs_buffer, path_swapextension(name, ".resx", ".Designer.cs"));
-			if (prj_has_file(vs_buffer))
+			strcpy(g_buffer, path_swapextension(name, ".resx", ".Designer.cs"));
+			if (prj_has_file(g_buffer))
 			{
 				fullstop = 1;
 				io_print(">\n");
 
 				io_print("      <SubType>Designer</SubType>\n");
 				io_print("      <Generator>ResXFileCodeGenerator</Generator>\n");
-				io_print("      <LastGenOutput>%s</LastGenOutput>\n", path_getname(vs_buffer));
+				io_print("      <LastGenOutput>%s</LastGenOutput>\n", path_getname(g_buffer));
 			}
 		}
 		io_print(fullstop ? "    </EmbeddedResource>\n" : " />\n");
