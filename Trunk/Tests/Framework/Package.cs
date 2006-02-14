@@ -12,6 +12,7 @@ namespace Premake.Tests.Framework
 		public string Language;
 		public string ScriptName;
 		public string Compiler;
+		public string DefFile;
 		public ConfigCollection Config;
 		public FileCollection File;
 		public ArrayList CopyLocal;
@@ -37,6 +38,7 @@ namespace Premake.Tests.Framework
 			Test(this.Language,   actual.Language,   "Package language");
 			Test(this.ScriptName, actual.ScriptName, "Package script name");
 			Test(this.Compiler,   actual.Compiler,   "Package compiler");
+			Test(this.DefFile,    actual.DefFile,    "Exports .def file");
 
 			this.Config.CompareTo(actual.Config);
 			this.File.CompareTo(actual.File);

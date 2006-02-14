@@ -531,7 +531,7 @@ int vs_write_cpp()
 					tag_attr_close();
 
 					/* Look for a .def file for DLLs */
-					if (prj_find_filetype("def") != NULL)
+					if (prj_find_filetype(".def") != NULL)
 						tag_attr("ModuleDefinitionFile=\"%s\"", prj_find_filetype(".def"));
 
 					tag_attr("GenerateDebugInformation=\"%s\"", symbols ? "TRUE" : "FALSE");

@@ -56,5 +56,16 @@ namespace Premake.Tests.Vs2005.Cpp
 			_expects.Package[0].File.Add("..\\Help\\file2.cpp");
 			Run();
 		}
+
+		[Test]
+		public void Test_DefFile()
+		{
+			_script.Replace("'exe'", "'dll'");
+			_script.Replace("'somefile.txt'", "'file0.cpp','exports.def'");
+			_expects.Package[0].File.Add(".\\file0.cpp");
+			_expects.Package[0].File.Add(".\\exports.def");
+			_expects.Package[0].DefFile = "exports.def";
+			Run();
+		}
 	}
 }

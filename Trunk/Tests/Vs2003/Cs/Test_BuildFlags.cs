@@ -83,5 +83,14 @@ namespace Premake.Tests.Vs2003.Cs
 			_expects.Package[0].Config[1].BuildFlags = new string[] { "optimize", "no-symbols" };
 			Run();
 		}
+
+		[Test]
+		public void Test_Unsafe()
+		{
+			_script.Append("package.buildflags = { 'unsafe' }");
+			_expects.Package[0].Config[0].BuildFlags = new string[] { "unsafe" };
+			_expects.Package[0].Config[1].BuildFlags = new string[] { "unsafe", "optimize", "no-symbols" };
+			Run();
+		}
 	}
 }

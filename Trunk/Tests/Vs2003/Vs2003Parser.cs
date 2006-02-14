@@ -307,6 +307,10 @@ namespace Premake.Tests.Vs2003
 					for (int i = 0; i < matches.Length - 1; ++i)
 						config.LibPaths[i] = matches[i + 1];
 
+					matches = Regex("\t\t\t\tModuleDefinitionFile=\"(.+)\"", true);
+					if (matches != null)
+						package.DefFile = matches[0];
+
 					string expected = buildFlags.Contains("no-symbols") ? "FALSE" : "TRUE";
 					Match("\t\t\t\tGenerateDebugInformation=\"" + expected + "\"");
 
