@@ -5,7 +5,8 @@ Premake Changelog
 * Added support for Visual Studio 2005
 * Added path handling functions to Lua environment
 * Added matchrecursive() for recursive file searches
-* Added fileexists() function to Lua environment
+* Added os.fileexists() function to Lua environment
+* Added os.appendfile() function to Lua environment
 * Feature 1096677: exclude files from matchfiles (package.excludes)
 * Bug 1422068: package.path="." causes bad makefiles
 * Bug 1431530: makefile target fails when project path specified

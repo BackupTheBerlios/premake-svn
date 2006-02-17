@@ -39,6 +39,7 @@ static const char* tbl_getstringi(int from, int i);
 
 static int         lf_addoption(lua_State* L);
 static int         lf_alert(lua_State* L);
+static int         lf_appendfile(lua_State* L);
 static int         lf_chdir(lua_State* L);
 static int         lf_copyfile(lua_State* L);
 static int         lf_docommand(lua_State* L);
@@ -94,6 +95,10 @@ int script_init()
 
 	/* Add some extensions to the built-in "os" table */
 	lua_getglobal(L, "os");
+
+	lua_pushstring(L, "appendfile");
+	lua_pushcfunction(L, lf_appendfile);
+	lua_settable(L, -3);
 
 	lua_pushstring(L, "chdir");
 	lua_pushcfunction(L, lf_chdir);
@@ -855,6 +860,36 @@ static int lf_alert(lua_State* L)
 
 	printf("%s%s\n", currentScript, msg);
 	exit(1);
+}
+
+
+static int lf_appendfile(lua_State* L)
+{
+	FILE* fSrc;
+	FILE* fDst;
+	int count;
+
+	const char* src = luaL_checkstring(L, 1);
+	const char* dst = luaL_checkstring(L, 2);
+
+	fSrc = fopen(src, "rb");
+	if (fSrc == NULL)
+		luaL_error(L, "Unable to open file for reading '%s'\n", src);
+
+	fDst = fopen(dst, "ab");
+	if (fDst == NULL)
+		luaL_error(L, "Unable to open file for appending '%s'\n", dst);
+
+	count = fread(g_buffer, 1, 8192, fSrc);
+	while (count > 0)
+	{
+		fwrite(g_buffer, 1, count, fDst);
+		count = fread(g_buffer, 1, 8192, fSrc);
+	}
+
+	fclose(fSrc);
+	fclose(fDst);
+	return 0;
 }
 
 
