@@ -288,6 +288,15 @@ namespace Premake.Tests.Gnu
 			} while (matches != null);
 			Match("");
 
+			if (Match("RESOURCES = \\", true))
+			{
+				do
+				{
+					matches = Regex("\t\\$\\(OBJDIR\\)/(.+?) \\\\", true);
+				} while (matches != null);
+				Match("");
+			}
+
 			Match(".PHONY: clean");
 			Match("");
 
@@ -295,11 +304,11 @@ namespace Premake.Tests.Gnu
 			{
 				Match("all: $(OUTDIR)/$(MACAPP)/PkgInfo $(OUTDIR)/$(MACAPP)/Info.plist $(OUTDIR)/$(MACAPP)/MacOS/$(TARGET)");
 				Match("");
-				Match("$(OUTDIR)/$(MACAPP)/MacOS/$(TARGET): $(OBJECTS) $(LDDEPS)");
+				Match("$(OUTDIR)/$(MACAPP)/MacOS/$(TARGET): $(OBJECTS) $(LDDEPS) $(RESOURCES)");
 			}
 			else
 			{
-				Match("$(OUTDIR)/$(TARGET): $(OBJECTS) $(LDDEPS)");
+				Match("$(OUTDIR)/$(TARGET): $(OBJECTS) $(LDDEPS) $(RESOURCES)");
 			}
 			Match("\t@echo Linking " + package.Name);
 			Match("\t-@if [ ! -d $(BINDIR) ]; then mkdir -p $(BINDIR); fi");
@@ -318,9 +327,9 @@ namespace Premake.Tests.Gnu
 			else
 			{
 				if (package.Language == "c++")
-					Match("\t@$(CXX) -o $@ $(OBJECTS) $(LDFLAGS)");
+					Match("\t@$(CXX) -o $@ $(OBJECTS) $(LDFLAGS) $(RESOURCES)");
 				else
-					Match("\t@$(CC) -o $@ $(OBJECTS) $(LDFLAGS)");
+					Match("\t@$(CC) -o $@ $(OBJECTS) $(LDFLAGS) $(RESOURCES)");
 			}
 			Match("");
 
@@ -346,21 +355,24 @@ namespace Premake.Tests.Gnu
 
 			do
 			{
-				matches = Regex("^\\$\\(OBJDIR\\)/(.+)[.]o: (.+)", true);
+				matches = Regex("^\\$\\(OBJDIR\\)/(.+)[.](o|res): (.+)", true);
 				if (matches != null)
 				{
-					package.File.Add(matches[1]);
+					package.File.Add(matches[2]);
 
 					Match("\t-@if [ ! -d $(OBJDIR) ]; then mkdir -p $(OBJDIR); fi");
 					Match("\t@echo $(notdir $<)");
 
-					switch (Path.GetExtension(matches[1]))
+					switch (Path.GetExtension(matches[2]))
 					{
 					case ".c":
 						Match("\t@$(CC) $(CFLAGS) -o $@ -c $<");
 						break;
 					case ".s":
 						Match("\t@$(CC) -x assembler-with-cpp $(CPPFLAGS) -o $@ -c $<");
+						break;
+					case ".rc":
+						Match("\t@windres $< -O coff -o $@");
 						break;
 					default:
 						Match("\t@$(CXX) $(CXXFLAGS) -o $@ -c $<");

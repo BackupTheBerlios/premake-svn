@@ -21,11 +21,11 @@
 #include "gnu.h"
 #include "os.h"
 
-static char buffer[8192];
-
 static const char* filterLinks(const char* name);
 static const char* listCppSources(const char* name);
+static const char* listRcSources(const char* name);
 static const char* listCppTargets(const char* name);
+static const char* listRcTargets(const char* name);
 static const char* listLinkerDeps(const char* name);
 
 
@@ -37,10 +37,10 @@ int gnu_cpp()
 
 	/* Open package makefile and write the header */
 	if (gnu_pkgOwnsPath())
-		strcpy(buffer, path_join(prj_get_pkgpath(), "Makefile", ""));
+		strcpy(g_buffer, path_join(prj_get_pkgpath(), "Makefile", ""));
 	else
-		strcpy(buffer, path_join(prj_get_pkgpath(), prj_get_pkgname(), DOT_MAKE));
-	io_openfile(buffer);
+		strcpy(g_buffer, path_join(prj_get_pkgpath(), prj_get_pkgname(), DOT_MAKE));
+	io_openfile(g_buffer);
 
 	io_print("# %s ", prj_is_lang("c++") ? "C++" : "C");
 
@@ -142,6 +142,14 @@ int gnu_cpp()
 	print_list(prj_get_files(), "\t$(OBJDIR)/", " \\\n", "", listCppSources);
 	io_print("\n");
 
+	/* Write out the list of resource files for windows targets */
+	if (os_is("windows"))
+	{
+		io_print("RESOURCES = \\\n");
+		print_list(prj_get_files(), "\t$(OBJDIR)/", " \\\n", "", listRcSources);
+		io_print("\n");
+	}
+
 	io_print(".PHONY: clean\n");
 	io_print("\n");
 
@@ -156,7 +164,7 @@ int gnu_cpp()
 		io_print("$(OUTDIR)/$(TARGET)");
 	}
 
-	io_print(": $(OBJECTS) $(LDDEPS)\n");
+	io_print(": $(OBJECTS) $(LDDEPS) $(RESOURCES)\n");
 	if (!g_verbose)
 		io_print("\t@echo Linking %s\n", prj_get_pkgname());
 	io_print("\t-%sif [ ! -d $(BINDIR) ]; then mkdir -p $(BINDIR); fi\n", prefix);
@@ -172,7 +180,7 @@ int gnu_cpp()
 	}
 	else
 	{
-		io_print("\t%s$(%s) -o $@ $(OBJECTS) $(LDFLAGS)\n", prefix, prj_is_lang("c") ? "CC" : "CXX");
+		io_print("\t%s$(%s) -o $@ $(OBJECTS) $(LDFLAGS) $(RESOURCES)\n", prefix, prj_is_lang("c") ? "CC" : "CXX");
 	}
 	io_print("\n");
 
@@ -201,6 +209,9 @@ int gnu_cpp()
 	 * VPATH which I didn't like. This new approach of listing each file
 	 * helps testing and opens the way for per-file configurations */
 	print_list(prj_get_files(), "", "\n", "", listCppTargets);
+	
+	if (os_is("windows"))
+		print_list(prj_get_files(), "", "", "", listRcTargets);
 
 	/* Include the automatically generated dependency lists */
 	io_print("-include $(OBJECTS:%%.o=%%.d)\n\n");
@@ -233,9 +244,9 @@ static const char* filterLinks(const char* name)
 	}
 	else
 	{
-		strcpy(buffer, "-l");
-		strcat(buffer, name);
-		return buffer;
+		strcpy(g_buffer, "-l");
+		strcat(g_buffer, name);
+		return g_buffer;
 	}
 }
 
@@ -249,9 +260,28 @@ static const char* listCppSources(const char* name)
 {
 	if (is_cpp(name))
 	{
-		strcpy(buffer, path_getbasename(name));
-		strcat(buffer, ".o");
-		return buffer;
+		strcpy(g_buffer, path_getbasename(name));
+		strcat(g_buffer, ".o");
+		return g_buffer;
+	}
+
+	return NULL;
+}
+
+
+/************************************************************************
+ * Checks each source code file and filters out everything that is
+ * not a windows resource file
+ ***********************************************************************/
+
+static const char* listRcSources(const char* name)
+{
+	const char* ext = path_getextension(name);
+	if (matches(ext, ".rc"))
+	{
+		strcpy(g_buffer, path_getbasename(name));
+		strcat(g_buffer, ".res");
+		return g_buffer;
 	}
 
 	return NULL;
@@ -268,45 +298,69 @@ static const char* listCppTargets(const char* name)
 	{
 		const char* ext = path_getextension(name);
 
-		sprintf(buffer, "$(OBJDIR)/%s.o: %s\n", path_getbasename(name), name);
-		strcat(buffer, "\t-");
+		sprintf(g_buffer, "$(OBJDIR)/%s.o: %s\n", path_getbasename(name), name);
+		strcat(g_buffer, "\t-");
 		if (!g_verbose)
-			strcat(buffer, "@");
-		strcat(buffer, "if [ ! -d $(OBJDIR) ]; then mkdir -p $(OBJDIR); fi\n");
+			strcat(g_buffer, "@");
+		strcat(g_buffer, "if [ ! -d $(OBJDIR) ]; then mkdir -p $(OBJDIR); fi\n");
 
 		if (!g_verbose)
-			strcat(buffer, "\t@echo $(notdir $<)\n");
+			strcat(g_buffer, "\t@echo $(notdir $<)\n");
       
-		strcat(buffer, "\t");
+		strcat(g_buffer, "\t");
 		if (!g_verbose)
-			strcat(buffer, "@");
+			strcat(g_buffer, "@");
 		if (matches(g_cc, "dmc"))
 		{
 			/* Digital Mars compiler build step */
 			/* FIXME: How to handle assembly files with DMC? */
 			if (matches(ext, ".c"))
-				strcat(buffer, "dmc $(CFLAGS) -o $@ -c $<\n");
+				strcat(g_buffer, "dmc $(CFLAGS) -o $@ -c $<\n");
 			else if (!matches(ext, ".s"))
-				strcat(buffer, "dmc -cpp -Ae -Ar -mn $(CXXFLAGS) -o $@ -c $<\n");
+				strcat(g_buffer, "dmc -cpp -Ae -Ar -mn $(CXXFLAGS) -o $@ -c $<\n");
 		}
 		else
 		{
 			/* GNU GCC compiler build step */
 			if (matches(ext, ".s"))
-				strcat(buffer, "$(CC) -x assembler-with-cpp $(CPPFLAGS) -o $@ -c $<\n");
+				strcat(g_buffer, "$(CC) -x assembler-with-cpp $(CPPFLAGS) -o $@ -c $<\n");
 			else if (matches(ext, ".c"))
-				strcat(buffer, "$(CC) $(CFLAGS) -o $@ -c $<\n");
+				strcat(g_buffer, "$(CC) $(CFLAGS) -o $@ -c $<\n");
 			else
-				strcat(buffer, "$(CXX) $(CXXFLAGS) -o $@ -c $<\n");
+				strcat(g_buffer, "$(CXX) $(CXXFLAGS) -o $@ -c $<\n");
 		}
 
-		return buffer;
+		return g_buffer;
 	}
 	else
 	{
 		return NULL;
 	}
 }
+
+
+/************************************************************************
+ * Creates the makefile build rules for windows resource files
+ ***********************************************************************/
+
+static const char* listRcTargets(const char* name)
+{
+	const char* prefix = (g_verbose) ? "" : "@";
+	if (matches(path_getextension(name), ".rc"))
+	{
+		const char* base = path_getbasename(name);
+
+		io_print("$(OBJDIR)/%s.res: %s\n", base, name);
+		io_print("\t-%sif [ ! -d $(OBJDIR) ]; then mkdir -p $(OBJDIR); fi\n", prefix);
+		if (!g_verbose)
+			io_print("\t@echo $(notdir $<)\n");
+		io_print("\t%swindres $< -O coff -o $@\n", prefix);
+		io_print("\n");
+	}
+
+	return NULL;
+}
+
 
 /************************************************************************
  * This is called by the code that builds the list of dependencies for 

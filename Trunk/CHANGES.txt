@@ -3,6 +3,7 @@ Premake Changelog
 
 3.1 (in progress)
 * Added support for Visual Studio 2005
+* Added support for Windows resources to GNU make target
 * Added path handling functions to Lua environment
 * Added matchrecursive() for recursive file searches
 * Added os.fileexists() function to Lua environment
