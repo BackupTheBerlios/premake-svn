@@ -96,6 +96,11 @@ int gnu_cs()
 		csc = "mcs";
 		resgen = "resgen";
 	}
+	else if (matches(g_dotnet, "mono2"))
+	{
+		csc = "gmcs";
+		resgen = "resgen";
+	}
 	else
 	{
 		printf("** Error: unknown .NET runtime '%s'\n", g_dotnet);
