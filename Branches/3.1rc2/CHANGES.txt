@@ -8,6 +8,7 @@ Premake Changelog
 * Added matchrecursive() for recursive file searches
 * Added os.fileexists() function to Lua environment
 * Added os.appendfile() function to Lua environment
+* Changed `monoresgen` to `resgen`
 * Feature 1096677: exclude files from matchfiles (package.excludes)
 * Bug 1422068: package.path="." causes bad makefiles
 * Bug 1431530: makefile target fails when project path specified
