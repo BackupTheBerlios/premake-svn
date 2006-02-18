@@ -78,7 +78,7 @@ int gnu_cs()
 		else
 		{
 			csc = "mcs";
-			resgen = "monoresgen";
+			resgen = "resgen";
 		}
 	}
 	else if (matches(g_dotnet, "ms"))
@@ -94,7 +94,12 @@ int gnu_cs()
 	else if (matches(g_dotnet, "mono"))
 	{
 		csc = "mcs";
-		resgen = "monoresgen";
+		resgen = "resgen";
+	}
+	else if (matches(g_dotnet, "mono2"))
+	{
+		csc = "gmcs";
+		resgen = "resgen";
 	}
 	else
 	{
