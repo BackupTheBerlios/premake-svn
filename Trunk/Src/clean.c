@@ -50,6 +50,7 @@ int clean()
 	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
 		char cwd[8192];
+		MaskHandle mask;
 
 		prj_select_package(i);
 
@@ -100,6 +101,19 @@ int clean()
 			/* All */
 			io_rmdir(".", prj_get_objdir());
 		}
+
+		/* VS.NET 2005 */
+		strcpy(g_buffer, path_join(".", prj_get_pkgname(), "vcproj.*.user"));
+		mask = io_mask_open(g_buffer);
+		while (io_mask_getnext(mask))
+			io_remove(io_mask_getname(mask));
+		io_mask_close(mask);
+
+		strcpy(g_buffer, path_join(".", prj_get_pkgname(), "csproj.*.user"));
+		mask = io_mask_open(g_buffer);
+		while (io_mask_getnext(mask))
+			io_remove(io_mask_getname(mask));
+		io_mask_close(mask);
 
 		/* VS.NET 200x */
 		io_remove(path_join(".", prj_get_pkgname(), "csproj"));

@@ -38,6 +38,7 @@ struct PlatformMaskData
 };
 
 static int (__stdcall *CoCreateGuid)(char*) = NULL;
+static BOOL (__stdcall *GetUserName_)(LPTSTR,LPDWORD) = NULL;
 
 
 int platform_chdir(const char* path)
