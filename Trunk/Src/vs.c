@@ -24,6 +24,8 @@
 
 static int version;
 
+#define S_TRUE  (version < VS2005 ? "TRUE" : "true")
+#define S_FALSE (version < VS2005 ? "FALSE" : "false")
 
 enum Blocks
 {
@@ -374,7 +376,7 @@ int vs_write_cpp()
 		tag_attr("ConfigurationType=\"%d\"", configTypeId);
 		tag_attr("CharacterSet=\"%d\"", prj_has_flag("unicode") ? 1 : 2);
 		if (prj_has_flag("managed")) 
-			tag_attr("ManagedExtensions=\"TRUE\"");
+			tag_attr("ManagedExtensions=\"%s\"", S_TRUE);
 
 		/* Write out tool blocks */
 		for (b = 0; blocks[version][b] != BlocksEnd; ++b)
@@ -455,7 +457,7 @@ int vs_write_cpp()
 				tag_attr("Optimization=\"%d\"", optimization);
 
 				if (prj_has_flag("no-frame-pointer")) 
-					tag_attr("OmitFramePointers=\"TRUE\"");
+					tag_attr("OmitFramePointers=\"%s\"", S_TRUE);
 
 				if (prj_get_numincpaths() > 0)
 				{
@@ -475,29 +477,31 @@ int vs_write_cpp()
 				}
 
 				if (debug && !prj_has_flag("managed"))
-					tag_attr("MinimalRebuild=\"TRUE\"");
+					tag_attr("MinimalRebuild=\"%s\"", S_TRUE);
 
 				if (prj_has_flag("no-exceptions")) 
-					tag_attr("ExceptionHandling=\"FALSE\"");
+					tag_attr("ExceptionHandling=\"%s\"", S_FALSE);
 
 				if (debug && !prj_has_flag("managed"))
 					tag_attr("BasicRuntimeChecks=\"3\"");
 				
 				if (!debug) 
-					tag_attr("StringPooling=\"TRUE\"");
+					tag_attr("StringPooling=\"%s\"", S_TRUE);
 				
 				tag_attr("RuntimeLibrary=\"%d\"", runtime);
-				tag_attr("EnableFunctionLevelLinking=\"TRUE\"");
+				tag_attr("EnableFunctionLevelLinking=\"%s\"", S_TRUE);
 
-				if (prj_has_flag("no-rtti"))
-					tag_attr("RuntimeTypeInfo=\"FALSE\"");
+				if (version < VS2005 && !prj_has_flag("no-rtti"))
+					tag_attr("RuntimeTypeInfo=\"%s\"", S_TRUE);
+				if (version == VS2005 && prj_has_flag("no-rtti"))
+					tag_attr("RuntimeTypeInfo=\"%s\"", S_FALSE);
 
 				tag_attr("UsePrecompiledHeader=\"0\"");
 				tag_attr("WarningLevel=\"%d\"", prj_has_flag("extra-warnings") ? 4 : 3);
 				if (prj_has_flag("fatal-warnings"))
-					tag_attr("WarnAsError=\"TRUE\"");
+					tag_attr("WarnAsError=\"%s\"", S_TRUE);
 				if (!prj_has_flag("managed")) 
-					tag_attr("Detect64BitPortabilityProblems=\"%s\"", prj_has_flag("no-64bit-checks") ? "FALSE" : "TRUE");
+					tag_attr("Detect64BitPortabilityProblems=\"%s\"", prj_has_flag("no-64bit-checks") ? S_FALSE : S_TRUE);
 
 				tag_attr("DebugInformationFormat=\"%d\"", symbols);
 				break;
@@ -506,7 +510,7 @@ int vs_write_cpp()
 				{
 					tag_attr("Name=\"VCLinkerTool\"");
 					if (prj_has_flag("no-import-lib"))
-						tag_attr("IgnoreImportLibrary=\"TRUE\"");
+						tag_attr("IgnoreImportLibrary=\"%s\"", S_TRUE);
 
 					if (prj_get_numlinkoptions() > 0)
 					{
@@ -534,7 +538,7 @@ int vs_write_cpp()
 					if (prj_find_filetype(".def") != NULL)
 						tag_attr("ModuleDefinitionFile=\"%s\"", prj_find_filetype(".def"));
 
-					tag_attr("GenerateDebugInformation=\"%s\"", symbols ? "TRUE" : "FALSE");
+					tag_attr("GenerateDebugInformation=\"%s\"", symbols ? S_TRUE : S_FALSE);
 					if (symbols) 
 						tag_attr("ProgramDatabaseFile=\"$(OutDir)/%s.pdb\"", path_getbasename(prj_get_target()));
 

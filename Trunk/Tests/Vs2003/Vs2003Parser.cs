@@ -249,7 +249,7 @@ namespace Premake.Tests.Vs2003
 				
 				Match("\t\t\t\tEnableFunctionLevelLinking=\"TRUE\"");
 
-				if (Match("\t\t\t\tRuntimeTypeInfo=\"FALSE\"", true))
+				if (!Match("\t\t\t\tRuntimeTypeInfo=\"TRUE\"", true))
 					buildFlags.Add("no-rtti");
 
 				Regex("\t\t\t\tUsePrecompiledHeader=\"([0-9])\"");

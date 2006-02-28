@@ -346,7 +346,7 @@ namespace Premake.Tests.Vs2005
 					throw new FormatException("Unrecognized value: Optimization=\"" + matches[0] + "\"");
 				}
 
-				if (Match("\t\t\t\tOmitFramePointers=\"TRUE\"", true))
+				if (Match("\t\t\t\tOmitFramePointers=\"true\"", true))
 					buildFlags.Add("no-frame-pointer");
 
 				matches = Regex("\t\t\t\tAdditionalIncludeDirectories=\"(.+)\"", true);
@@ -356,13 +356,13 @@ namespace Premake.Tests.Vs2005
 				config.Defines = (matches != null) ? matches[0].Split(';') : new string[] { };
 
 				if (optimization == 0)
-					Match("\t\t\t\tMinimalRebuild=\"TRUE\"");
+					Match("\t\t\t\tMinimalRebuild=\"true\"");
 
-				if (Match("\t\t\t\tExceptionHandling=\"FALSE\"", true))
+				if (Match("\t\t\t\tExceptionHandling=\"false\"", true))
 					buildFlags.Add("no-exceptions");
 
 				if (optimization > 0)
-					Match("\t\t\t\tStringPooling=\"TRUE\"", true);
+					Match("\t\t\t\tStringPooling=\"true\"", true);
 
 				if (optimization == 0)
 					Match("\t\t\t\tBasicRuntimeChecks=\"3\"", true);
@@ -375,9 +375,9 @@ namespace Premake.Tests.Vs2005
 				if (matches[0] == "0" || matches[0] == "1")
 					config.LinkFlags = new string[] { "static-runtime" };
 
-				Match("\t\t\t\tEnableFunctionLevelLinking=\"TRUE\"");
+				Match("\t\t\t\tEnableFunctionLevelLinking=\"true\"");
 
-				if (Match("\t\t\t\tRuntimeTypeInfo=\"FALSE\"", true))
+				if (Match("\t\t\t\tRuntimeTypeInfo=\"false\"", true))
 					buildFlags.Add("no-rtti");
 
 				Regex("\t\t\t\tUsePrecompiledHeader=\"([0-9])\"");
@@ -386,11 +386,11 @@ namespace Premake.Tests.Vs2005
 				if (matches[0] == "4")
 					buildFlags.Add("extra-warnings");
 
-				if (Match("\t\t\t\tWarnAsError=\"TRUE\"", true))
+				if (Match("\t\t\t\tWarnAsError=\"true\"", true))
 					buildFlags.Add("fatal-warnings");
 
-				matches = Regex("\t\t\t\tDetect64BitPortabilityProblems=\"(TRUE|FALSE)\"");
-				if (matches[0] == "FALSE")
+				matches = Regex("\t\t\t\tDetect64BitPortabilityProblems=\"(true|false)\"");
+				if (matches[0] == "false")
 					buildFlags.Add("no-64bit-checks");
 
 				matches = Regex("\t\t\t\tDebugInformationFormat=\"([0-9])\"");
@@ -438,7 +438,7 @@ namespace Premake.Tests.Vs2005
 					if (matches != null)
 						config.Links = matches[0].Split(' ');
 
-					if (Match("\t\t\t\tIgnoreImportLibrary=\"TRUE\"", true))
+					if (Match("\t\t\t\tIgnoreImportLibrary=\"true\"", true))
 						buildFlags.Add("no-import-lib");
 
 					matches = Regex("\t\t\t\tOutputFile=\"\\$\\(OutDir\\)/(.+)\"");
@@ -460,7 +460,7 @@ namespace Premake.Tests.Vs2005
 					if (matches != null)
 						package.DefFile = matches[0];
 
-					string expected = buildFlags.Contains("no-symbols") ? "FALSE" : "TRUE";
+					string expected = buildFlags.Contains("no-symbols") ? "false" : "true";
 					Match("\t\t\t\tGenerateDebugInformation=\"" + expected + "\"");
 
 					if (!buildFlags.Contains("no-symbols"))
