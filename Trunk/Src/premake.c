@@ -271,7 +271,8 @@ void showUsage()
 	puts("");
 	puts(" --dotnet name     Choose a .NET compiler set, if supported by target; one of:");
 	puts("      ms        Microsoft (csc)");
-	puts("      mono      Mono (msc)");
+	puts("      mono      Mono (mcs)");
+	puts("      mono2     Mono .NET 2.0 (gmcs)");
 	puts("      pnet      Portable.NET (cscc)");
 	puts("");
 	puts(" --os name         Generate files for different operating system; one of:");

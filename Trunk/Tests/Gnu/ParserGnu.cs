@@ -145,19 +145,19 @@ namespace Premake.Tests.Gnu
 
 				Match("ifeq ($(CONFIG)," + config.Name + ")");
 
-				matches = Regex("  BINDIR = (.+)");
+				matches = Regex("  BINDIR := (.+)");
 				config.BinDir = matches[0];
 
-				matches = Regex("  LIBDIR = (.+)");
+				matches = Regex("  LIBDIR := (.+)");
 				config.LibDir = matches[0];
 
-				matches = Regex("  OBJDIR = (.+)");
+				matches = Regex("  OBJDIR := (.+)");
 				config.ObjDir = matches[0];
 
-				matches = Regex("  OUTDIR = (.+)");
+				matches = Regex("  OUTDIR := (.+)");
 				config.OutDir = matches[0];
 
-				matches = Regex("  CPPFLAGS = (.*)");
+				matches = Regex("  CPPFLAGS := (.*)");
 
 				System.Text.RegularExpressions.MatchCollection mc;
 				mc = System.Text.RegularExpressions.Regex.Matches(matches[0], "-I \"(.+?)\"");
@@ -212,7 +212,7 @@ namespace Premake.Tests.Gnu
 					config.BuildOptions = config.BuildOptions.Trim(' ');
 				}
 
-				matches = Regex("  CXXFLAGS = \\$\\(CFLAGS\\)(.*)");
+				matches = Regex("  CXXFLAGS := \\$\\(CFLAGS\\)(.*)");
 				if (matches != null)
 				{
 					string[] flags = matches[0].Split(' ');
@@ -267,13 +267,13 @@ namespace Premake.Tests.Gnu
 					config.LinkOptions = config.LinkOptions.Trim(' ');
 				}
 
-				matches = Regex("  LDDEPS =(.*)");
+				matches = Regex("  LDDEPS :=(.*)");
 				config.LinkDeps = matches[0].Trim().Split(' ');
 
-				matches = Regex("  TARGET = (.+)");
+				matches = Regex("  TARGET := (.+)");
 				config.Target = matches[0];
 
-				isMac = Match("  MACAPP = " + config.Target + ".app/Contents", true);
+				isMac = Match("  MACAPP := " + config.Target + ".app/Contents", true);
 
 				Match("endif");
 				Match("");
@@ -281,14 +281,14 @@ namespace Premake.Tests.Gnu
 				config.BuildFlags = (string[])buildFlags.ToArray(typeof(string));
 			}
 
-			Match("OBJECTS = \\");
+			Match("OBJECTS := \\");
 			do
 			{
 				matches = Regex("\t\\$\\(OBJDIR\\)/(.+?) \\\\", true);
 			} while (matches != null);
 			Match("");
 
-			if (Match("RESOURCES = \\", true))
+			if (Match("RESOURCES := \\", true))
 			{
 				do
 				{
@@ -296,6 +296,20 @@ namespace Premake.Tests.Gnu
 				} while (matches != null);
 				Match("");
 			}
+
+			Match("CMD := $(subst \\,\\\\,$(ComSpec)$(COMSPEC))");
+			Match("ifeq (,$(CMD))");
+			Match("  CMD_MKBINDIR := mkdir -p $(BINDIR)");
+			Match("  CMD_MKLIBDIR := mkdir -p $(LIBDIR)");
+			Match("  CMD_MKOUTDIR := mkdir -p $(OUTDIR)");
+			Match("  CMD_MKOBJDIR := mkdir -p $(OBJDIR)");
+			Match("else");
+			Match("  CMD_MKBINDIR := $(CMD) /c if not exist $(subst /,\\\\,$(BINDIR)) mkdir $(subst /,\\\\,$(BINDIR))");
+			Match("  CMD_MKLIBDIR := $(CMD) /c if not exist $(subst /,\\\\,$(LIBDIR)) mkdir $(subst /,\\\\,$(LIBDIR))");
+			Match("  CMD_MKOUTDIR := $(CMD) /c if not exist $(subst /,\\\\,$(OUTDIR)) mkdir $(subst /,\\\\,$(OUTDIR))");
+			Match("  CMD_MKOBJDIR := $(CMD) /c if not exist $(subst /,\\\\,$(OBJDIR)) mkdir $(subst /,\\\\,$(OBJDIR))");
+			Match("endif");
+			Match("");
 
 			Match(".PHONY: clean");
 			Match("");
@@ -311,9 +325,9 @@ namespace Premake.Tests.Gnu
 				Match("$(OUTDIR)/$(TARGET): $(OBJECTS) $(LDDEPS) $(RESOURCES)");
 			}
 			Match("\t@echo Linking " + package.Name);
-			Match("\t-@if [ ! -d $(BINDIR) ]; then mkdir -p $(BINDIR); fi");
-			Match("\t-@if [ ! -d $(LIBDIR) ]; then mkdir -p $(LIBDIR); fi");
-			Match("\t-@if [ ! -d $(OUTDIR) ]; then mkdir -p $(OUTDIR); fi");
+			Match("\t-@$(CMD_MKBINDIR)");
+			Match("\t-@$(CMD_MKLIBDIR)");
+			Match("\t-@$(CMD_MKOUTDIR)");
 			if (isMac)
 			{
 				Match("\t-@if [ ! -d $(OUTDIR)/$(MACAPP)/MacOS ]; then mkdir -p $(OUTDIR)/$(MACAPP)/MacOS; fi");
@@ -360,7 +374,7 @@ namespace Premake.Tests.Gnu
 				{
 					package.File.Add(matches[2]);
 
-					Match("\t-@if [ ! -d $(OBJDIR) ]; then mkdir -p $(OBJDIR); fi");
+					Match("\t-@$(CMD_MKOBJDIR)");
 					Match("\t@echo $(notdir $<)");
 
 					switch (Path.GetExtension(matches[2]))
@@ -390,10 +404,10 @@ namespace Premake.Tests.Gnu
 		#region Managed Code Parsing
 		private void ParseManaged(Project project, Package package)
 		{
-			string[] matches = Regex("CSC = ([a-z]+)");
+			string[] matches = Regex("CSC := ([a-z]+)");
 			package.Compiler = matches[0];
 
-			matches = Regex("RESGEN = ([a-z]+)");
+			matches = Regex("RESGEN := ([a-z]+)");
 			bool ok = false;
 			switch (package.Compiler)
 			{
@@ -402,7 +416,7 @@ namespace Premake.Tests.Gnu
 				ok = (matches[0] == "resgen");
 				break;
 			case "mcs":
-				ok = (matches[0] == "monoresgen");
+				ok = (matches[0] == "resgen");
 				break;
 			default:
 				throw new NotImplementedException("Unrecognized compiler: " + package.Compiler);
@@ -411,7 +425,7 @@ namespace Premake.Tests.Gnu
 				throw new FormatException("Compiler/Resgen mismatch");
 			Match("");
 
-			matches = Regex("OBJDIR = (.+)");
+			matches = Regex("OBJDIR := (.+)");
 			string objdir = matches[0];
 			Match("");
 
@@ -422,10 +436,10 @@ namespace Premake.Tests.Gnu
 
 				Match("ifeq ($(CONFIG)," + config.Name + ")");
 
-				matches = Regex("  BINDIR = (.+)");
+				matches = Regex("  BINDIR := (.+)");
 				config.BinDir = matches[0];
 
-				matches = Regex("  OUTDIR = (.+)");
+				matches = Regex("  OUTDIR := (.+)");
 				config.OutDir = matches[0];
 
 				matches = Regex("  FLAGS \\+=(.*)");
@@ -475,10 +489,10 @@ namespace Premake.Tests.Gnu
 				for (int i = 0; i < mc.Count; ++i)
 					config.Links[i] = mc[i].Groups[1].ToString();
 
-				matches = Regex("  DEPS =(.*)");
+				matches = Regex("  DEPS :=(.*)");
 				config.LinkDeps = matches[0].Trim().Split(' ');
 
-				matches = Regex("  TARGET = (.+)");
+				matches = Regex("  TARGET := (.+)");
 				config.Target = Path.Combine(Path.GetDirectoryName(matches[0]), Path.GetFileNameWithoutExtension(matches[0]));
 
 				Match("endif");
@@ -487,7 +501,7 @@ namespace Premake.Tests.Gnu
 				config.BuildFlags = (string[])buildFlags.ToArray(typeof(string));
 			}
 
-			Match("SOURCES = \\");
+			Match("SOURCES := \\");
 			do
 			{
 				matches = Regex("\t(.+?)[ ]\\\\", true);
@@ -496,7 +510,7 @@ namespace Premake.Tests.Gnu
 			} while (matches != null);
 			Match("");
 
-			Match("EMBEDDEDFILES = \\");
+			Match("EMBEDDEDFILES := \\");
 			do
 			{
 				matches = Regex("\t(.+?)[ ]\\\\", true);
@@ -505,7 +519,7 @@ namespace Premake.Tests.Gnu
 			} while (matches != null);
 			Match("");
 
-			Match("EMBEDDEDCOMMAND = \\");
+			Match("EMBEDDEDCOMMAND := \\");
 			foreach (SourceFile file in package.File)
 			{
 				if (file.BuildAction == "EmbeddedResource")
@@ -513,7 +527,7 @@ namespace Premake.Tests.Gnu
 			} while (matches != null);
 			Match("");
 
-			Match("LINKEDFILES = \\");
+			Match("LINKEDFILES := \\");
 			do
 			{
 				matches = Regex("\t(.+?)[ ]\\\\", true);
@@ -522,7 +536,7 @@ namespace Premake.Tests.Gnu
 			} while (matches != null);
 			Match("");
 
-			Match("LINKEDCOMMAND = \\");
+			Match("LINKEDCOMMAND := \\");
 			foreach (SourceFile file in package.File)
 			{
 				if (file.BuildAction == "Linked")
@@ -530,7 +544,7 @@ namespace Premake.Tests.Gnu
 			}
 			Match("");
 
-			Match("CONTENTFILES = \\");
+			Match("CONTENTFILES := \\");
 			do
 			{
 				matches = Regex("\t(.+?)[ ]\\\\", true);
@@ -539,7 +553,7 @@ namespace Premake.Tests.Gnu
 			} while (matches != null);
 			Match("");
 
-			Match("COPYLOCALFILES = \\");
+			Match("COPYLOCALFILES := \\");
 			do
 			{
 				matches = Regex("\t(.+?)[ ]\\\\", true);
@@ -548,8 +562,17 @@ namespace Premake.Tests.Gnu
 			} while (matches != null);
 			Match("");
 
-			Match("COMPILECOMMAND = $(SOURCES) $(EMBEDDEDCOMMAND) $(LINKEDCOMMAND)");
+			Match("COMPILECOMMAND := $(SOURCES) $(EMBEDDEDCOMMAND) $(LINKEDCOMMAND)");
 			Match("");
+
+			Match("CMD := $(subst \\,\\\\,$(ComSpec)$(COMSPEC))");
+			Match("ifeq (,$(CMD))");
+			Match("  CMD_MKOUTDIR := mkdir -p $(OUTDIR)");
+			Match("else");
+			Match("  CMD_MKOUTDIR := $(CMD) /c if not exist $(subst /,\\\\,$(OUTDIR)) mkdir $(subst /,\\\\,$(OUTDIR))");
+			Match("endif");
+			Match("");
+
 			Match(".PHONY: clean");
 			Match("");
 			Match("all: \\");
@@ -562,7 +585,7 @@ namespace Premake.Tests.Gnu
 			Match("");
 
 			Match("$(OUTDIR)/$(TARGET): $(SOURCES) $(EMBEDDEDFILES) $(LINKEDFILES) $(COPYLOCALFILES) $(DEPS)");
-			Match("\t-@if [ ! -d $(OUTDIR) ]; then mkdir -p $(OUTDIR); fi");
+			Match("\t-@$(CMD_MKOUTDIR)");
 
 			matches = Regex("\t@\\$\\(CSC\\) /nologo /out:\\$@ /t:([a-z]+) /lib:\\$\\(BINDIR\\) \\$\\(FLAGS\\) \\$\\(COMPILECOMMAND\\)");
 			if ((package.Kind == "exe"    && matches[0] != "exe")     ||

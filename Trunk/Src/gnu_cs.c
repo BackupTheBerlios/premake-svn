@@ -136,12 +136,12 @@ int gnu_cs()
 	io_print("endif\n\n");
 
 	/* Specify the build tools */
-	io_print("CSC = %s\n", csc);
-	io_print("RESGEN = %s\n", resgen);
+	io_print("CSC := %s\n", csc);
+	io_print("RESGEN := %s\n", resgen);
 	io_print("\n");
 
 	/* Where to put compiled resources */
-	io_print("OBJDIR = %s\n\n", prj_get_objdir());
+	io_print("OBJDIR := %s\n\n", prj_get_objdir());
 
 	/* Process the build configurations */
 	for (i = 0; i < prj_get_numconfigs(); ++i)
@@ -149,8 +149,8 @@ int gnu_cs()
 		prj_select_config(i);
 
 		io_print("ifeq ($(CONFIG),%s)\n", prj_get_cfgname());
-		io_print("  BINDIR = %s\n", prj_get_bindir());
-		io_print("  OUTDIR = %s\n", prj_get_outdir());
+		io_print("  BINDIR := %s\n", prj_get_bindir());
+		io_print("  OUTDIR := %s\n", prj_get_outdir());
 
 		io_print("  FLAGS +=");
 		if (!prj_has_flag("no-symbols"))
@@ -184,13 +184,13 @@ int gnu_cs()
 
 		/* List any sibling packages as dependencies for make */
 		prj_select_config(i);
-		io_print("  DEPS =");
+		io_print("  DEPS :=");
 		print_list(prj_get_links(), " ", " ", "", listReferenceDeps);
 		io_print("\n");
 
 		/* VS.NET doesn't allow per-config target names */
 		prj_select_config(0);
-		io_print("  TARGET = %s\n", path_getname(prj_get_target()));
+		io_print("  TARGET := %s\n", path_getname(prj_get_target()));
 		io_print("endif\n\n");
 	}
 
@@ -201,35 +201,43 @@ int gnu_cs()
 	print_list(prj_get_files(), "", "", "", assignContentFiles);
 
 	/* Sort out the files by build action */
-	io_print("SOURCES = \\\n");
+	io_print("SOURCES := \\\n");
 	print_list(prj_get_files(), "\t", " \\\n", "", listCodeFiles);
 	io_print("\n");
 
-	io_print("EMBEDDEDFILES = \\\n");
+	io_print("EMBEDDEDFILES := \\\n");
 	print_list(prj_get_files(), "\t", " \\\n", "", listEmbeddedFiles);
 	io_print("\n");
 
-	io_print("EMBEDDEDCOMMAND = \\\n");
+	io_print("EMBEDDEDCOMMAND := \\\n");
 	print_list(prj_get_files(), "\t/resource:", " \\\n", "", listEmbeddedFiles);
 	io_print("\n");
 	
-	io_print("LINKEDFILES = \\\n");
+	io_print("LINKEDFILES := \\\n");
 	print_list(prj_get_files(), "\t", " \\\n", "", listLinkedFiles);
 	io_print("\n");
 
-	io_print("LINKEDCOMMAND = \\\n");
+	io_print("LINKEDCOMMAND := \\\n");
 	print_list(prj_get_files(), "\t/linkresource:", " \\\n", "", listLinkedFiles);
 	io_print("\n");
 
-	io_print("CONTENTFILES = \\\n");
+	io_print("CONTENTFILES := \\\n");
 	print_list(prj_get_files(), "\t", " \\\n", "", listContentFiles);
 	io_print("\n");
 
-	io_print("COPYLOCALFILES = \\\n");
+	io_print("COPYLOCALFILES := \\\n");
 	print_list(prj_get_links(), "\t", " \\\n", "", listCopyLocalFiles);
 	io_print("\n");
 
-	io_print("COMPILECOMMAND = $(SOURCES) $(EMBEDDEDCOMMAND) $(LINKEDCOMMAND)\n\n");
+	io_print("COMPILECOMMAND := $(SOURCES) $(EMBEDDEDCOMMAND) $(LINKEDCOMMAND)\n\n");
+
+	io_print("CMD := $(subst \\,\\\\,$(ComSpec)$(COMSPEC))\n");
+	io_print("ifeq (,$(CMD))\n");
+	io_print("  CMD_MKOUTDIR := mkdir -p $(OUTDIR)\n");
+	io_print("else\n");
+	io_print("  CMD_MKOUTDIR := $(CMD) /c if not exist $(subst /,\\\\,$(OUTDIR)) mkdir $(subst /,\\\\,$(OUTDIR))\n");
+	io_print("endif\n");
+	io_print("\n");
 
 	/* Build targets: add all content files as dependencies so the copy
 	 * rules will get fired when they change */
@@ -241,7 +249,7 @@ int gnu_cs()
 
 	/* The main build target */
 	io_print("$(OUTDIR)/$(TARGET): $(SOURCES) $(EMBEDDEDFILES) $(LINKEDFILES) $(COPYLOCALFILES) $(DEPS)\n");
-	io_print("\t-@if [ ! -d $(OUTDIR) ]; then mkdir -p $(OUTDIR); fi\n");
+	io_print("\t-@$(CMD_MKOUTDIR)\n");
 	io_print("\t@$(CSC) /nologo /out:$@ /t:%s /lib:$(BINDIR) $(FLAGS) $(COMPILECOMMAND)\n\n", kind);
 
 	/* Write rules to copy content files */

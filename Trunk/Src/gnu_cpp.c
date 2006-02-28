@@ -69,13 +69,13 @@ int gnu_cpp()
 
 		io_print("ifeq ($(CONFIG),%s)\n", prj_get_cfgname());
 
-		io_print("  BINDIR = %s\n", prj_get_bindir());
-		io_print("  LIBDIR = %s\n", prj_get_libdir());
-		io_print("  OBJDIR = %s\n", prj_get_objdir());
-		io_print("  OUTDIR = %s\n", prj_get_outdir());
+		io_print("  BINDIR := %s\n", prj_get_bindir());
+		io_print("  LIBDIR := %s\n", prj_get_libdir());
+		io_print("  OBJDIR := %s\n", prj_get_objdir());
+		io_print("  OUTDIR := %s\n", prj_get_outdir());
 
 		/* Write preprocessor flags - how to generate dependencies for DMC? */
-		io_print("  CPPFLAGS =");
+		io_print("  CPPFLAGS :=");
 		if (!matches(g_cc, "dmc"))
 			io_print(" -MD");
 		print_list(prj_get_defines(), " -D \"", "\"", "", NULL);
@@ -104,7 +104,7 @@ int gnu_cpp()
 		io_print("\n");
 
 		/* Write C++ flags */
-		io_print("  CXXFLAGS = $(CFLAGS)");
+		io_print("  CXXFLAGS := $(CFLAGS)");
 		if (prj_has_flag("no-exceptions"))
 			io_print(" --no-exceptions");
 		if (prj_has_flag("no-rtti"))
@@ -125,30 +125,44 @@ int gnu_cpp()
 		io_print("\n");
 
 		/* Build a list of libraries this target depends on */
-		io_print("  LDDEPS =");
+		io_print("  LDDEPS :=");
 		print_list(prj_get_links(), " ", "", "", listLinkerDeps);
 		io_print("\n");
 
 		/* Build the target name */
-		io_print("  TARGET = %s\n", path_getname(prj_get_target()));
+		io_print("  TARGET := %s\n", path_getname(prj_get_target()));
 		if (os_is("macosx") && prj_is_kind("winexe"))
-			io_print("  MACAPP = %s.app/Contents\n", path_getname(prj_get_target()));
+			io_print("  MACAPP := %s.app/Contents\n", path_getname(prj_get_target()));
 
 		io_print("endif\n\n");
 	}
 
 	/* Write out the list of object file targets for all C/C++ sources */
-	io_print("OBJECTS = \\\n");
+	io_print("OBJECTS := \\\n");
 	print_list(prj_get_files(), "\t$(OBJDIR)/", " \\\n", "", listCppSources);
 	io_print("\n");
 
 	/* Write out the list of resource files for windows targets */
 	if (os_is("windows"))
 	{
-		io_print("RESOURCES = \\\n");
+		io_print("RESOURCES := \\\n");
 		print_list(prj_get_files(), "\t$(OBJDIR)/", " \\\n", "", listRcSources);
 		io_print("\n");
 	}
+
+	io_print("CMD := $(subst \\,\\\\,$(ComSpec)$(COMSPEC))\n");
+	io_print("ifeq (,$(CMD))\n");
+	io_print("  CMD_MKBINDIR := mkdir -p $(BINDIR)\n");
+	io_print("  CMD_MKLIBDIR := mkdir -p $(LIBDIR)\n");
+	io_print("  CMD_MKOUTDIR := mkdir -p $(OUTDIR)\n");
+	io_print("  CMD_MKOBJDIR := mkdir -p $(OBJDIR)\n");
+	io_print("else\n");
+	io_print("  CMD_MKBINDIR := $(CMD) /c if not exist $(subst /,\\\\,$(BINDIR)) mkdir $(subst /,\\\\,$(BINDIR))\n");
+	io_print("  CMD_MKLIBDIR := $(CMD) /c if not exist $(subst /,\\\\,$(LIBDIR)) mkdir $(subst /,\\\\,$(LIBDIR))\n");
+	io_print("  CMD_MKOUTDIR := $(CMD) /c if not exist $(subst /,\\\\,$(OUTDIR)) mkdir $(subst /,\\\\,$(OUTDIR))\n");
+	io_print("  CMD_MKOBJDIR := $(CMD) /c if not exist $(subst /,\\\\,$(OBJDIR)) mkdir $(subst /,\\\\,$(OBJDIR))\n");
+	io_print("endif\n");
+	io_print("\n");
 
 	io_print(".PHONY: clean\n");
 	io_print("\n");
@@ -167,9 +181,9 @@ int gnu_cpp()
 	io_print(": $(OBJECTS) $(LDDEPS) $(RESOURCES)\n");
 	if (!g_verbose)
 		io_print("\t@echo Linking %s\n", prj_get_pkgname());
-	io_print("\t-%sif [ ! -d $(BINDIR) ]; then mkdir -p $(BINDIR); fi\n", prefix);
-	io_print("\t-%sif [ ! -d $(LIBDIR) ]; then mkdir -p $(LIBDIR); fi\n", prefix);
-	io_print("\t-%sif [ ! -d $(OUTDIR) ]; then mkdir -p $(OUTDIR); fi\n", prefix);
+	io_print("\t-%s$(CMD_MKBINDIR)\n", prefix);
+	io_print("\t-%s$(CMD_MKLIBDIR)\n", prefix);
+	io_print("\t-%s$(CMD_MKOUTDIR)\n", prefix);
 	if (os_is("macosx") && prj_is_kind("winexe"))
 		io_print("\t-%sif [ ! -d $(OUTDIR)/$(MACAPP)/MacOS ]; then mkdir -p $(OUTDIR)/$(MACAPP)/MacOS; fi\n", prefix);
 
@@ -302,7 +316,7 @@ static const char* listCppTargets(const char* name)
 		strcat(g_buffer, "\t-");
 		if (!g_verbose)
 			strcat(g_buffer, "@");
-		strcat(g_buffer, "if [ ! -d $(OBJDIR) ]; then mkdir -p $(OBJDIR); fi\n");
+		strcat(g_buffer, "$(CMD_MKOBJDIR)\n");
 
 		if (!g_verbose)
 			strcat(g_buffer, "\t@echo $(notdir $<)\n");
@@ -351,7 +365,7 @@ static const char* listRcTargets(const char* name)
 		const char* base = path_getbasename(name);
 
 		io_print("$(OBJDIR)/%s.res: %s\n", base, name);
-		io_print("\t-%sif [ ! -d $(OBJDIR) ]; then mkdir -p $(OBJDIR); fi\n", prefix);
+		io_print("\t-%s$(CMD_MKOBJDIR)\n", prefix);
 		if (!g_verbose)
 			io_print("\t@echo $(notdir $<)\n");
 		io_print("\t%swindres $< -O coff -o $@\n", prefix);

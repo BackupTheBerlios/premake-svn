@@ -9,7 +9,10 @@ Premake Changelog
 * Added os.fileexists() function to Lua environment
 * Added os.appendfile() function to Lua environment
 * Changed `monoresgen` to `resgen` to keep up with Mono project
+* Added `mono2` .NET compiler set for Mono .NET 2.0 support
 * Feature 1096677: exclude files from matchfiles (package.excludes)
+* Bug 1439463: VS2003 RTTI problem
+* Bug 1439446: GNU Makefile problem under Mingw32
 * Bug 1422068: package.path="." causes bad makefiles
 * Bug 1431530: makefile target fails when project path specified
 
