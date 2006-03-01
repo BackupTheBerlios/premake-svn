@@ -98,6 +98,9 @@ int clean()
 			io_remove(path_join(prj_get_libdir(), buffer, "lib"));
 			io_remove(path_join(prj_get_libdir(), buffer, "exp"));
 
+			/* Mono debugger symbols */
+			io_remove(path_join(prj_get_outdir(), buffer, "mdb"));
+
 			/* All */
 			io_rmdir(".", prj_get_objdir());
 		}
