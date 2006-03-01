@@ -27,7 +27,7 @@ echo ""
 echo "Did you update CHANGES.txt?"
 read line
 echo ""
-echo "Ready to build POSIX executable for version $1."
+echo "Ready to build Source Code and POSIX executable for version $1."
 echo "Press [Enter] to begin."
 read line
 
@@ -44,9 +44,39 @@ echo ""
 cd ../..
 svn co https://svn.berlios.de/svnroot/repos/premake/Branches/$1 Premake-$1
 
+echo ""
+echo "REMOVING PRIVATE FILES..."
+echo ""
+
+cd Premake-$1
+rm -rf `find . -name .svn`
+rm -rf Scripts
+rm -f  TODO.txt
+
 
 #####################################################################
-# Stage 2: Binary Package
+# Stage 2: Source Code Package
+#####################################################################
+
+echo ""
+echo "PACKAGING SOURCE CODE..."
+echo ""
+
+premake --os linux --target gnu
+premake --target vs6
+premake --target vs2002
+
+unix2dos Premake.dsw
+unix2dos Premake.sln
+unix2dos Src/Premake.dsp
+unix2dos Src/Premake.vcproj
+
+cd ..
+zip -r9 $script_dir/premake-src-$1.zip Premake-$1/*
+
+
+#####################################################################
+# Stage 3: Binary Package
 #####################################################################
 
 echo ""
@@ -54,25 +84,8 @@ echo "BUILDING RELEASE BINARY..."
 echo ""
 
 cd Premake-$1
-premake --with-tests --target gnu
+premake --target gnu
 make CONFIG=Release
-
-
-#####################################################################
-# Stage 3: Unit Test
-#
-# I haven't gotten the unit tests to run on Linux yet
-#####################################################################
-
-# echo ""
-# echo "RUNNING UNIT TESTS..."
-# echo ""
-
-# nunit-console.exe Premake.Tests.nunit
-
-# echo "Did the unit tests run successfully?"
-# read line
-# echo ""
 
 
 #####################################################################
