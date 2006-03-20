@@ -252,7 +252,9 @@ namespace Premake.Tests.Vs2003
 				if (!Match("\t\t\t\tRuntimeTypeInfo=\"TRUE\"", true))
 					buildFlags.Add("no-rtti");
 
-				Regex("\t\t\t\tUsePrecompiledHeader=\"([0-9])\"");
+				matches = Regex("\t\t\t\tUsePrecompiledHeader=\"([0-9])\"");
+				if (matches[0] != "2")
+					throw new FormatException("Expected UsePrecompiledHeader to be 2, got " + matches[0]);
 
 				matches = Regex("\t\t\t\tWarningLevel=\"([3-4])\"");
 				if (matches[0] == "4")
