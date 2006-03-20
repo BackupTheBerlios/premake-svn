@@ -496,7 +496,7 @@ int vs_write_cpp()
 				if (version == VS2005 && prj_has_flag("no-rtti"))
 					tag_attr("RuntimeTypeInfo=\"%s\"", S_FALSE);
 
-				tag_attr("UsePrecompiledHeader=\"2\"");
+				tag_attr("UsePrecompiledHeader=\"%d\"", version < VS2005 ? 2 : 0);
 				tag_attr("WarningLevel=\"%d\"", prj_has_flag("extra-warnings") ? 4 : 3);
 				if (prj_has_flag("fatal-warnings"))
 					tag_attr("WarnAsError=\"%s\"", S_TRUE);
