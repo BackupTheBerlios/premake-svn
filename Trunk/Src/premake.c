@@ -165,10 +165,13 @@ static int postprocess()
 		}
 		else
 		{
-			if (!g_hasScript && !noScriptWarning)
+			if (!g_hasScript)
 			{
-				puts("** No Premake script found!");
-				noScriptWarning = 1;
+				if (!noScriptWarning)
+				{
+					puts("** No Premake script found!");
+					noScriptWarning = 1;
+				}
 			}
 			else
 			{

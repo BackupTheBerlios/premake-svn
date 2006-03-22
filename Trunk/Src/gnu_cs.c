@@ -152,7 +152,7 @@ int gnu_cs()
 		io_print("  BINDIR := %s\n", prj_get_bindir());
 		io_print("  OUTDIR := %s\n", prj_get_outdir());
 
-		io_print("  FLAGS +=");
+		io_print("  FLAGS += /t:%s", kind);
 		if (!prj_has_flag("no-symbols"))
 		{
 			io_print(" /debug");
@@ -250,7 +250,7 @@ int gnu_cs()
 	/* The main build target */
 	io_print("$(OUTDIR)/$(TARGET): $(SOURCES) $(EMBEDDEDFILES) $(LINKEDFILES) $(COPYLOCALFILES) $(DEPS)\n");
 	io_print("\t-@$(CMD_MKOUTDIR)\n");
-	io_print("\t@$(CSC) /nologo /out:$@ /t:%s /lib:$(BINDIR) $(FLAGS) $(COMPILECOMMAND)\n\n", kind);
+	io_print("\t@$(CSC) /nologo /out:$@ /lib:$(BINDIR) $(FLAGS) $(COMPILECOMMAND)\n\n");
 
 	/* Write rules to copy content files */
 	print_list(prj_get_files(), "", "", "", listContentRules);

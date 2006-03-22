@@ -161,9 +161,9 @@ namespace Premake.Tests.SharpDev
 
 				switch (matches[9])
 				{
-				case "Exe":     package.Kind = "exe";    break;
-				case "WinExe":  package.Kind = "winexe"; break;
-				case "Library": package.Kind = "dll";    break;
+				case "Exe":     config.Kind = "exe";    break;
+				case "WinExe":  config.Kind = "winexe"; break;
+				case "Library": config.Kind = "dll";    break;
 				}
 
 				if (matches[4] == "False")

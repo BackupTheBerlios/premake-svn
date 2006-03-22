@@ -134,6 +134,14 @@ int gnu_cpp()
 		if (os_is("macosx") && prj_is_kind("winexe"))
 			io_print("  MACAPP := %s.app/Contents\n", path_getname(prj_get_target()));
 
+		/* Build command */
+		io_print("  BLDCMD = ");
+		if (prj_is_kind("lib"))
+			io_print("ar -cr $(OUTDIR)/$(TARGET) $(OBJECTS); ranlib $(OUTDIR)/$(TARGET)");
+		else
+			io_print("$(%s) -o $(OUTDIR)/$(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES)", prj_is_lang("c") ? "CC" : "CXX");
+		io_print("\n");
+
 		io_print("endif\n\n");
 	}
 
@@ -186,7 +194,9 @@ int gnu_cpp()
 	io_print("\t-%s$(CMD_MKOUTDIR)\n", prefix);
 	if (os_is("macosx") && prj_is_kind("winexe"))
 		io_print("\t-%sif [ ! -d $(OUTDIR)/$(MACAPP)/MacOS ]; then mkdir -p $(OUTDIR)/$(MACAPP)/MacOS; fi\n", prefix);
+	io_print("\t%s$(BLDCMD)\n\n", prefix);
 
+/*
 	if (prj_is_kind("lib"))
 	{
 		io_print("\t%sar -cr $@ $^\n", prefix);
@@ -197,6 +207,7 @@ int gnu_cpp()
 		io_print("\t%s$(%s) -o $@ $(OBJECTS) $(LDFLAGS) $(RESOURCES)\n", prefix, prj_is_lang("c") ? "CC" : "CXX");
 	}
 	io_print("\n");
+*/
 
 	if (os_is("macosx") && prj_is_kind("winexe"))
 	{

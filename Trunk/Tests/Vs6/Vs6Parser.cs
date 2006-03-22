@@ -336,11 +336,10 @@ namespace Premake.Tests.Vs6
 				Match("# ADD CPP /nologo " + flags);
 
 				string debugSymbol = bldflags.Contains("no-symbols") ? "NDEBUG" : "_DEBUG";
-				if (package.Kind == "winexe" || package.Kind == "dll")
-				{
-					Match("# ADD BASE MTL /nologo /D \"" + debugSymbol + "\" /mktyplib203 /win32");
+
+				bool hasMtl = Match("# ADD BASE MTL /nologo /D \"" + debugSymbol + "\" /mktyplib203 /win32", true);
+				if (hasMtl)
 					Match("# ADD MTL /nologo /D \"" + debugSymbol + "\" /mktyplib203 /win32");
-				}
 
 				Match("# ADD BASE RSC /l 0x409 /d \"" + debugSymbol + "\"");
 				Match("# ADD RSC /l 0x409 /d \"" + debugSymbol + "\"");
@@ -348,9 +347,9 @@ namespace Premake.Tests.Vs6
 				Match("# ADD BASE BSC32 /nologo");
 				Match("# ADD BSC32 /nologo");
 
-				if (package.Kind == "lib")
+				if (Match("LINK32=link.exe -lib", true))
 				{
-					Match("LINK32=link.exe -lib");
+					config.Kind = "lib";
 					Match("# ADD BASE LIB32 /nologo");
 					Match("# ADD LIB32 /nologo");
 				}
@@ -367,20 +366,36 @@ namespace Premake.Tests.Vs6
 
 					Expect(matches[i++], "/nologo");
 
-					if ((package.Kind == "winexe" || package.Kind == "exe"))
+					bool noMain = true;
+					if (matches[i] == "/entry:\"mainCRTStartup\"")
 					{
-						if (matches[i] == "/entry:\"mainCRTStartup\"")
-							++i;
-						else
-							bldflags.Add("no-main");
+						noMain = false;
+						++i;
 					}
 
-					if (package.Kind == "winexe")
-						Expect(matches[i++], "/subsystem:windows");
-					else if (package.Kind == "exe")
-						Expect(matches[i++], "/subsystem:console");
+					if (matches[i] == "/subsystem:windows")
+					{
+						config.Kind = "winexe";
+					}
+					else if (matches[i] == "/subsystem:console")
+					{
+						config.Kind = "exe";
+					}
+					else if (matches[i] == "/dll")
+					{
+						config.Kind = "dll";
+					}
 					else
-						Expect(matches[i++], "/dll");
+					{
+						throw new FormatException("Unexpected subsystem flag: " + matches[i]);
+					}
+					++i;
+
+					if (hasMtl && config.Kind != "winexe" && config.Kind != "dll")
+						throw new FormatException("Found unexpected MTL block");
+
+					if ((config.Kind == "winexe" || config.Kind == "exe") && noMain)
+						bldflags.Add("no-main");
 
 					if (!bldflags.Contains("no-symbols"))
 					{
@@ -390,7 +405,7 @@ namespace Premake.Tests.Vs6
 
 					Expect(matches[i++], "/machine:I386");
 
-					if (package.Kind == "dll")
+					if (config.Kind == "dll")
 					{
 						config.ImportLib = matches[i].Substring(9, matches[i].Length - 10);
 						++i;

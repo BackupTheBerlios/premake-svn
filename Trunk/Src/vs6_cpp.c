@@ -36,6 +36,7 @@ int vs6_cpp()
 	if (!io_openfile(path_join(prj_get_pkgpath(), prj_get_pkgname(), "dsp")))
 		return 0;
 
+	prj_select_config(0);
 	if (prj_is_kind("winexe"))
 	{
 		projTypeTag = "Win32 (x86) Application";

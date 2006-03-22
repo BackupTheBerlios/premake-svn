@@ -39,6 +39,7 @@ int vs2005_generate(int target)
 	for (p = 0; p < prj_get_numpackages(); ++p)
 	{
 		prj_select_package(p);
+		prj_select_config(0);
 
 		printf("...%s\n", prj_get_pkgname());
 
@@ -89,6 +90,8 @@ static int vs2005_write_solution()
 	for (i = 0; i < prj_get_numpackages(); ++i)
 	{
 		prj_select_package(i);
+		prj_select_config(0);
+
 		data = (VsPkgData*)prj_get_data();
 
 		if (prj_is_kind("aspnet"))
@@ -99,7 +102,6 @@ static int vs2005_write_solution()
 			io_print("Project(\"{%s}\") = \"%s\", \"%s\\\", \"{%s}\"\n", data->toolGuid, prj_get_pkgname(), path, data->projGuid);
 			io_print("\tProjectSection(WebsiteProperties) = preProject\n");
 
-			prj_select_config(0);
 			if (prj_get_numlinks() > 0)
 				print_list(prj_get_links(), "\t\tProjectReferences = \"", ";\"\n", ";", list_aspnet_refs);
 

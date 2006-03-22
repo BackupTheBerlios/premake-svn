@@ -19,6 +19,7 @@ namespace Premake.Tests.Gnu.Cs
 
 			_expects = new Project();
 			_expects.Package.Add(1);
+			_expects.Package[0].Config.Add(2);
 
 			_parser = new GnuParser();
 		}
@@ -32,7 +33,8 @@ namespace Premake.Tests.Gnu.Cs
 		[Test]
 		public void Test_KindIsExe()
 		{
-			_expects.Package[0].Kind = "exe";
+			_expects.Package[0].Config[0].Kind = "exe";
+			_expects.Package[0].Config[1].Kind = "exe";
 			Run();
 		}
 
@@ -40,7 +42,8 @@ namespace Premake.Tests.Gnu.Cs
 		public void Test_KindIsWinExe()
 		{
 			_script.Replace("exe", "winexe");
-			_expects.Package[0].Kind = "winexe";
+			_expects.Package[0].Config[0].Kind = "winexe";
+			_expects.Package[0].Config[1].Kind = "winexe";
 			Run();
 		}
 
@@ -48,15 +51,18 @@ namespace Premake.Tests.Gnu.Cs
 		public void Test_KindIsDll()
 		{
 			_script.Replace("exe", "dll");
-			_expects.Package[0].Kind = "dll";
+			_expects.Package[0].Config[0].Kind = "dll";
+			_expects.Package[0].Config[1].Kind = "dll";
 			Run();
 		}
 
 		[Test]
 		public void Test_KindIsAspNet()
 		{
+			/* Can't distinguish between the two on this platform */
 			_script.Replace("exe", "aspnet");
-			_expects.Package[0].Kind = "aspnet";
+			_expects.Package[0].Config[0].Kind = "dll";
+			_expects.Package[0].Config[1].Kind = "dll";
 			Run();
 		}
 	}

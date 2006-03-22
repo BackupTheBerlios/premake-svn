@@ -347,6 +347,7 @@ static int export_pkgconfig(Package* package, int tbl)
 		config->extension = export_value(tbl, obj, "targetextension");
 		config->prefix    = export_value(tbl, obj, "targetprefix");
 		config->target    = export_value(tbl, obj, "target");
+		config->kind      = export_value(tbl, obj, "kind");
 
 		/* Assign a default target, if none specified */
 		if (config->target == NULL)
