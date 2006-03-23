@@ -47,6 +47,7 @@ static int         lf_dopackage(lua_State* L);
 static int         lf_fileexists(lua_State* L);
 static int         lf_findlib(lua_State* L);
 static int         lf_getbasename(lua_State* L);
+static int         lf_getconfigs(lua_State* L);
 static int         lf_getcwd(lua_State* L);
 static int         lf_getdir(lua_State* L);
 static int         lf_getextension(lua_State* L);
@@ -542,19 +543,14 @@ static void buildNewProject()
 	lua_pushstring(L, "__newindex");
 	lua_pushcfunction(L, lf_setconfigs);
 	lua_settable(L, -3);
+	lua_pushstring(L, "__index");
+	lua_pushcfunction(L, lf_getconfigs);
+	lua_settable(L, -3);
 	lua_setmetatable(L, -2);
 
 	/* Set default values */
 	lua_pushstring(L, "script");
 	lua_pushstring(L, path_getname(currentScript));
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "bindir");
-	lua_pushstring(L, ".");
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "libdir");
-	lua_pushstring(L, ".");
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "configs");
@@ -1305,6 +1301,17 @@ static int lf_rmdir(lua_State* L)
 }
 
 
+static int lf_getconfigs(lua_State* L)
+{
+	const char* name = luaL_checkstring(L, 2);
+	if (matches(name, "configs"))
+		lua_pushstring(L, "__configs");
+
+	lua_rawget(L, 1);
+	return 1;
+}
+
+
 static int lf_setconfigs(lua_State* L)
 {
 	int i;
@@ -1325,10 +1332,18 @@ static int lf_setconfigs(lua_State* L)
 			/* Set up the new config table to be added by name */
 			lua_rawgeti(L, 3, i);
 
-			/* Create the config and set the config name */
+			/* Create the config and set the defaults */
 			lua_newtable(L);
 			lua_pushstring(L, "name");
 			lua_pushvalue(L, -3);
+			lua_rawset(L, -3);
+
+			lua_pushstring(L, "bindir");
+			lua_pushstring(L, ".");
+			lua_rawset(L, -3);
+
+			lua_pushstring(L, "libdir");
+			lua_pushstring(L, ".");
 			lua_rawset(L, -3);
 
 			/* Add the config by index */
@@ -1341,9 +1356,18 @@ static int lf_setconfigs(lua_State* L)
 
 		/* Add the new config table to the project */
 		lua_rawset(L, 1);
+
+		/* Add the initially requested item to the list, but under a different
+		 * name so __newindex will be called if it is set again */
+		lua_pushstring(L, "__configs");
+		lua_pushvalue(L, 3);
+		lua_rawset(L, 1);
+	}
+	else
+	{
+		/* Not setting "configs", just write to the table */
+		lua_rawset(L, 1);
 	}
 
-	/* Add the initially requested item to the list */
-	lua_rawset(L, 1);
 	return 0;
 }
