@@ -1338,13 +1338,15 @@ static int lf_setconfigs(lua_State* L)
 			lua_pushvalue(L, -3);
 			lua_rawset(L, -3);
 
+#if OBSOLETE
 			lua_pushstring(L, "bindir");
-			lua_pushstring(L, ".");
+			lua_pushstring(L, "");
 			lua_rawset(L, -3);
 
 			lua_pushstring(L, "libdir");
-			lua_pushstring(L, ".");
+			lua_pushstring(L, "");
 			lua_rawset(L, -3);
+#endif
 
 			/* Add the config by index */
 			lua_pushvalue(L, -1);
