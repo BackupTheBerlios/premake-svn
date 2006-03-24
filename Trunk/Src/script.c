@@ -538,6 +538,14 @@ static void buildNewProject()
 	lua_pushstring(L, path_getdir(currentScript));
 	lua_settable(L, -3);
 
+	lua_pushstring(L, "bindir");
+	lua_pushstring(L, "");
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "libdir");
+	lua_pushstring(L, "");
+	lua_settable(L, -3);
+
 	/* Hook "index" metamethod so I can tell when the config list changes */
 	lua_newtable(L);
 	lua_pushstring(L, "__newindex");
@@ -1337,16 +1345,6 @@ static int lf_setconfigs(lua_State* L)
 			lua_pushstring(L, "name");
 			lua_pushvalue(L, -3);
 			lua_rawset(L, -3);
-
-#if OBSOLETE
-			lua_pushstring(L, "bindir");
-			lua_pushstring(L, "");
-			lua_rawset(L, -3);
-
-			lua_pushstring(L, "libdir");
-			lua_pushstring(L, "");
-			lua_rawset(L, -3);
-#endif
 
 			/* Add the config by index */
 			lua_pushvalue(L, -1);

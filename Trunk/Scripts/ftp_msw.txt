@@ -4,6 +4,5 @@ cd incoming
 bin
 prompt
 mput premake-win32-*.zip
-mput premake-src-*.zip
 quit
 
