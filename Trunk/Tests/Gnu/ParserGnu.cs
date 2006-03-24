@@ -274,12 +274,12 @@ namespace Premake.Tests.Gnu
 
 				isMac = Match("  MACAPP := " + config.Target + ".app/Contents", true);
 
-				if (Match("  BLDCMD := ar -cr $(OUTDIR)/$(TARGET) $(OBJECTS); ranlib $(OUTDIR)/$(TARGET)", true))
+				if (Match("  BLDCMD = ar -cr $(OUTDIR)/$(TARGET) $(OBJECTS); ranlib $(OUTDIR)/$(TARGET)", true))
 					config.Kind = "lib";
 				else if (package.Language == "c++")
-					Match("  BLDCMD := $(CXX) -o $(OUTDIR)/$(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES)");
+					Match("  BLDCMD = $(CXX) -o $(OUTDIR)/$(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES)");
 				else
-					Match("  BLDCMD := $(CC) -o $(OUTDIR)/$(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES)");
+					Match("  BLDCMD = $(CC) -o $(OUTDIR)/$(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES)");
 
 				Match("endif");
 				Match("");
