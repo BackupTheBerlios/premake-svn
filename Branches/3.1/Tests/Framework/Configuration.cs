@@ -13,6 +13,7 @@ namespace Premake.Tests.Framework
 		public string OutDir;
 		public string Target;
 		public string OutFile;
+		public string Kind;
 		public string[] IncludePaths;
 		public string[] Defines;
 		public string[] LibPaths;
@@ -38,6 +39,7 @@ namespace Premake.Tests.Framework
 			Test(this.OutDir,  actual.OutDir,  "Output directory");
 			Test(this.Target,  actual.Target,  "Target");
 			Test(this.OutFile, actual.OutFile, "Output file");
+			Test(this.Kind, actual.Kind, "Kind");
 			Test(this.BuildOptions, actual.BuildOptions, "Build options");
 			Test(this.LinkOptions,  actual.LinkOptions,  "Link options");
 			Test(this.ImportLib,    actual.ImportLib,    "Import library");

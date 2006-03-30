@@ -227,7 +227,7 @@ const char* prj_get_outdir_for(int i)
 	Package*   pkg = prj_get_package_for(i);
 	PkgConfig* cfg = prj_get_config_for(i);
 	
-	if (matches(pkg->kind, "lib"))
+	if (matches(cfg->kind, "lib"))
 		strcpy(buffer, prj_get_libdir_for(i));
 	else
 		strcpy(buffer, prj_get_bindir_for(i));
@@ -344,12 +344,12 @@ const char** prj_get_linkoptions()
 
 const char* prj_get_kind()
 {
-	return my_pkg->kind;
+	return my_cfg->kind;
 }
 
 int prj_is_kind(const char* kind)
 {
-	return matches(my_pkg->kind, kind);
+	return matches(my_cfg->kind, kind);
 }
 
 
@@ -579,7 +579,7 @@ const char* prj_get_target_for(int i)
 	if (matches(pkg->lang, "c#"))
 	{
 		strcat(buffer, filename);
-		if (matches(pkg->kind, "dll"))
+		if (matches(cfg->kind, "dll"))
 			extension = "dll";
 		else
 			extension = "exe";
@@ -588,15 +588,15 @@ const char* prj_get_target_for(int i)
 	else if (os_is("windows"))
 	{
 		strcat(buffer, filename);
-		if (matches(pkg->kind, "lib"))
+		if (matches(cfg->kind, "lib"))
 			extension = "lib";
-		else if (matches(pkg->kind, "dll"))
+		else if (matches(cfg->kind, "dll"))
 			extension = "dll";
 		else
 			extension = "exe";
 	}
 
-	else if (os_is("macosx") && matches(pkg->kind, "dll"))
+	else if (os_is("macosx") && matches(cfg->kind, "dll"))
 	{
 		if (prj_has_flag_for(i, "dylib"))
 		{
@@ -614,14 +614,14 @@ const char* prj_get_target_for(int i)
 
 	else
 	{
-		if (matches(pkg->kind, "lib"))
+		if (matches(cfg->kind, "lib"))
 		{
 			if (cfg->prefix == NULL)
 				strcat(buffer, "lib");
 			strcat(buffer, filename);
 			extension = "a";
 		}
-		else if (matches(pkg->kind, "dll"))
+		else if (matches(cfg->kind, "dll"))
 		{
 			if (cfg->prefix == NULL)
 				strcat(buffer, "lib");

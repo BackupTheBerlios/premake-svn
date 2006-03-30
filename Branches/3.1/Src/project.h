@@ -49,6 +49,7 @@ typedef struct tagPkgConfig
 	const char*  objdir;
 	const char*  prefix;
 	const char*  target;
+	const char*  kind;
 	FileConfig** fileconfigs;
 } PkgConfig;
 

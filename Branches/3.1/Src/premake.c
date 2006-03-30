@@ -29,7 +29,7 @@
 #include "vs2005.h"
 
 const char* DEFAULT   = "premake.lua";
-const char* VERSION   = "3.1rc3+svn";
+const char* VERSION   = "3.1";
 const char* COPYRIGHT = "Copyright (C) 2002-2006 Jason Perkins and the Premake Project";
 const char* HELP_MSG  = "Type 'premake --help' for help";
 
@@ -165,10 +165,13 @@ static int postprocess()
 		}
 		else
 		{
-			if (!g_hasScript && !noScriptWarning)
+			if (!g_hasScript)
 			{
-				puts("** No Premake script found!");
-				noScriptWarning = 1;
+				if (!noScriptWarning)
+				{
+					puts("** No Premake script found!");
+					noScriptWarning = 1;
+				}
 			}
 			else
 			{

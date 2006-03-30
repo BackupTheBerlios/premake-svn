@@ -120,7 +120,10 @@ static int writeRootMakefile()
 	{
 		prj_select_package(i);
 		if (!matches(prj_get_script(), prj_get_pkgscript()))
-			io_print(" %s", path_combine(path_build(prj_get_path(), "."), prj_get_pkgscript()));
+		{
+			strcpy(g_buffer, path_build(prj_get_path(), "."));
+			io_print(" %s", path_combine(g_buffer, prj_get_pkgscript()));
+		}
 	}
 	io_print("\n");
 	io_print("\t@echo ==== Regenerating Makefiles ====\n");

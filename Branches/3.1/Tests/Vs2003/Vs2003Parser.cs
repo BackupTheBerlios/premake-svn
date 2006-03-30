@@ -184,14 +184,14 @@ namespace Premake.Tests.Vs2003
 				matches = Regex("\t\t\tConfigurationType=\"([0-9])\"");
 				switch (int.Parse(matches[0]))
 				{
-				case 1:  package.Kind = "exe";  break;
-				case 2:  package.Kind = "dll";  break;
-				case 4:  package.Kind = "lib";  break;
+				case 1:  config.Kind = "exe";  break;
+				case 2:  config.Kind = "dll";  break;
+				case 4:  config.Kind = "lib";  break;
 				default:
 					throw new FormatException("Unrecognized value: ConfigurationType=\"" + matches[0] + "\"");
 				}
 
-				if (package.Kind == "lib")
+				if (config.Kind == "lib")
 					config.LibDir = config.OutDir;
 				else
 					config.BinDir = config.OutDir;
@@ -252,7 +252,9 @@ namespace Premake.Tests.Vs2003
 				if (!Match("\t\t\t\tRuntimeTypeInfo=\"TRUE\"", true))
 					buildFlags.Add("no-rtti");
 
-				Regex("\t\t\t\tUsePrecompiledHeader=\"([0-9])\"");
+				matches = Regex("\t\t\t\tUsePrecompiledHeader=\"([0-9])\"");
+				if (matches[0] != "2")
+					throw new FormatException("Expected UsePrecompiledHeader to be 2, got " + matches[0]);
 
 				matches = Regex("\t\t\t\tWarningLevel=\"([3-4])\"");
 				if (matches[0] == "4")
@@ -275,7 +277,7 @@ namespace Premake.Tests.Vs2003
 				Match("\t\t\t\tName=\"VCCustomBuildTool\"/>");
 
 				Match("\t\t\t<Tool");
-				if (package.Kind == "lib")
+				if (config.Kind == "lib")
 				{
 					Match("\t\t\t\tName=\"VCLibrarianTool\"");
 					matches = Regex("\t\t\t\tOutputFile=\"\\$\\(OutDir\\)/(.+)\"/>");
@@ -318,8 +320,8 @@ namespace Premake.Tests.Vs2003
 						Match("\t\t\t\tProgramDatabaseFile=\"$(OutDir)/" + Path.GetFileNameWithoutExtension(config.Target) + ".pdb\"");
 
 					matches = Regex("\t\t\t\tSubSystem=\"([0-9])\"");
-					if (package.Kind == "exe" && matches[0] == "2")
-						package.Kind = "winexe";
+					if (config.Kind == "exe" && matches[0] == "2")
+						config.Kind = "winexe";
 
 					if (optimization > 0)
 					{
@@ -328,7 +330,7 @@ namespace Premake.Tests.Vs2003
 					}
 
 					
-					if (package.Kind == "exe" || package.Kind == "winexe")
+					if (config.Kind == "exe" || config.Kind == "winexe")
 					{
 						if (!Match("\t\t\t\tEntryPointSymbol=\"mainCRTStartup\"", true))
 							buildFlags.Add("no-main");
@@ -439,6 +441,8 @@ namespace Premake.Tests.Vs2003
 		#region C# Parsing
 		private void ParseCs(Project project, Package package, string filename)
 		{
+			string kind = null;
+
 			Begin(filename);
 
 			Match("<VisualStudioProject>");
@@ -446,7 +450,7 @@ namespace Premake.Tests.Vs2003
 			
 			string[] matches = Regex("\t\tProjectType = \"([A-Za-z]+)\"");
 			if (matches[0] == "Web")
-				package.Kind = "aspnet";
+				kind = "aspnet";
 
 			Match("\t\tProductVersion = \"7.10.3077\"");
 			Match("\t\tSchemaVersion = \"2.0\"");
@@ -472,13 +476,13 @@ namespace Premake.Tests.Vs2003
 			Match("\t\t\t\tDelaySign = \"false\"");
 			
 			matches = Regex("\t\t\t\tOutputType = \"([A-Za-z]+)\"");
-			if (package.Kind == null)
+			if (kind == null)
 			{
 				switch (matches[0])
 				{
-				case "Exe":     package.Kind = "exe";    break;
-				case "WinExe":  package.Kind = "winexe"; break;
-				case "Library": package.Kind = "dll";    break;
+				case "Exe":     kind = "exe";    break;
+				case "WinExe":  kind = "winexe"; break;
+				case "Library": kind = "dll";    break;
 				default:
 					throw new FormatException("Unexpected value: OutputType = \"" + matches[0] + "\"");
 				}
@@ -579,6 +583,7 @@ namespace Premake.Tests.Vs2003
 
 			foreach (Configuration config in package.Config)
 			{
+				config.Kind = kind;
 				config.Links = (string[])links.ToArray(typeof(string));
 				config.LinkDeps = (string[])lddep.ToArray(typeof(string));
 			}
@@ -610,7 +615,7 @@ namespace Premake.Tests.Vs2003
 			Match("\t</CSHARP>");
 			Match("</VisualStudioProject>");
 
-			if (package.Kind != "aspnet")
+			if (kind != "aspnet")
 				ParseUserFile(project, package, filename);
 		}
 

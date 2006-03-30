@@ -234,6 +234,7 @@ void vs_assign_guids()
 	
 		generateUUID(data->projGuid);
 
+		prj_select_config(0);
 		if (version == VS2005 && prj_is_kind("aspnet"))
 		{
 			strcpy(data->toolGuid, "E24C65DC-7377-472B-9ABA-BC803B73C61A");
@@ -268,33 +269,9 @@ void vs_assign_guids()
 int vs_write_cpp()
 {
 	const char* str;
-	int configTypeId;
 	int i, b;
 
 	VsPkgData* data = (VsPkgData*)prj_get_data();
-
-	if (prj_is_kind("winexe") || prj_is_kind("exe"))
-	{
-		configTypeId = 1;
-	}
-	else if (prj_is_kind("dll"))
-	{
-		configTypeId = 2;
-	}
-	else if (prj_is_kind("lib"))
-	{
-		configTypeId = 4;
-	}
-	else if (prj_is_kind("aspnet"))
-	{
-		puts("** Error: C++ ASP.NET projects are not supported");
-		return 0;
-	}
-	else
-	{
-		printf("** Error: unknown package kind '%s'\n", prj_get_kind());
-		return 0;
-	}
 
 	/* Open the file and write the header */
 	if (!io_openfile(path_join(prj_get_pkgpath(), prj_get_pkgname(), "vcproj")))
@@ -344,9 +321,32 @@ int vs_write_cpp()
 	tag_open("Configurations");
 	for (i = 0; i < prj_get_numconfigs(); ++i)
 	{
-		int optimization, debug, runtime, symbols;
+		int optimization, debug, runtime, symbols, configTypeId;
 
 		prj_select_config(i);
+
+		if (prj_is_kind("winexe") || prj_is_kind("exe"))
+		{
+			configTypeId = 1;
+		}
+		else if (prj_is_kind("dll"))
+		{
+			configTypeId = 2;
+		}
+		else if (prj_is_kind("lib"))
+		{
+			configTypeId = 4;
+		}
+		else if (prj_is_kind("aspnet"))
+		{
+			puts("** Error: C++ ASP.NET projects are not supported");
+			return 0;
+		}
+		else
+		{
+			printf("** Error: unknown package kind '%s'\n", prj_get_kind());
+			return 0;
+		}
 
 		if (prj_has_flag("optimize-speed"))
 			optimization = 2;
@@ -496,7 +496,7 @@ int vs_write_cpp()
 				if (version == VS2005 && prj_has_flag("no-rtti"))
 					tag_attr("RuntimeTypeInfo=\"%s\"", S_FALSE);
 
-				tag_attr("UsePrecompiledHeader=\"0\"");
+				tag_attr("UsePrecompiledHeader=\"%d\"", version < VS2005 ? 2 : 0);
 				tag_attr("WarningLevel=\"%d\"", prj_has_flag("extra-warnings") ? 4 : 3);
 				if (prj_has_flag("fatal-warnings"))
 					tag_attr("WarnAsError=\"%s\"", S_TRUE);
