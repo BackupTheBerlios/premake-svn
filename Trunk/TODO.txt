@@ -1,3 +1,7 @@
+Move website and svn back to sf.net
+
+Feature ideas in email from Philip Taylor
+
 Remove package type from Makefile header
 
 Remove Package.Kind from unit test framework classes
