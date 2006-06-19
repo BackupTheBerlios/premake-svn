@@ -161,7 +161,7 @@ int gnu_cs()
 		{
 			/* Mono doesn't support the optimize flag */
 			if (!matches(csc, "mcs"))
-				io_print(" /o");
+				io_print(" /optimize");
 		}
 		if (prj_has_flag("unsafe"))
 		{
